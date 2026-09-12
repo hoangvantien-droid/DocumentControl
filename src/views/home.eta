@@ -1,0 +1,18 @@
+<% layout('layout.eta', { title: 'Trang chủ — DCS', user: it.user }) %>
+
+<!-- Trang chủ (DCS-7 §1.3): trả lời đúng một câu — hôm nay tôi cần làm gì.
+     Khối không có việc thì ẩn hẳn, không hiện "không có mục nào".
+     Giai đoạn nền móng: chưa có dữ liệu thật, hiện lời chào và ô tìm lớn. -->
+<section class="home">
+  <h1>Hệ Quản lý &amp; Phân phối Tài liệu Điện tử</h1>
+  <p class="lead">Khung nền đã dựng. Các luồng nghiệp vụ sẽ được bổ sung theo danh sách việc DCS-9.</p>
+
+  <div class="quick-search">
+    <form action="/search" method="get" role="search">
+      <input type="search" name="q" placeholder="Tìm tài liệu…" aria-label="Tìm kiếm nhanh">
+      <button type="submit">Tìm</button>
+    </form>
+  </div>
+
+  <p class="build-note">Trạng thái: giai đoạn 0 (nền móng) hoàn tất — server, cấu hình, kết nối cơ sở dữ liệu, migration, ghi vết, khung giao diện.</p>
+</section>

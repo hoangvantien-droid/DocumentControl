@@ -1,0 +1,19 @@
+# /etc/systemd/system/dcs-jobs.service  +  dcs-jobs.timer
+# Tác vụ nền chạy hằng ngày: chuyển hiệu lực theo lịch, sinh rà soát, leo thang
+# (DCS-9 giai đoạn 3/7). Ở giai đoạn nền móng CHƯA có src/jobs/scheduler.ts —
+# file này để sẵn cho giai đoạn sau, chưa kích hoạt.
+
+# ===== dcs-jobs.service =====
+[Unit]
+Description=DCS - tac vu nen hang ngay (chuyen hieu luc, sinh ra soat, leo thang)
+After=network.target postgresql.service dcs.service
+
+[Service]
+Type=oneshot
+User=dcs
+Group=dcs
+WorkingDirectory=/opt/dcs
+EnvironmentFile=/opt/dcs/.env
+# ExecStart=/usr/bin/node dist/jobs/scheduler.js   # bật khi có scheduler (giai đoạn 3)
+ExecStart=/bin/true
+SyslogIdentifier=dcs-jobs

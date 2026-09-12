@@ -1,0 +1,29 @@
+# /etc/systemd/system/dcs.service
+# Dịch vụ systemd cho DCS (DCS-8 §7: chạy thẳng bằng systemd, không Docker).
+# Tự khởi động lại khi lỗi; khởi động lại máy thì hệ thống tự lên (T-101).
+
+[Unit]
+Description=DCS - He Quan ly & Phan phoi Tai lieu Dien tu
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dcs
+Group=dcs
+WorkingDirectory=/opt/dcs
+# Nạp biến môi trường từ file (chmod 600, chỉ user dcs đọc được).
+EnvironmentFile=/opt/dcs/.env
+# Chạy bản đã build (dist/). Build ở bước deploy, không chạy tsx trên production.
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=3
+# Giới hạn bộ nhớ để không kéo sập cả máy 1 GB (DCS-5 §1.1).
+MemoryMax=350M
+# Ghi log ra journald.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dcs
+
+[Install]
+WantedBy=multi-user.target
