@@ -207,3 +207,25 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .reject-form { margin-top: 16px; display: flex; gap: 8px; }
 .reject-form input { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; }
 .doc-title { color: var(--muted); font-size: 15px; margin-top: -8px; }
+
+/* ---- Trang chủ khối việc (T-039) ---- */
+.home-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+.home-block h2 { font-size: 16px; margin: 0 0 10px; }
+.home-list { list-style: none; padding: 0; margin: 0; }
+.home-list li { padding: 6px 0; border-bottom: 1px solid var(--bg); }
+
+/* ---- Dải đỏ toàn chiều rộng (DCS-7 §3.2) ---- */
+.danger-banner {
+  background: #fdecec; border: 1px solid #f5b5b5; color: var(--danger);
+  padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 600;
+}
+.danger-link { color: var(--danger); }
+
+/* ---- Chi tiết ---- */
+.detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.detail-main, .detail-side { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+.detail-side dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
+.detail-side dt { color: var(--muted); }
+.section-block { margin-bottom: 16px; }
+.section-block h3 { font-size: 14px; margin: 0 0 4px; }
+.muted { color: var(--muted); font-size: 13px; }

@@ -20,6 +20,7 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerConfirmationRoutes } from './routes/confirmation.js';
+import { registerCatalogRoutes } from './routes/catalog.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -58,10 +59,11 @@ async function main() {
 
   // Các route.
   registerAuthRoutes(app, sql);
-  registerHomeRoutes(app);
+  registerHomeRoutes(app, sql);
   registerAdminRoutes(app, sql);
   registerDocumentRoutes(app, sql);
   registerConfirmationRoutes(app, sql);
+  registerCatalogRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

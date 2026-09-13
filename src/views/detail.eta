@@ -1,0 +1,52 @@
+<% layout('layout.eta', { title: 'Chi tiết — DCS', user: it.user }) %>
+<% var d = it.d; %>
+
+<!-- Điều phải hiện nổi bật (DCS-7 §3.2) -->
+<% if (d.status === 'het_hieu_luc') { %>
+  <div class="danger-banner">
+    Bản này ĐÃ HẾT HIỆU LỰC.
+    <% if (it.current) { %> Bản đang áp dụng: <a href="/documents/<%= it.current.version_id %>">phiên bản <%= it.current.version_no %></a>.<% } %>
+  </div>
+<% } else if (d.status === 'thu_hoi') { %>
+  <div class="danger-banner">Tài liệu ĐÃ THU HỒI. Lý do: <%= d.recall_reason %></div>
+<% } else if (d.qua_han_xem_xet) { %>
+  <div class="warn-banner">Tài liệu QUÁ HẠN RÀ SOÁT.</div>
+<% } %>
+
+<h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
+<p class="doc-title"><%= d.title %> · <span class="status status-<%= d.status %>"><%= d.status %></span></p>
+
+<div class="detail-grid">
+  <div class="detail-main">
+    <h2>Nội dung</h2>
+    <% if (it.sections.length === 0) { %>
+      <p class="muted">Chưa bóc tách nội dung (sẽ có ở giai đoạn xử lý nội dung).</p>
+    <% } else { %>
+      <% it.sections.forEach(function(s){ %>
+        <div class="section-block"><h3><%= s.section_code %> <%= s.section_title %></h3><p><%= s.raw_text || '' %></p></div>
+      <% }) %>
+    <% } %>
+  </div>
+
+  <aside class="detail-side">
+    <h2>Thông tin</h2>
+    <dl>
+      <dt>Loại</dt><dd><%= d.doc_type %> (<%= d.origin %>)</dd>
+      <dt>Phạm vi</dt><dd><%= d.scope_level %></dd>
+      <dt>Ngày ban hành</dt><dd><%= d.issued_date || '' %></dd>
+      <dt>Người phê duyệt</dt><dd><%= d.approver_name || '' %></dd>
+      <dt>Số hồ sơ phê duyệt</dt><dd><%= d.approval_reference || '' %></dd>
+      <dt>Ngày hiệu lực</dt><dd><%= d.effective_date || '' %></dd>
+      <dt>Rà soát tới</dt><dd><%= d.next_review_date || '' %></dd>
+    </dl>
+
+    <h3>Nhãn liên kết</h3>
+    <% if (it.links.length === 0) { %><p class="muted">Chưa có.</p><% } else { %>
+      <% it.links.forEach(function(l){ %><span class="chip"><%= l.link_type %>: <%= l.link_code %></span><% }) %>
+    <% } %>
+
+    <% if (it.canRecall && (d.status === 'da_dang_ky' || d.status === 'hieu_luc')) { %>
+      <p><a href="/documents/<%= d.version_id %>/recall" class="danger-link">Thu hồi tài liệu</a></p>
+    <% } %>
+  </aside>
+</div>

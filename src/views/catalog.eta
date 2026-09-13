@@ -1,0 +1,21 @@
+<% layout('layout.eta', { title: 'Danh mục tài liệu — DCS', user: it.user }) %>
+
+<h1>Danh mục tài liệu</h1>
+
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>PB</th><th>Tiêu đề</th><th>Loại</th><th>Phạm vi</th><th>Trạng thái</th><th>Hiệu lực</th></tr></thead>
+  <tbody>
+    <% it.docs.forEach(function(d){ %>
+    <tr>
+      <td><a href="/documents/<%= d.version_id %>"><%= d.doc_id %></a></td>
+      <td><%= d.version_no %></td>
+      <td><%= d.title %></td>
+      <td><%= d.doc_type %></td>
+      <td><%= d.scope_level %></td>
+      <td><span class="status status-<%= d.status %>"><%= d.status %></span></td>
+      <td><%= d.effective_date || '' %></td>
+    </tr>
+    <% }) %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="7">Chưa có tài liệu nào trong phạm vi của bạn.</td></tr><% } %>
+  </tbody>
+</table>
