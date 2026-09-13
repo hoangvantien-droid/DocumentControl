@@ -1,0 +1,15 @@
+<% layout('layout.eta', { title: 'Bản in — DCS', user: it.user }) %>
+<% var rec = it.rec; %>
+
+<h1>Đã tạo bản in kiểm soát</h1>
+<div class="pkg-card">
+  <p><b><%= rec.doc_id %></b> phiên bản <%= rec.version_no %></p>
+  <p>Mã bản in: <code><%= rec.print_id %></code></p>
+  <p>Thời điểm: <%= rec.printed_at %></p>
+  <p>Mã tra cứu QR (đường dẫn): <code>/verify/<%= rec.verify_token %></code></p>
+  <p class="muted">
+    Lớp phủ đóng dấu (số hiệu, phiên bản, mã bản in, ngày in, QR, cảnh báo giá
+    trị tại thời điểm in) được đóng khi kết xuất — tệp gốc không đổi. Quét QR ra
+    trang tra cứu không cần đăng nhập, chỉ hiện tình trạng còn dùng được hay không.
+  </p>
+</div>

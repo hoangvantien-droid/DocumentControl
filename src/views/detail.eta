@@ -16,6 +16,14 @@
 <h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
 <p class="doc-title"><%= d.title %> · <span class="status status-<%= d.status %>"><%= d.status %></span></p>
 
+<!-- In bản kiểm soát (T-085): chỉ khi hiệu lực -->
+<% if (d.status === 'hieu_luc') { %>
+  <form method="post" action="/documents/<%= d.version_id %>/print" style="display:inline">
+    <input type="hidden" name="location" value="">
+    <button type="submit" class="btn-diff">In bản kiểm soát</button>
+  </form>
+<% } %>
+
 <!-- Nút xác nhận đọc (T-069, DCS-7 §3.3) -->
 <% if (it.ackState && it.ackState.show) { %>
   <form method="post" action="/documents/<%= d.version_id %>/acknowledge">

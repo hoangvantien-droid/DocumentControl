@@ -1,0 +1,31 @@
+<% layout('layout.eta', { title: 'Hỏi đáp — DCS', user: it.user }) %>
+
+<h1>Hỏi đáp tài liệu <span class="tag">đang thử nghiệm</span></h1>
+
+<% if (!it.enabled) { %>
+  <div class="warn-banner">Hỏi đáp AI chưa được bật (chưa cấu hình API embedding). Tìm kiếm và các chức năng khác vẫn hoạt động.</div>
+<% } %>
+
+<form method="post" action="/qa" class="search-bar-full">
+  <input type="text" name="question" value="<%= it.question %>" placeholder="Đặt câu hỏi về tài liệu đang hiệu lực…" autofocus>
+  <button type="submit">Hỏi</button>
+</form>
+
+<% if (it.result) { %>
+  <% if (it.result.insufficientEvidence) { %>
+    <div class="no-results"><p><%= it.result.answer %></p><p class="muted">Gợi ý: thử tìm kiếm thông thường.</p></div>
+  <% } else { %>
+    <div class="qa-answer"><%= it.result.answer %></div>
+    <h3>Trích dẫn</h3>
+    <ul class="qa-citations">
+      <% it.result.citations.forEach(function(c){ %>
+        <li>
+          <b><%= c.doc_id %></b> v<%= c.version_no %>
+          <% if (c.section_code) { %>· mục <%= c.section_code %> <%= c.section_title %><% } %>
+          <% if (c.page_from) { %>· trang <%= c.page_from %><% } %>
+        </li>
+      <% }) %>
+    </ul>
+    <p class="muted">Nội dung trích từ tài liệu đang hiệu lực. Đối chiếu tài liệu gốc khi cần áp dụng chính xác.</p>
+  <% } %>
+<% } %>

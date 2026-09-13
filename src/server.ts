@@ -26,6 +26,8 @@ import { registerDiffRoutes } from './routes/diff.js';
 import { registerFunctionalGroupRoutes } from './routes/functional-groups.js';
 import { registerReviewRoutes } from './routes/reviews.js';
 import { registerPackageRoutes } from './routes/packages.js';
+import { registerPrintingRoutes } from './routes/printing.js';
+import { registerQaRoutes } from './routes/qa.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -74,6 +76,8 @@ async function main() {
   registerFunctionalGroupRoutes(app, sql);
   registerReviewRoutes(app, sql);
   registerPackageRoutes(app, sql);
+  registerPrintingRoutes(app, sql);
+  registerQaRoutes(app, sql, config);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

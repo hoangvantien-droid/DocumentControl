@@ -273,3 +273,17 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .verdict-form { display: flex; gap: 6px; align-items: center; }
 .verdict-form select, .verdict-form input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
 .verdict-form button { padding: 5px 10px; border: none; border-radius: 6px; background: var(--brand); color: #fff; cursor: pointer; }
+
+/* ---- Tra cứu QR công khai (T-086, DCS-7 §7.5) ---- */
+.verify-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+.verify-card { text-align: center; padding: 40px; border-radius: 16px; width: 90%; max-width: 480px; }
+.verify-big { font-size: 96px; line-height: 1; font-weight: 800; }
+.verify-card p { font-size: 24px; font-weight: 600; margin: 16px 0 0; }
+.verify-ok { background: #d4f4dd; color: #146c2e; }
+.verify-bad { background: #fdecec; color: var(--danger); }
+.verify-unknown { background: #f0f0f0; color: #555; }
+
+/* ---- Hỏi đáp (T-088) ---- */
+.qa-answer { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; white-space: pre-wrap; }
+.qa-citations { list-style: none; padding: 0; }
+.qa-citations li { padding: 6px 10px; background: #fffbe6; border-radius: 6px; margin: 4px 0; font-size: 13px; }
