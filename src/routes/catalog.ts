@@ -10,6 +10,7 @@ import {
 } from '../domain/catalog.js';
 import { recallVersion, recallImpact } from '../domain/lifecycle.js';
 import { canRelease } from '../domain/permissions.js';
+import { processVersionContent } from '../domain/content.js';
 
 export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
   app.get('/documents', async (req, reply) => {
@@ -44,6 +45,15 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
     if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
     const impact = await recallImpact(sql, detail.doc_id, req.params.id);
     return reply.view('recall.eta', { d: detail, impact, error: null });
+  });
+
+  // Xử lý nội dung (bóc tách + phân đoạn) — chạy nền, không chặn. Người nộp
+  // hoặc người release kích hoạt. Với tệp thật OCR chạy qua jobs/ocr-worker.
+  app.post<{ Params: { id: string } }>('/documents/:id/process', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    await processVersionContent(sql, req.params.id);
+    return reply.redirect(`/documents/${req.params.id}`);
   });
 
   app.post<{ Params: { id: string }; Body: { reason?: string } }>(
