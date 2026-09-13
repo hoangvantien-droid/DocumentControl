@@ -12,7 +12,7 @@
     </label>
     <label>Loại
       <select name="doc_type">
-        <% ['SOP','WI','Form','Policy','External'].forEach(function(t){ %>
+        <% var docTypes = ['SOP','WI','Form','Policy','External']; docTypes.forEach(function(t){ %>
           <option value="<%= t %>" <%= val.doc_type===t?'selected':'' %>><%= t %></option>
         <% }) %>
       </select>
@@ -25,7 +25,7 @@
     </label>
     <label>Cấp phạm vi
       <select name="scope_level">
-        <% ['group','bu','site','dept'].forEach(function(s){ %>
+        <% var scopeLevels = ['group','bu','site','dept']; scopeLevels.forEach(function(s){ %>
           <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= s %></option>
         <% }) %>
       </select>

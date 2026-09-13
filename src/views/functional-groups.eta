@@ -24,7 +24,7 @@
       <td><%= g.name %></td>
       <td><% var o = it.users.find(function(u){return u.user_id===g.owner_user_id}); %><%= o ? o.full_name : g.owner_user_id %></td>
       <td>
-        <% (it.membersByGroup[g.group_id] || []).forEach(function(m){ %>
+        <% var ms = (it.membersByGroup[g.group_id] || []); ms.forEach(function(m){ %>
           <span class="chip"><%= m.full_name || m.email %>
             <form method="post" action="/functional-groups/members/remove" style="display:inline">
               <input type="hidden" name="group_id" value="<%= g.group_id %>">

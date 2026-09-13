@@ -1,4 +1,4 @@
-<% layout('layout.eta', { title: 'Quản trị người dùng — DCS', user: it.user }) %>
+<% layout('/layout.eta', { title: 'Quản trị người dùng — DCS', user: it.user }) %>
 
 <div class="warn-banner">
   Người dùng khai tay chỉ dùng khi L1 chưa vận hành. Khi L1 lên, người dùng đồng bộ tự động.
@@ -16,7 +16,7 @@
       <td><%= u.email %></td>
       <td><%= u.is_active ? 'Hoạt động' : 'Ngừng' %></td>
       <td>
-        <% (it.deptsByUser[u.user_id] || []).forEach(function(did){
+        <% var ds = (it.deptsByUser[u.user_id] || []); ds.forEach(function(did){
              var d = it.depts.find(function(x){return x.dept_id===did}); %>
           <span class="chip"><%= d ? d.dept_code : did %></span>
         <% }) %>

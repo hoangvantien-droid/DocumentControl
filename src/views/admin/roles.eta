@@ -1,4 +1,4 @@
-<% layout('layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
+<% layout('/layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
 
 <div class="warn-banner">
   Gán vai trò tạm khi L1 chưa vận hành. Khi L1 lên, vai trò do L1 quản.
@@ -14,7 +14,7 @@
     <tr>
       <td><%= u.full_name %> <small>(<%= u.email %>)</small></td>
       <td>
-        <% (it.rolesByUser[u.user_id] || []).forEach(function(r){ %>
+        <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
           <span class="chip"><%= r.role_code %> @ <%= r.scope_level %></span>
         <% }) %>
       </td>

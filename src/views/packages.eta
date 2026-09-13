@@ -11,7 +11,7 @@
       <span class="pkg-prog"><%= p.confirmed_count %>/<%= p.member_count %> đã xác nhận · hiệu lực <%= p.effective_date %></span>
     </div>
     <ul class="matrix-list">
-      <% (it.membersByPkg[p.package_id] || []).forEach(function(m){ %>
+      <% var mm = (it.membersByPkg[p.package_id] || []); mm.forEach(function(m){ %>
         <li>
           <%= m.doc_id %> v<%= m.version_no %> — <%= m.title %> <span class="status status-<%= m.status %>"><%= m.status %></span>
           <% if (p.status === 'dang_mo') { %>

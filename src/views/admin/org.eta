@@ -1,4 +1,4 @@
-<% layout('layout.eta', { title: 'Quản trị tổ chức — DCS', user: it.user }) %>
+<% layout('/layout.eta', { title: 'Quản trị tổ chức — DCS', user: it.user }) %>
 
 <!-- Dải cảnh báo CỐ ĐỊNH, không ẩn được (DCS-7 §7.4): nếu không có, ba năm sau
      màn hình tạm này vẫn còn và DCS âm thầm thành nguồn sự thật thứ hai về tổ chức. -->

@@ -1,0 +1,80 @@
+{
+  "pbtResults": {
+    "1. Viết test khám phá điều kiện lỗi (bug condition exploration test)": {
+      "status": "passed",
+      "failingExample": "Bug reproduced successfully on unfixed code. Each affected view throws exactly the error predicted by design:\n- admin/roles.eta: \"\\\")</small></td>\\n      <td>\\n        \\\" is not a function\"\n- functional-groups.eta: \"\\\"</td>\\n      <td>\\n        \\\" is not a function\"\n- admin/users.eta: \"\\\"</td>\\n      <td>\\n        \\\" is not a function\"\n- packages.eta: \"\\\"</span>\\n    </div>\\n    <ul class=\\\"matrix-list\\\">\\n      \\\" is not a function\"\n- register.eta: \"Cannot read properties of undefined (reading 'forEach')\"",
+      "lastRunTimestamp": 1789308267612
+    }
+  },
+  "executionHistory": {
+    "1. Viết test khám phá điều kiện lỗi (bug condition exploration test)": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308064017
+      },
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308300305
+      }
+    ],
+    "2. Viết test phòng ngừa (preservation property tests) TRƯỚC khi sửa": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308308001
+      },
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308677985
+      }
+    ],
+    "3.1 Áp dụng fix ở tầng template (hướng a — gán biến, không đổi HTML)": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308689989
+      },
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308816983
+      }
+    ],
+    "3.2 Xác minh test khám phá giờ đã PASS": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789308824623
+      },
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789309129161
+      }
+    ],
+    "3.3 Xác minh test phòng ngừa vẫn PASS": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789309171565
+      }
+    ],
+    "3. Sửa lỗi ASI khiến Eta render sập (5 file, 6 vị trí)": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789309171650
+      }
+    ],
+    "4. Checkpoint — Đảm bảo toàn bộ test xanh": [
+      {
+        "executionId": "23ac1792-1a78-4f19-ac9e-d070d66fcf22",
+        "chatSessionId": "sess_3c7d0b5f-fa19-4e61-bf03-0d91fb31ff06",
+        "timestamp": 1789309179248
+      }
+    ]
+  }
+}
