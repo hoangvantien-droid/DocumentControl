@@ -11,17 +11,19 @@
 import { loadConfig } from '../config.js';
 import { getSql, closeSql } from '../db/client.js';
 import { activateDueVersions, generateDueReviews } from '../domain/lifecycle.js';
+import { runEscalations } from '../domain/escalation.js';
 import { purgeExpiredSessions } from '../domain/session.js';
 
 export async function runDailyJobs(): Promise<{
-  activated: number; reviewsGenerated: number; sessionsPurged: number;
+  activated: number; reviewsGenerated: number; escalationsSent: number; sessionsPurged: number;
 }> {
   const config = loadConfig();
   const sql = getSql(config);
   const activated = await activateDueVersions(sql);
   const reviewsGenerated = await generateDueReviews(sql);
+  const escalationsSent = await runEscalations(sql);
   const sessionsPurged = await purgeExpiredSessions(sql);
-  return { activated, reviewsGenerated, sessionsPurged };
+  return { activated, reviewsGenerated, escalationsSent, sessionsPurged };
 }
 
 // Chạy trực tiếp: node dist/jobs/scheduler.js
@@ -29,7 +31,8 @@ if (process.argv[1]?.endsWith('scheduler.ts') || process.argv[1]?.endsWith('sche
   runDailyJobs()
     .then((r) => {
       console.log(
-        `Tác vụ nền xong: kích hoạt ${r.activated}, sinh rà soát ${r.reviewsGenerated}, dọn phiên ${r.sessionsPurged}`,
+        `Tác vụ nền xong: kích hoạt ${r.activated}, sinh rà soát ${r.reviewsGenerated}, ` +
+        `leo thang ${r.escalationsSent}, dọn phiên ${r.sessionsPurged}`,
       );
       return closeSql();
     })

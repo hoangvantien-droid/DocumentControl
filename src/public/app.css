@@ -265,3 +265,11 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .matrix-list { list-style: none; padding: 0; font-size: 13px; }
 .matrix-list li { padding: 3px 0; }
 .ack-done { color: #146c2e; font-size: 14px; background: #eaf7ee; padding: 8px 12px; border-radius: 8px; display: inline-block; }
+
+/* ---- Gói ban hành & rà soát (GĐ7) ---- */
+.pkg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.pkg-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.pkg-prog { color: var(--muted); font-size: 12px; }
+.verdict-form { display: flex; gap: 6px; align-items: center; }
+.verdict-form select, .verdict-form input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+.verdict-form button { padding: 5px 10px; border: none; border-radius: 6px; background: var(--brand); color: #fff; cursor: pointer; }
