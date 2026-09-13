@@ -15,7 +15,15 @@ declare module 'fastify' {
 
 export function registerViewLayer(app: FastifyInstance, eta: Eta): void {
   app.decorateReply('view', function (template: string, data: Record<string, unknown> = {}) {
-    const html = eta.render(template, data);
+    // Tự chèn user hiện tại và cờ thực đơn để mọi view/layout dùng chung,
+    // route không phải truyền thủ công. Data của route ghi đè nếu trùng khoá.
+    const req = this.request;
+    const merged = {
+      user: req?.currentUser ?? null,
+      nav: req?.nav ?? {},
+      ...data,
+    };
+    const html = eta.render(template, merged);
     this.type('text/html; charset=utf-8').send(html);
     return this;
   });

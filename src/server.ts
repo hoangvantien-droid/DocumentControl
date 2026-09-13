@@ -12,13 +12,18 @@ import { Eta } from 'eta';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadConfig } from './config.js';
+import { getSql } from './db/client.js';
 import { registerViewLayer } from './views/render.js';
+import { registerAuth } from './middleware/auth.js';
 import { registerHomeRoutes } from './routes/home.js';
+import { registerAuthRoutes } from './routes/auth.js';
+import { registerAdminRoutes } from './routes/admin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const config = loadConfig();
+  const sql = getSql(config);
 
   const app = Fastify({
     logger: {
@@ -46,8 +51,13 @@ async function main() {
   });
   registerViewLayer(app, eta);
 
+  // Xác thực: phân giải người dùng hiện tại từ cookie phiên (đường duy nhất).
+  registerAuth(app, sql);
+
   // Các route.
+  registerAuthRoutes(app, sql);
   registerHomeRoutes(app);
+  registerAdminRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

@@ -107,3 +107,64 @@ a:hover { text-decoration: underline; }
   font-size: 13px;
   color: var(--brand-dark);
 }
+
+/* ---- Đăng nhập (T-010) ---- */
+.login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  width: 360px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+}
+.login-card h1 { margin: 0; color: var(--brand-dark); }
+.login-sub { color: var(--muted); font-size: 13px; margin: 4px 0 20px; }
+.login-card label { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.login-card input {
+  width: 100%; padding: 9px 12px; margin-top: 4px;
+  border: 1px solid var(--border); border-radius: 8px; font-size: 14px;
+}
+.login-card button {
+  width: 100%; padding: 10px; margin-top: 8px; border: none; border-radius: 8px;
+  background: var(--brand); color: #fff; font-size: 15px; cursor: pointer;
+}
+.login-card button:hover { background: var(--brand-dark); }
+.login-error {
+  background: #fdecec; border: 1px solid #f5c2c2; color: var(--danger);
+  padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+}
+
+/* ---- Dải cảnh báo cố định (DCS-7 §7.4) ---- */
+.warn-banner {
+  background: #fff8e6; border: 1px solid #f0d98a; color: #7a5c00;
+  padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px;
+}
+
+/* ---- Bảng dữ liệu ---- */
+.data-table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; background: var(--surface); }
+.data-table th, .data-table td {
+  text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 14px;
+}
+.data-table th { background: var(--bg); color: var(--muted); font-weight: 600; }
+.chip {
+  display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 12px;
+  background: #eef2f7; font-size: 12px;
+}
+
+/* ---- Form nội dòng ---- */
+.inline-form { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 4px 0; }
+.inline-form input, .inline-form select {
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+}
+.inline-form button {
+  padding: 6px 12px; border: none; border-radius: 6px; background: var(--brand); color: #fff; cursor: pointer; font-size: 13px;
+}
+.org-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.org-col { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.org-col h2 { font-size: 15px; margin: 0 0 10px; }
+.org-col ul { list-style: none; padding: 0; margin: 0 0 12px; font-size: 13px; }
+.org-col li { padding: 3px 0; border-bottom: 1px solid var(--bg); }
+.role-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.role-form select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+.role-form button { padding: 7px 14px; border: none; border-radius: 6px; background: var(--brand); color: #fff; cursor: pointer; }

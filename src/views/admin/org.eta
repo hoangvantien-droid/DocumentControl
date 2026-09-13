@@ -1,0 +1,59 @@
+<% layout('layout.eta', { title: 'Quản trị tổ chức — DCS', user: it.user }) %>
+
+<!-- Dải cảnh báo CỐ ĐỊNH, không ẩn được (DCS-7 §7.4): nếu không có, ba năm sau
+     màn hình tạm này vẫn còn và DCS âm thầm thành nguồn sự thật thứ hai về tổ chức. -->
+<div class="warn-banner">
+  Màn hình này chỉ dùng tạm trong giai đoạn tầng định danh dùng chung (L1) chưa
+  vận hành. Khi hệ đó lên, dữ liệu tổ chức sẽ được đồng bộ tự động và màn hình
+  này bị gỡ bỏ.
+</div>
+
+<h1>Quản trị tổ chức</h1>
+
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<section class="org-grid">
+  <div class="org-col">
+    <h2>Ngành hàng (BU)</h2>
+    <ul>
+      <% it.bus.forEach(function(b){ %><li><b><%= b.bu_code %></b> — <%= b.name %></li><% }) %>
+    </ul>
+    <form method="post" action="/admin/org/bu" class="inline-form">
+      <input name="code" placeholder="Mã BU" required>
+      <input name="name" placeholder="Tên" required>
+      <button type="submit">Thêm BU</button>
+    </form>
+  </div>
+
+  <div class="org-col">
+    <h2>Nhà máy (Site)</h2>
+    <ul>
+      <% it.sites.forEach(function(s){ %><li><b><%= s.site_code %></b> — <%= s.name %></li><% }) %>
+    </ul>
+    <form method="post" action="/admin/org/site" class="inline-form">
+      <input name="code" placeholder="Mã Site" required>
+      <input name="name" placeholder="Tên" required>
+      <select name="bu_id" required>
+        <option value="">-- BU --</option>
+        <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %></option><% }) %>
+      </select>
+      <button type="submit">Thêm Site</button>
+    </form>
+  </div>
+
+  <div class="org-col">
+    <h2>Phòng ban (Department)</h2>
+    <ul>
+      <% it.depts.forEach(function(d){ %><li><b><%= d.dept_code %></b> — <%= d.name %></li><% }) %>
+    </ul>
+    <form method="post" action="/admin/org/dept" class="inline-form">
+      <input name="code" placeholder="Mã Dept" required>
+      <input name="name" placeholder="Tên" required>
+      <select name="site_id" required>
+        <option value="">-- Site --</option>
+        <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %></option><% }) %>
+      </select>
+      <button type="submit">Thêm Dept</button>
+    </form>
+  </div>
+</section>

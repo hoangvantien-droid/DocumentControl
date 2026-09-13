@@ -1,0 +1,58 @@
+<% layout('layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
+
+<div class="warn-banner">
+  Gán vai trò tạm khi L1 chưa vận hành. Khi L1 lên, vai trò do L1 quản.
+</div>
+
+<h1>Vai trò theo phạm vi</h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<table class="data-table">
+  <thead><tr><th>Người dùng</th><th>Vai trò hiện có</th></tr></thead>
+  <tbody>
+    <% it.users.forEach(function(u){ %>
+    <tr>
+      <td><%= u.full_name %> <small>(<%= u.email %>)</small></td>
+      <td>
+        <% (it.rolesByUser[u.user_id] || []).forEach(function(r){ %>
+          <span class="chip"><%= r.role_code %> @ <%= r.scope_level %></span>
+        <% }) %>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<h2>Gán vai trò</h2>
+<form method="post" action="/admin/roles" class="role-form">
+  <select name="user_id" required>
+    <option value="">-- người dùng --</option>
+    <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
+  </select>
+  <select name="role_code" required>
+    <option value="DC_GROUP_OWNER">DC_GROUP_OWNER</option>
+    <option value="DC_BU_OWNER">DC_BU_OWNER</option>
+    <option value="DC_SITE_QA_MANAGER">DC_SITE_QA_MANAGER</option>
+    <option value="DC_AUTHOR">DC_AUTHOR</option>
+    <option value="DC_READER">DC_READER</option>
+  </select>
+  <select name="scope_level" required>
+    <option value="group">group</option>
+    <option value="bu">bu</option>
+    <option value="site">site</option>
+    <option value="dept">dept</option>
+  </select>
+  <select name="scope_bu_id">
+    <option value="">(BU nếu cấp bu)</option>
+    <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %></option><% }) %>
+  </select>
+  <select name="scope_site_id">
+    <option value="">(Site nếu cấp site)</option>
+    <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %></option><% }) %>
+  </select>
+  <select name="scope_dept_id">
+    <option value="">(Dept nếu cấp dept)</option>
+    <% it.depts.forEach(function(d){ %><option value="<%= d.dept_id %>"><%= d.dept_code %></option><% }) %>
+  </select>
+  <button type="submit">Gán</button>
+</form>
