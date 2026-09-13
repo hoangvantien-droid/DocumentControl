@@ -1,0 +1,19 @@
+<% layout('layout.eta', { title: 'Chờ tôi xác nhận — DCS', user: it.user }) %>
+
+<h1>Chờ tôi xác nhận</h1>
+
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Ngày hiệu lực</th><th></th></tr></thead>
+  <tbody>
+    <% it.docs.forEach(function(d){ %>
+    <tr>
+      <td><%= d.doc_id %></td>
+      <td><%= d.version_no %></td>
+      <td><%= d.title %></td>
+      <td><%= d.effective_date || '' %></td>
+      <td><a href="/confirm/<%= d.version_id %>" class="btn-link">Mở xác nhận</a></td>
+    </tr>
+    <% }) %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="5">Không có tài liệu nào chờ bạn xác nhận.</td></tr><% } %>
+  </tbody>
+</table>

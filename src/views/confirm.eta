@@ -1,0 +1,60 @@
+<% layout('layout.eta', { title: 'Xác nhận — DCS', user: it.user }) %>
+<% var v = it.v; %>
+
+<h1>Xác nhận: <%= v.doc_id %> — phiên bản <%= v.version_no %></h1>
+<p class="doc-title"><%= v.title %></p>
+
+<% if (!it.allowed) { %>
+  <div class="login-error">Bạn không đủ thẩm quyền xác nhận tài liệu này. Hãy tìm người có quyền release ở cấp phạm vi tương ứng.</div>
+<% } %>
+
+<!-- Guard C.4: ngày hiệu lực đã trôi qua -> ẩn nút Xác nhận, chỉ còn Trả về -->
+<% if (!it.effectivePassed) { %>
+  <div class="warn-banner">
+    Ngày hiệu lực đã qua trong lúc chờ xử lý. Không sửa được ngày ở đây — tài liệu
+    sẽ được trả về người đăng ký để chọn lại ngày.
+  </div>
+<% } %>
+
+<section class="checklist">
+  <h2>Checklist xác nhận</h2>
+  <form method="post" action="/confirm/<%= v.version_id %>/approve">
+    <input type="hidden" name="needs9b" value="<%= v.supersedes_version_id ? 'true' : 'false' %>">
+    <ul class="check-list">
+      <% it.checklist.forEach(function(c){ %>
+        <li class="check-item check-<%= c.kind %> level-<%= c.level %>">
+          <span class="check-no"><%= c.no %></span>
+          <% if (c.kind === 'auto') { %>
+            <span class="check-mark <%= c.pass ? 'ok':'fail' %>"><%= c.pass ? '✓' : '✗' %></span>
+            <span class="check-label"><%= c.label %></span>
+            <% if (c.note) { %><small class="check-note"><%= c.note %></small><% } %>
+          <% } else { %>
+            <!-- Mục Admin tự tích. Nhìn khác hẳn nhóm tự động. Không có nút tích tất cả. -->
+            <% if (c.no === '9b' && !it.viewedDiff) { %>
+              <label class="check-label admin locked">
+                <input type="checkbox" disabled> <b><%= c.label %></b>
+              </label>
+              <form method="post" action="/confirm/<%= v.version_id %>/viewed-diff" style="display:inline">
+                <button type="submit" class="btn-diff">Xem so sánh trước</button>
+              </form>
+            <% } else { %>
+              <label class="check-label admin">
+                <input type="checkbox" name="chk<%= c.no %>"> <b><%= c.label %></b>
+              </label>
+            <% } %>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+
+    <% if (it.allowed && it.effectivePassed) { %>
+      <button type="submit" class="primary">Xác nhận</button>
+    <% } %>
+  </form>
+
+  <!-- Từ chối: bắt buộc lý do -->
+  <form method="post" action="/confirm/<%= v.version_id %>/reject" class="reject-form">
+    <input name="reason" placeholder="Lý do từ chối (bắt buộc)" required>
+    <button type="submit" class="danger">Từ chối / Trả về người đăng ký</button>
+  </form>
+</section>

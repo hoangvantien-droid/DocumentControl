@@ -18,6 +18,8 @@ import { registerAuth } from './middleware/auth.js';
 import { registerHomeRoutes } from './routes/home.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminRoutes } from './routes/admin.js';
+import { registerDocumentRoutes } from './routes/documents.js';
+import { registerConfirmationRoutes } from './routes/confirmation.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -58,6 +60,8 @@ async function main() {
   registerAuthRoutes(app, sql);
   registerHomeRoutes(app);
   registerAdminRoutes(app, sql);
+  registerDocumentRoutes(app, sql);
+  registerConfirmationRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);
