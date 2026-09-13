@@ -100,3 +100,39 @@ cd /opt/dcs && sudo -u dcs git pull && sudo bash deploy/deploy.sh
 ```
 
 Migration idempotent nên chạy lại an toàn — chỉ áp các file `.sql` mới.
+
+---
+
+## Triển khai lên tienhv.io.vn (dưới path /dcs/)
+
+Server này chạy backend bằng systemd trên host, nginx trong Docker (container
+`tienhv-web`), PostgreSQL trên host. DCS phục vụ tại `https://tienhv.io.vn/dcs/`.
+
+Trên server (user `tao`), chạy:
+
+```bash
+cd /home/tao/webserver-tienhv/www
+git clone https://github.com/hoangvantien-droid/DocumentControl.git dcs-src
+cd dcs-src
+bash deploy/deploy-tienhv.sh
+```
+
+Script tự: tạo DB `dcs_prod`, cài extension, build, cài `/opt/dcs`, tạo
+`/etc/dcs/.env` (BASE_PATH=/dcs, SESSION_SECRET sinh ngẫu nhiên), chạy migration,
+cài `dcs.service` (port 3100), thêm block `location /dcs/` vào nginx trong Docker
+(`docker cp` + reload), rồi kiểm tra `/dcs/healthz`.
+
+Tạo tài khoản quản trị đầu tiên:
+
+```bash
+node scripts/create-admin.mjs admin@tienhv.io.vn 'MatKhauManh123' 'Quản trị DCS'
+```
+
+Cập nhật phiên bản sau này:
+
+```bash
+cd /home/tao/webserver-tienhv/www/dcs-src && git pull && bash deploy/deploy-tienhv.sh
+```
+
+Hỏi đáp AI đang **tắt** (chưa cấu hình `EMBEDDING_API_URL`). Nếu server không có
+pgvector, script tự bỏ cột `embedding` — mọi chức năng khác vẫn chạy.

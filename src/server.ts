@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path';
 import { loadConfig } from './config.js';
 import { getSql } from './db/client.js';
 import { registerViewLayer } from './views/render.js';
-import { registerAuth } from './middleware/auth.js';
+import { registerAuth, setCookiePath } from './middleware/auth.js';
 import { registerHomeRoutes } from './routes/home.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminRoutes } from './routes/admin.js';
@@ -67,7 +67,23 @@ async function main() {
     views: join(__dirname, 'views'),
     cache: config.nodeEnv === 'production',
   });
-  registerViewLayer(app, eta);
+  registerViewLayer(app, eta, config.basePath);
+
+  // Khi chạy sau proxy dưới path con (/dcs), nginx strip prefix nên route giữ
+  // nguyên, nhưng Location của redirect (do backend sinh, dạng /login) phải được
+  // thêm lại prefix để trình duyệt gọi đúng /dcs/login. Viết lại tại một chỗ.
+  if (config.basePath) {
+    app.addHook('onSend', async (_req, reply, payload) => {
+      const loc = reply.getHeader('location');
+      if (typeof loc === 'string' && loc.startsWith('/') && !loc.startsWith(config.basePath + '/') && loc !== config.basePath) {
+        reply.header('location', config.basePath + loc);
+      }
+      return payload;
+    });
+  }
+
+  // Cookie phiên gắn đúng phạm vi path (/dcs) khi chạy sau proxy.
+  setCookiePath(config.basePath);
 
   // Xác thực: phân giải người dùng hiện tại từ cookie phiên (đường duy nhất).
   registerAuth(app, sql);

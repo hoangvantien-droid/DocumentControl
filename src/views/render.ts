@@ -13,17 +13,35 @@ declare module 'fastify' {
   }
 }
 
-export function registerViewLayer(app: FastifyInstance, eta: Eta): void {
+/**
+ * Thêm tiền tố base path vào mọi URL nội bộ trong HTML (href/src/action/formaction
+ * và các thuộc tính htmx hx-get/hx-post…). Chỉ áp cho đường dẫn bắt đầu bằng một
+ * dấu "/" (nội bộ); bỏ qua "//" (external) và URL tuyệt đối. Làm ở MỘT chỗ để
+ * không phải sửa từng view và không sót.
+ */
+function applyBasePath(html: string, basePath: string): string {
+  if (!basePath) return html;
+  const attrs = ['href', 'src', 'action', 'formaction', 'hx-get', 'hx-post', 'hx-put', 'hx-delete', 'hx-patch'];
+  const re = new RegExp(`\\b(${attrs.join('|')})="(/(?!/)[^"]*)"`, 'g');
+  return html.replace(re, (_m, attr: string, path: string) => {
+    // Đã có prefix rồi thì không thêm nữa (tránh double).
+    if (path === basePath || path.startsWith(basePath + '/')) return `${attr}="${path}"`;
+    return `${attr}="${basePath}${path}"`;
+  });
+}
+
+export function registerViewLayer(app: FastifyInstance, eta: Eta, basePath: string): void {
   app.decorateReply('view', function (template: string, data: Record<string, unknown> = {}) {
-    // Tự chèn user hiện tại và cờ thực đơn để mọi view/layout dùng chung,
-    // route không phải truyền thủ công. Data của route ghi đè nếu trùng khoá.
+    // Tự chèn user hiện tại, cờ thực đơn để mọi view dùng chung. Data route ghi đè.
     const req = this.request;
     const merged = {
       user: req?.currentUser ?? null,
       nav: req?.nav ?? {},
+      basePath,
       ...data,
     };
-    const html = eta.render(template, merged);
+    let html = eta.render(template, merged);
+    html = applyBasePath(html, basePath);
     this.type('text/html; charset=utf-8').send(html);
     return this;
   });

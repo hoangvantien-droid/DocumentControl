@@ -15,6 +15,8 @@ export interface Config {
   sessionSecret: string;
   fileStoragePath: string;
   dbPoolMax: number;
+  /** Tiền tố đường dẫn khi chạy sau proxy dưới path con (vd /dcs). Rỗng = chạy ở root. */
+  basePath: string;
   /** Thiếu thì tắt hỏi đáp AI, phần còn lại vẫn chạy (DCS-8 §6.1). */
   embeddingApiUrl: string | null;
   embeddingApiKey: string | null;
@@ -96,6 +98,11 @@ export function loadConfig(): Config {
 
   if (problems.length > 0) throw new ConfigError(problems);
 
+  // BASE_PATH: chuẩn hoá về dạng "" hoặc "/dcs" (bỏ dấu / cuối).
+  let basePath = (env.BASE_PATH ?? '').trim();
+  if (basePath && !basePath.startsWith('/')) basePath = '/' + basePath;
+  if (basePath.endsWith('/')) basePath = basePath.slice(0, -1);
+
   return {
     nodeEnv,
     port,
@@ -104,6 +111,7 @@ export function loadConfig(): Config {
     sessionSecret,
     fileStoragePath,
     dbPoolMax,
+    basePath,
     embeddingApiUrl: env.EMBEDDING_API_URL ?? null,
     embeddingApiKey: env.EMBEDDING_API_KEY ?? null,
     tesseractPath: env.TESSERACT_PATH ?? '/usr/bin/tesseract',

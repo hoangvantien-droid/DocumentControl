@@ -13,6 +13,12 @@ import { resolveSession, destroySession, type SessionUser } from '../domain/sess
 /** Tên cookie mang session_id đã ký. */
 export const SESSION_COOKIE = 'dcs_sid';
 
+/** Path của cookie — đặt theo base path để phiên gắn đúng phạm vi (/dcs). */
+let cookiePath = '/';
+export function setCookiePath(p: string): void {
+  cookiePath = p || '/';
+}
+
 import { buildNav, type NavFlags } from './nav.js';
 
 declare module 'fastify' {
@@ -63,7 +69,7 @@ export function requireUser(req: FastifyRequest, reply: FastifyReply): SessionUs
 /** Đặt cookie phiên đã ký. */
 export function setSessionCookie(reply: FastifyReply, sessionId: string): void {
   reply.setCookie(SESSION_COOKIE, sessionId, {
-    path: '/',
+    path: cookiePath,
     httpOnly: true,
     sameSite: 'lax',
     signed: true,
@@ -82,5 +88,5 @@ export async function clearSession(
     const unsigned = req.unsignCookie(raw);
     if (unsigned.valid && unsigned.value) await destroySession(sql, unsigned.value);
   }
-  reply.clearCookie(SESSION_COOKIE, { path: '/' });
+  reply.clearCookie(SESSION_COOKIE, { path: cookiePath });
 }

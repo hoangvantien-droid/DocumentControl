@@ -8,7 +8,7 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-  <!-- Thanh điều hướng (DCS-7 §1.1): trái = tên hệ thống + ô tìm luôn hiện; phải = người dùng, vai trò, đăng xuất -->
+  <!-- Thanh điều hướng (DCS-7 §1.1) -->
   <header class="topbar">
     <div class="topbar-left">
       <a class="brand" href="/">DCS</a>
@@ -29,8 +29,7 @@
   </header>
 
   <div class="app-shell">
-    <!-- Thực đơn bên (DCS-7 §1.2): ẩn hẳn mục không có quyền. Giai đoạn nền móng hiện đầy đủ. -->
-    <!-- Thực đơn theo vai trò (DCS-7 §1.2): ẩn hẳn mục không có quyền, không hiện rồi báo lỗi. -->
+    <!-- Thực đơn theo vai trò (DCS-7 §1.2): ẩn hẳn mục không có quyền. -->
     <% var nav = it.nav || {}; %>
     <nav class="sidebar" aria-label="Điều hướng chính">
       <ul>
