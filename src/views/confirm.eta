@@ -34,9 +34,7 @@
               <label class="check-label admin locked">
                 <input type="checkbox" disabled> <b><%= c.label %></b>
               </label>
-              <form method="post" action="/confirm/<%= v.version_id %>/viewed-diff" style="display:inline">
-                <button type="submit" class="btn-diff">Xem so sánh trước</button>
-              </form>
+              <a class="btn-diff" href="/compare?from=<%= v.supersedes_version_id %>&to=<%= v.version_id %>">Xem so sánh trước</a>
             <% } else { %>
               <label class="check-label admin">
                 <input type="checkbox" name="chk<%= c.no %>"> <b><%= c.label %></b>

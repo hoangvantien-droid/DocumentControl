@@ -21,6 +21,8 @@ import { registerAdminRoutes } from './routes/admin.js';
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerConfirmationRoutes } from './routes/confirmation.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
+import { registerSearchRoutes } from './routes/search.js';
+import { registerDiffRoutes } from './routes/diff.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -64,6 +66,8 @@ async function main() {
   registerDocumentRoutes(app, sql);
   registerConfirmationRoutes(app, sql);
   registerCatalogRoutes(app, sql);
+  registerSearchRoutes(app, sql);
+  registerDiffRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

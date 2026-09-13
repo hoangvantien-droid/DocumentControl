@@ -12,8 +12,10 @@
   <header class="topbar">
     <div class="topbar-left">
       <a class="brand" href="/">DCS</a>
-      <form class="search" action="/search" method="get" role="search">
-        <input type="search" name="q" placeholder="Tìm số hiệu, tiêu đề, nội dung…" aria-label="Tìm kiếm" autocomplete="off">
+      <form class="search" action="/search" method="get" role="search" autocomplete="off">
+        <input type="search" name="q" placeholder="Tìm số hiệu, tiêu đề, nội dung…" aria-label="Tìm kiếm"
+               hx-get="/search/suggest" hx-trigger="keyup changed delay:250ms" hx-target="#suggest-box" hx-swap="innerHTML">
+        <div id="suggest-box" class="suggest-box"></div>
       </form>
     </div>
     <div class="topbar-right">

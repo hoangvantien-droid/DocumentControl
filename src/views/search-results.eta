@@ -1,0 +1,40 @@
+<% layout('layout.eta', { title: 'Kết quả tìm — DCS', user: it.user }) %>
+
+<h1>Kết quả tìm kiếm</h1>
+
+<form method="get" action="/search" class="search-bar-full">
+  <input type="search" name="q" value="<%= it.q %>" placeholder="Tìm số hiệu, tiêu đề, nội dung…" autofocus>
+  <label class="hist-toggle">
+    <input type="checkbox" name="historical" value="1" <%= it.includeHistorical ? 'checked' : '' %>>
+    Bao gồm bản lịch sử
+  </label>
+  <button type="submit">Tìm</button>
+</form>
+
+<% if (it.q && it.hits.length === 0) { %>
+  <!-- Màn không có kết quả (T-058): gợi ý 3 việc, không để hiểu là tài liệu không tồn tại -->
+  <div class="no-results">
+    <p>Không tìm thấy kết quả cho "<b><%= it.q %></b>".</p>
+    <ul>
+      <li>Nới bộ lọc hoặc bỏ bớt từ khoá.</li>
+      <li>Bật "Bao gồm bản lịch sử" ở trên — tài liệu có thể đã hết hiệu lực.</li>
+      <li>Thử hỏi đáp — nội dung có thể diễn đạt khác từ khoá bạn gõ.</li>
+    </ul>
+  </div>
+<% } else { %>
+  <p class="result-count"><%= it.hits.length %> kết quả</p>
+  <ul class="result-list">
+    <% it.hits.forEach(function(h){ %>
+      <li class="result-item <%= h.status !== 'hieu_luc' ? 'historical' : '' %>">
+        <div class="result-line1">
+          <a href="/documents/<%= h.version_id %>"><b><%= h.doc_id %></b> — <%= h.title %></a>
+          <span class="status status-<%= h.status %>"><%= h.status %></span>
+        </div>
+        <div class="result-line2">Phiên bản <%= h.version_no %> · khớp: <%= h.match_level %></div>
+        <% if (h.match_level === 'section' && h.snippet) { %>
+          <div class="result-snippet"><b><%= h.section_code %> <%= h.section_title %>:</b> <%= h.snippet %></div>
+        <% } %>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
