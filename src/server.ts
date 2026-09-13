@@ -7,6 +7,7 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import formbody from '@fastify/formbody';
+import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { Eta } from 'eta';
 import { fileURLToPath } from 'node:url';
@@ -29,6 +30,7 @@ import { registerPackageRoutes } from './routes/packages.js';
 import { registerPrintingRoutes } from './routes/printing.js';
 import { registerQaRoutes } from './routes/qa.js';
 import { registerOpsRoutes } from './routes/ops.js';
+import { registerAuditRoutes } from './routes/audit.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -48,6 +50,11 @@ async function main() {
 
   await app.register(cookie, { secret: config.sessionSecret });
   await app.register(formbody);
+  // Upload tệp PDF: field text -> string, field file -> Buffer, gắn vào req.body.
+  await app.register(multipart, {
+    attachFieldsToBody: 'keyValues',
+    limits: { fileSize: 25 * 1024 * 1024, files: 1 }, // 25 MB, một tệp
+  });
 
   // Tài nguyên tĩnh: CSS, htmx. Phục vụ dưới /static.
   await app.register(fastifyStatic, {
@@ -69,9 +76,9 @@ async function main() {
   registerAuthRoutes(app, sql);
   registerHomeRoutes(app, sql);
   registerAdminRoutes(app, sql);
-  registerDocumentRoutes(app, sql);
+  registerDocumentRoutes(app, sql, config);
   registerConfirmationRoutes(app, sql);
-  registerCatalogRoutes(app, sql);
+  registerCatalogRoutes(app, sql, config);
   registerSearchRoutes(app, sql);
   registerDiffRoutes(app, sql);
   registerFunctionalGroupRoutes(app, sql);
@@ -80,6 +87,7 @@ async function main() {
   registerPrintingRoutes(app, sql);
   registerQaRoutes(app, sql, config);
   registerOpsRoutes(app, sql);
+  registerAuditRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

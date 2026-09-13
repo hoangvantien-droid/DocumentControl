@@ -25,7 +25,7 @@ export async function runOcrBatch(): Promise<{ processed: string[] }> {
 
   const processed: string[] = [];
   for (const p of pending) {
-    await processVersionContent(sql, p.version_id);
+    await processVersionContent(sql, p.version_id, { tesseractPath: config.tesseractPath });
     processed.push(p.version_id);
   }
   return { processed };

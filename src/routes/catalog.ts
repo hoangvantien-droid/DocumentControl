@@ -15,8 +15,9 @@ import { acknowledge, mustAcknowledge, hasAcknowledged } from '../domain/acknowl
 import { listMatrix, addMatrix, removeMatrix } from '../domain/distribution.js';
 import { listDepartments } from '../domain/org.js';
 import { listGroups } from '../domain/functional-groups.js';
+import type { Config } from '../config.js';
 
-export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
+export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
   app.get('/documents', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
@@ -109,7 +110,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
   app.post<{ Params: { id: string } }>('/documents/:id/process', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    await processVersionContent(sql, req.params.id);
+    await processVersionContent(sql, req.params.id, { tesseractPath: config.tesseractPath });
     return reply.redirect(`/documents/${req.params.id}`);
   });
 

@@ -7,8 +7,9 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { Sql, TransactionSql } from 'postgres';
-import { extractPdf } from './extract.js';
+import { extractPdf, splitSections, type ExtractResult } from './extract.js';
 import { chunkSection } from './chunking.js';
+import { runTesseract } from './ocr.js';
 import { writeAudit } from '../lib/audit.js';
 
 export interface ProcessResult {
@@ -24,6 +25,7 @@ export interface ProcessResult {
 export async function processVersionContent(
   sql: Sql,
   versionId: string,
+  opts: { tesseractPath?: string } = {},
 ): Promise<ProcessResult> {
   const meta = (await sql<{ file_path: string; doc_type: string }[]>`
     SELECT v.file_path, d.doc_type
@@ -31,8 +33,27 @@ export async function processVersionContent(
      WHERE v.version_id = ${versionId}`)[0];
   if (!meta) throw new Error('Không tìm thấy phiên bản để xử lý nội dung');
 
-  const result = await extractPdf(meta.file_path);
+  let result = await extractPdf(meta.file_path);
   const isForm = meta.doc_type === 'Form';
+
+  // Nối OCR trọn luồng: tệp quét (bóc tách kém) -> tesseract -> bóc tách lại từ
+  // văn bản OCR. Chạy tiến trình rời (DCS-8 §1.2). Chỉ khi có tesseractPath.
+  if (result.parseStatus === 'kem_tin_cay' && !isForm && opts.tesseractPath) {
+    const ocr = await runTesseract(opts.tesseractPath, meta.file_path);
+    if (ocr.ok && ocr.text.trim().length > 0) {
+      const sections = splitSections(ocr.text);
+      const ocrResult: ExtractResult = {
+        parseStatus: sections.length > 0 ? 'thanh_cong' : 'kem_tin_cay',
+        parseNote: sections.length > 0
+          ? 'Bóc tách từ văn bản nhận dạng ký tự (OCR)'
+          : 'OCR xong nhưng không nhận ra tiêu đề mục',
+        pageCount: result.pageCount,
+        sections,
+        fullText: ocr.text,
+      };
+      result = ocrResult;
+    }
+  }
 
   return sql.begin(async (tx) => {
     // Bóc tách lại: xoá mục cũ của chính phiên bản này (nếu chạy lại).

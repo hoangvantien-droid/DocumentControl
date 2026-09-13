@@ -295,3 +295,7 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .metric-label { color: var(--muted); font-size: 13px; margin-top: 6px; }
 .metric-bad { border-color: #f5b5b5; background: #fdf3f3; }
 .metric-bad-text { color: var(--danger); font-weight: 700; }
+
+/* ---- Bổ sung: đếm người nhận realtime, upload ---- */
+.recip-count { margin: 4px 0 12px; font-size: 13px; }
+.reg-form input[type=file] { padding: 6px; background: #fafafa; }

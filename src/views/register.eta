@@ -4,7 +4,7 @@
 <h1>Đăng ký tài liệu ban hành</h1>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
-<form method="post" action="/register" class="reg-form">
+<form method="post" action="/register" class="reg-form" enctype="multipart/form-data">
   <fieldset>
     <legend>Định danh &amp; phạm vi</legend>
     <label>Số hiệu tài liệu
@@ -45,6 +45,9 @@
         <% it.depts.forEach(function(x){ %><option value="<%= x.dept_id %>"><%= x.dept_code %></option><% }) %>
       </select>
     </label>
+    <label>Tệp PDF của tài liệu
+      <input type="file" name="file" accept="application/pdf" required>
+    </label>
   </fieldset>
 
   <fieldset>
@@ -66,10 +69,15 @@
     <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" value="<%= val.review_cycle_months || '12' %>" min="1"></label>
     <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= val.expiry_date || '' %>"></label>
     <label>Bộ phận sở hữu
-      <select name="owner_department_id" required><option value="">--</option>
+      <select name="owner_department_id" required
+              hx-get="/register/recipient-count" hx-trigger="change"
+              hx-target="#recip-count" hx-swap="innerHTML"
+              hx-params="owner_department_id">
+        <option value="">--</option>
         <% it.depts.forEach(function(x){ %><option value="<%= x.dept_id %>"><%= x.dept_code %></option><% }) %>
       </select>
     </label>
+    <div id="recip-count" class="recip-count muted"></div>
   </fieldset>
 
   <fieldset>
@@ -98,4 +106,5 @@
   </fieldset>
 
   <button type="submit" class="primary">Nộp đăng ký</button>
+  <button type="submit" class="btn-diff" formaction="/register/draft">Lưu nháp</button>
 </form>

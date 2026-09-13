@@ -186,6 +186,42 @@ export async function addLink(
   });
 }
 
+/**
+ * Lưu nháp: tạo/cập nhật bản ghi ở trạng thái cho_hoan_thien, KHÔNG chạy kiểm
+ * tra nộp đầy đủ (T-024). Người nộp thường phải đi hỏi phạm vi/điều khoản —
+ * không có lưu nháp thì mất hết khi đóng trình duyệt.
+ */
+export async function saveDraft(
+  sql: Sql,
+  doc: DocumentInput,
+  v: Partial<VersionInput> & { versionNo: string; title: string; registrantUserId: string; ownerDepartmentId: string; filePath: string; fileHash: string },
+): Promise<string> {
+  return sql.begin(async (tx) => {
+    await ensureDocument(tx as TransactionSql, doc);
+    const versionId = randomUUID();
+    await tx`
+      INSERT INTO document_versions (
+        version_id, doc_id, version_no, title,
+        issued_date, approver_name, approval_reference, approval_method,
+        effective_date, review_cycle_months,
+        source_channel, file_path, file_hash,
+        status, registrant_user_id, owner_department_id
+      ) VALUES (
+        ${versionId}, ${v.docId ?? doc.docId}, ${v.versionNo}, ${v.title},
+        ${v.issuedDate ?? today()}, ${v.approverName ?? '(chưa điền)'}, ${v.approvalReference ?? null}, ${v.approvalMethod ?? 'ky_so'},
+        ${v.effectiveDate ?? today()}, ${v.reviewCycleMonths ?? 12},
+        'thu_cong', ${v.filePath}, ${v.fileHash},
+        'cho_hoan_thien', ${v.registrantUserId}, ${v.ownerDepartmentId}
+      )`;
+    await writeAudit(tx as TransactionSql, {
+      eventType: 'sua_truoc_khi_nop', actorUserId: v.registrantUserId,
+      objectType: 'document_versions', objectId: versionId,
+      afterState: { status: 'cho_hoan_thien' },
+    });
+    return versionId;
+  }) as Promise<string>;
+}
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
