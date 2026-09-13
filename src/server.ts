@@ -23,6 +23,7 @@ import { registerConfirmationRoutes } from './routes/confirmation.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerDiffRoutes } from './routes/diff.js';
+import { registerFunctionalGroupRoutes } from './routes/functional-groups.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -68,6 +69,7 @@ async function main() {
   registerCatalogRoutes(app, sql);
   registerSearchRoutes(app, sql);
   registerDiffRoutes(app, sql);
+  registerFunctionalGroupRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

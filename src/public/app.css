@@ -259,3 +259,9 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .compare-cell.changed { background: #fff8e6; }
 .compare-cell p { margin: 4px 0 0; white-space: pre-wrap; }
 .tag { font-size: 11px; background: #f0c040; color: #5a4500; padding: 1px 6px; border-radius: 8px; }
+
+/* ---- Phân phối & xác nhận đọc (GĐ6) ---- */
+.chip-x { border: none; background: transparent; color: var(--danger); cursor: pointer; font-size: 14px; padding: 0 2px; }
+.matrix-list { list-style: none; padding: 0; font-size: 13px; }
+.matrix-list li { padding: 3px 0; }
+.ack-done { color: #146c2e; font-size: 14px; background: #eaf7ee; padding: 8px 12px; border-radius: 8px; display: inline-block; }

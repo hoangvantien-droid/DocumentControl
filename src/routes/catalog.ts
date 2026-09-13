@@ -11,6 +11,10 @@ import {
 import { recallVersion, recallImpact } from '../domain/lifecycle.js';
 import { canRelease } from '../domain/permissions.js';
 import { processVersionContent } from '../domain/content.js';
+import { acknowledge, mustAcknowledge, hasAcknowledged } from '../domain/acknowledgement.js';
+import { listMatrix, addMatrix, removeMatrix } from '../domain/distribution.js';
+import { listDepartments } from '../domain/org.js';
+import { listGroups } from '../domain/functional-groups.js';
 
 export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
   app.get('/documents', async (req, reply) => {
@@ -34,7 +38,17 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
       scope_level: detail.scope_level as never,
       scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
     });
-    return reply.view('detail.eta', { d: detail, sections, links, current, canRecall });
+    // Xác nhận đọc: chỉ hiện nút khi tài liệu hiệu lực + người xem thuộc diện phải đọc + chưa xác nhận.
+    let ackState: { show: boolean; done: boolean; inherited: boolean } = { show: false, done: false, inherited: false };
+    if (detail.status === 'hieu_luc') {
+      const must = await mustAcknowledge(sql, detail.version_id, user.user_id);
+      if (must) {
+        const h = await hasAcknowledged(sql, detail.version_id, user.user_id);
+        ackState = { show: !h.acknowledged, done: h.acknowledged, inherited: h.inherited };
+      }
+    }
+    const matrix = await listMatrix(sql, detail.doc_id);
+    return reply.view('detail.eta', { d: detail, sections, links, current, canRecall, ackState, matrix, canRecallMatrix: canRecall });
   });
 
   // Thu hồi: hiện tác động trước, rồi xác nhận.
@@ -45,6 +59,49 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql): void {
     if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
     const impact = await recallImpact(sql, detail.doc_id, req.params.id);
     return reply.view('recall.eta', { d: detail, impact, error: null });
+  });
+
+  // Xác nhận đọc (T-069).
+  app.post<{ Params: { id: string } }>('/documents/:id/acknowledge', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    try {
+      await acknowledge(sql, req.params.id, user.user_id);
+      return reply.redirect(`/documents/${req.params.id}`);
+    } catch (err) {
+      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      throw err;
+    }
+  });
+
+  // Ma trận phân phối (T-065). Thêm/xoá dòng — người release quản lý.
+  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/matrix/add', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const detail = await loadDetail(sql, req.params.id);
+    if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
+    await addMatrix(sql, {
+      docId: detail.doc_id,
+      departmentId: req.body.department_id ?? '',
+      functionalGroupId: req.body.functional_group_id || null,
+      createdBy: user.user_id,
+    });
+    return reply.redirect(`/documents/${req.params.id}`);
+  });
+
+  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/matrix/remove', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    await removeMatrix(sql, req.body.matrix_id ?? '', user.user_id);
+    return reply.redirect(`/documents/${req.params.id}`);
+  });
+
+  // Danh sách bộ phận + nhóm cho form thêm ma trận (dùng trên detail).
+  app.get<{ Params: { id: string } }>('/documents/:id/matrix-options', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const [depts, groups] = await Promise.all([listDepartments(sql), listGroups(sql)]);
+    return reply.view('matrix-options.eta', { id: req.params.id, depts, groups });
   });
 
   // Xử lý nội dung (bóc tách + phân đoạn) — chạy nền, không chặn. Người nộp

@@ -16,6 +16,17 @@
 <h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
 <p class="doc-title"><%= d.title %> · <span class="status status-<%= d.status %>"><%= d.status %></span></p>
 
+<!-- Nút xác nhận đọc (T-069, DCS-7 §3.3) -->
+<% if (it.ackState && it.ackState.show) { %>
+  <form method="post" action="/documents/<%= d.version_id %>/acknowledge">
+    <button type="submit" class="primary">Xác nhận đã đọc</button>
+  </form>
+<% } else if (it.ackState && it.ackState.done) { %>
+  <p class="ack-done">
+    <% if (it.ackState.inherited) { %>Đã xác nhận (kế thừa từ phiên bản trước do thay đổi nhỏ).<% } else { %>Bạn đã xác nhận đọc bản này.<% } %>
+  </p>
+<% } %>
+
 <div class="detail-grid">
   <div class="detail-main">
     <h2>Nội dung</h2>
@@ -46,6 +57,26 @@
     <h3>Nhãn liên kết</h3>
     <% if (it.links.length === 0) { %><p class="muted">Chưa có.</p><% } else { %>
       <% it.links.forEach(function(l){ %><span class="chip"><%= l.link_type %>: <%= l.link_code %></span><% }) %>
+    <% } %>
+
+    <h3>Phân phối tới</h3>
+    <% if (!it.matrix || it.matrix.length === 0) { %><p class="muted">Chưa khai.</p><% } else { %>
+      <ul class="matrix-list">
+        <% it.matrix.forEach(function(m){ %>
+          <li>
+            <%= m.department_code %><% if (m.functional_group_name) { %> ∩ <%= m.functional_group_name %><% } %>
+            <% if (it.canRecallMatrix) { %>
+              <form method="post" action="/documents/<%= d.version_id %>/matrix/remove" style="display:inline">
+                <input type="hidden" name="matrix_id" value="<%= m.matrix_id %>">
+                <button type="submit" class="chip-x">×</button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (it.canRecallMatrix) { %>
+      <div hx-get="/documents/<%= d.version_id %>/matrix-options" hx-trigger="load" hx-swap="innerHTML"></div>
     <% } %>
 
     <% if (it.canRecall && (d.status === 'da_dang_ky' || d.status === 'hieu_luc')) { %>

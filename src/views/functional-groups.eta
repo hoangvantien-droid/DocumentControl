@@ -1,0 +1,59 @@
+<% layout('layout.eta', { title: 'Nhóm chức năng — DCS', user: it.user }) %>
+
+<h1>Nhóm chức năng</h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<!-- Cảnh báo nhóm lạc hậu (T-068): hiện NGAY khi mở trang, không giấu tab phụ -->
+<% if (it.stale.length > 0) { %>
+  <div class="danger-banner">
+    Có thành viên đã rời tổ chức hoặc đổi bộ phận — cần rà soát:
+    <ul>
+      <% it.stale.forEach(function(s){ %>
+        <li><b><%= s.code %></b> (<%= s.name %>): thành viên <%= s.thanh_vien_can_ra_soat %> — <%= s.ly_do %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<table class="data-table">
+  <thead><tr><th>Mã</th><th>Tên (công việc)</th><th>Người phụ trách</th><th>Thành viên</th></tr></thead>
+  <tbody>
+    <% it.groups.forEach(function(g){ %>
+    <tr>
+      <td><b><%= g.code %></b></td>
+      <td><%= g.name %></td>
+      <td><% var o = it.users.find(function(u){return u.user_id===g.owner_user_id}); %><%= o ? o.full_name : g.owner_user_id %></td>
+      <td>
+        <% (it.membersByGroup[g.group_id] || []).forEach(function(m){ %>
+          <span class="chip"><%= m.full_name || m.email %>
+            <form method="post" action="/functional-groups/members/remove" style="display:inline">
+              <input type="hidden" name="group_id" value="<%= g.group_id %>">
+              <input type="hidden" name="user_id" value="<%= m.user_id %>">
+              <button type="submit" class="chip-x">×</button>
+            </form>
+          </span>
+        <% }) %>
+        <form method="post" action="/functional-groups/members/add" class="inline-form">
+          <input type="hidden" name="group_id" value="<%= g.group_id %>">
+          <select name="user_id" required>
+            <option value="">+ thêm thành viên</option>
+            <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
+          </select>
+          <button type="submit">Thêm</button>
+        </form>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<h2>Tạo nhóm chức năng</h2>
+<form method="post" action="/functional-groups" class="inline-form">
+  <input name="code" placeholder="Mã (FG-CCP-HAP)" required>
+  <input name="name" placeholder="Tên công việc" required>
+  <select name="owner_user_id" required>
+    <option value="">-- người phụ trách (bắt buộc) --</option>
+    <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
+  </select>
+  <button type="submit">Tạo</button>
+</form>
