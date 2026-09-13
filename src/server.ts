@@ -28,6 +28,7 @@ import { registerReviewRoutes } from './routes/reviews.js';
 import { registerPackageRoutes } from './routes/packages.js';
 import { registerPrintingRoutes } from './routes/printing.js';
 import { registerQaRoutes } from './routes/qa.js';
+import { registerOpsRoutes } from './routes/ops.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -78,6 +79,7 @@ async function main() {
   registerPackageRoutes(app, sql);
   registerPrintingRoutes(app, sql);
   registerQaRoutes(app, sql, config);
+  registerOpsRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

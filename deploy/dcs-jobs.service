@@ -14,6 +14,8 @@ User=dcs
 Group=dcs
 WorkingDirectory=/opt/dcs
 EnvironmentFile=/opt/dcs/.env
-# ExecStart=/usr/bin/node dist/jobs/scheduler.js   # bật khi có scheduler (giai đoạn 3)
-ExecStart=/bin/true
+# Chạy tác vụ nền: chuyển hiệu lực, sinh rà soát, leo thang, dọn phiên.
+ExecStart=/usr/bin/node dist/jobs/scheduler.js
+# Sau đó xử lý một tệp OCR/bóc tách (mỗi lần một tệp — RAM 1 GB).
+ExecStartPost=/usr/bin/node dist/jobs/ocr-worker.js
 SyslogIdentifier=dcs-jobs

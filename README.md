@@ -16,12 +16,28 @@ hai lớp, phiên bản, phân phối, xác nhận đọc, dán nhãn nội dung
 
 ## Trạng thái
 
-**Giai đoạn 0 — nền móng (T-001 → T-009): hoàn tất.**
-Server, cấu hình, kết nối CSDL, trình chạy migration, schema DCS-4, ghi vết,
-xử lý lỗi, bộ kiểm thử ràng buộc, khung giao diện.
+**Toàn bộ giai đoạn 0 → 10 của DCS-9 (T-001 → T-103): đã viết code.**
 
-Các giai đoạn tiếp theo (định danh, đăng ký, xác nhận, vòng đời, nội dung, tìm
-kiếm, phân phối, in/QR/hỏi đáp) theo danh sách việc DCS-9.
+| Giai đoạn | Nội dung |
+|---|---|
+| 0 | Nền móng: server, config, CSDL, migration, schema DCS-4, ghi vết, lỗi, khung giao diện, bộ test ràng buộc |
+| 1 | Định danh & phân quyền: đăng nhập argon2id, phiên DB, getCurrentUser, quản trị tổ chức/người dùng/vai trò, canRelease, menu theo vai trò |
+| 2 | Đăng ký & xác nhận: form đăng ký, checklist 12 mục, guard ngày hiệu lực, xác nhận/từ chối |
+| 3 | Vòng đời: lập lịch chuyển hiệu lực, thu hồi, danh mục lọc quyền, chi tiết, trang chủ |
+| 4 | Nội dung & nhãn: đọc PDF, bóc tách mục, OCR rời, phân đoạn (không cắt bảng) |
+| 5 | Tìm kiếm & so sánh phiên bản |
+| 6 | Phân phối & xác nhận đọc (phép giao), nhóm chức năng |
+| 7 | Rà soát định kỳ, gói ban hành, leo thang |
+| 8 | Bản in kiểm soát, tra cứu QR công khai, hỏi đáp AI |
+| 9-10 | Nạp dữ liệu cũ, báo cáo chất lượng, chỉ số sử dụng, vận hành |
+
+**Đã verify tại chỗ (không cần CSDL):** `tsc --noEmit` sạch, `npm run build`
+thành công, server khởi động và mọi route bảo vệ đúng, `npm run test:unit` (logic
+phân đoạn/bóc tách) xanh.
+
+**Chưa verify (cần PostgreSQL):** 20 test ràng buộc CSDL, các luồng nghiệp vụ
+end-to-end. Chạy khi deploy lên VPS (`npm run migrate` + `npm test`). Máy phát
+triển hiện không cài được PostgreSQL (nguồn tải EnterpriseDB bị chặn).
 
 ## Chạy dưới máy phát triển
 
