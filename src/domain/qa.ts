@@ -90,11 +90,14 @@ export async function answer(
        AND c.embedding IS NOT NULL
        AND (d.scope_level = 'group'
             OR EXISTS (
-              SELECT 1 FROM app_user_dept ud
+              SELECT 1 FROM user_departments ud
                 JOIN org_department dp ON dp.dept_id = ud.dept_id
                 JOIN org_site st ON st.site_id = dp.site_id
                WHERE ud.user_id = ${input.userId} AND ud.is_active
-                 AND ((d.scope_level='bu'   AND st.bu_id   = d.scope_bu_id)
+                 AND ((d.scope_level='bu' AND EXISTS (
+                        SELECT 1 FROM org_site_bu sb
+                         WHERE sb.site_id = st.site_id AND sb.bu_id = d.scope_bu_id
+                      ))
                    OR (d.scope_level='site' AND st.site_id = d.scope_site_id)
                    OR (d.scope_level='dept' AND dp.dept_id = d.scope_dept_id))))
      ORDER BY dist ASC

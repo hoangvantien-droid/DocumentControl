@@ -2,17 +2,18 @@
  * src/routes/admin.ts — quản trị tổ chức, người dùng, vai trò (giai đoạn 1).
  * Route MỎNG: gọi domain. Màn hình này CÓ HẠN SỬ DỤNG, gỡ khi L1 lên (DCS-7 §7.4).
  */
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError, BusinessError } from '../lib/errors.js';
 import {
-  listBu, listSites, listDepartments, createBu, createSite, createDepartment,
+  listBu, listSites, listDepartments, createBu, createSite, addSiteBu, createDepartment,
 } from '../domain/org.js';
 import {
   listUsers, createUser, setUserActive, assignToDepartment, departmentsOfUser,
 } from '../domain/users.js';
 import { grantRole, rolesOfUser, type RoleCode, type ScopeLevel } from '../domain/roles.js';
+import { hasSystemAdminAccess } from '../domain/permissions.js';
 
 /** Lấy field bắt buộc từ body, ném lỗi nếu thiếu — thoả noUncheckedIndexedAccess. */
 function reqField(body: Record<string, string>, name: string): string {
@@ -23,10 +24,21 @@ function reqField(body: Record<string, string>, name: string): string {
   return v;
 }
 
+async function requireSystemAdmin(req: FastifyRequest, reply: FastifyReply, sql: Sql): Promise<boolean> {
+  const user = requireUser(req, reply);
+  if (!user) return false;
+  if (!await hasSystemAdminAccess(sql, user.user_id)) {
+    reply.code(403);
+    reply.send('Không đủ quyền quản trị hệ thống');
+    return false;
+  }
+  return true;
+}
+
 export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
   // ---- Tổ chức (T-013) ----
   app.get('/admin/org', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     const [bus, sites, depts] = await Promise.all([
       listBu(sql), listSites(sql), listDepartments(sql),
     ]);
@@ -34,26 +46,32 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/org/bu', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     await createBu(sql, (req.body.code ?? '').trim(), (req.body.name ?? '').trim());
     return reply.redirect('/admin/org');
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/org/site', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     await createSite(sql, (req.body.code ?? '').trim(), (req.body.name ?? '').trim(), reqField(req.body, 'bu_id'));
     return reply.redirect('/admin/org');
   });
 
+  app.post<{ Body: Record<string, string> }>('/admin/org/site-bu', async (req, reply) => {
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
+    await addSiteBu(sql, reqField(req.body, 'site_id'), reqField(req.body, 'bu_id'));
+    return reply.redirect('/admin/org');
+  });
+
   app.post<{ Body: Record<string, string> }>('/admin/org/dept', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     await createDepartment(sql, (req.body.code ?? '').trim(), (req.body.name ?? '').trim(), reqField(req.body, 'site_id'));
     return reply.redirect('/admin/org');
   });
 
   // ---- Người dùng (T-014) ----
   app.get('/admin/users', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     const [users, depts] = await Promise.all([listUsers(sql), listDepartments(sql)]);
     const deptsByUser: Record<string, string[]> = {};
     for (const u of users) deptsByUser[u.user_id] = await departmentsOfUser(sql, u.user_id);
@@ -63,7 +81,7 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/users', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     try {
       await createUser(sql, {
         email: (req.body.email ?? '').trim(),
@@ -84,20 +102,20 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/users/assign-dept', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     await assignToDepartment(sql, reqField(req.body, 'user_id'), reqField(req.body, 'dept_id'));
     return reply.redirect('/admin/users');
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/users/active', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     await setUserActive(sql, reqField(req.body, 'user_id'), req.body.active === 'true');
     return reply.redirect('/admin/users');
   });
 
   // ---- Vai trò theo phạm vi (T-015) ----
   app.get('/admin/roles', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     const [users, bus, sites, depts] = await Promise.all([
       listUsers(sql), listBu(sql), listSites(sql), listDepartments(sql),
     ]);
@@ -109,7 +127,7 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/roles', async (req, reply) => {
-    if (!requireUser(req, reply)) return reply;
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
     try {
       await grantRole(sql, {
         userId: reqField(req.body, 'user_id'),

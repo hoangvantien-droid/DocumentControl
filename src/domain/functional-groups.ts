@@ -57,7 +57,7 @@ export async function removeMember(sql: Sql, groupId: string, userId: string): P
 export async function membersOf(sql: Sql, groupId: string) {
   return sql<{ user_id: string; full_name: string | null; email: string | null }[]>`
     SELECT m.user_id, u.full_name, u.email
-      FROM functional_group_members m JOIN app_user_ref u ON u.user_id = m.user_id
+      FROM functional_group_members m JOIN users u ON u.user_id = m.user_id
      WHERE m.group_id = ${groupId}`;
 }
 

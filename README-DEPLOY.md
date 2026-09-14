@@ -93,13 +93,114 @@ Với 1 GB RAM, thứ cần canh nhất là bộ nhớ:
 | Đĩa | trên 80% |
 | Thời gian tìm kiếm | trên 2 giây |
 
+## Rehearsal bắt buộc cho Ver2 migration 005
+
+> **Không chạy `npm run migrate`, `deploy/deploy.sh` hoặc `deploy/deploy-tienhv.sh`
+> trên production khi `005_ver2_organization_authorization.sql` chưa được
+> rehearsal và QA phê duyệt. Hai script deploy hiện tại tự chạy migration.
+
+Migration 005 là forward migration, không được sửa migration cũ và không được
+chạy thử trên dữ liệu thật. Nó đổi tên các bảng người dùng để giữ UUID/FK lịch
+sử, chuyển Site–BU sang N:N, mở rộng sang bảy role Ver2 và tạo tương thích
+chỉ-đọc cho tên bảng cũ.
+
+1. **Backup và chuẩn bị bản sao cô lập.** Dừng thay đổi nghiệp vụ trong thời
+   điểm lấy backup. Backup cả PostgreSQL lẫn `/var/dcs/files`, rồi khôi phục
+   database vào một database rehearsal riêng (ví dụ `dcs_ver2_rehearsal`) và
+   dùng một file storage bản sao. Không chia sẻ endpoint với production.
+2. **Lưu bằng chứng trước migration trên bản rehearsal.** Chạy những lệnh sau
+   trước khi áp 005; các file kết quả là cơ sở chứng minh UUID không đổi:
+
+   ```bash
+   psql "$REHEARSAL_DATABASE_URL" -Atc \
+     "SELECT user_id FROM app_user_ref ORDER BY user_id" > before-users.txt
+   psql "$REHEARSAL_DATABASE_URL" -Atc \
+     "SELECT user_id || '|' || dept_id FROM app_user_dept ORDER BY 1" > before-user-departments.txt
+   psql "$REHEARSAL_DATABASE_URL" -Atc \
+     "SELECT user_role_id || '|' || user_id FROM app_user_role ORDER BY 1" > before-user-roles.txt
+   ```
+
+3. **Chạy migration chỉ trên bản rehearsal.** Nạp cấu hình rehearsal (bao gồm
+   `SESSION_SECRET` và `FILE_STORAGE_PATH` bản sao), sau đó đặt
+   `DATABASE_URL` thành URL rehearsal và chạy:
+
+   ```bash
+   DATABASE_URL="$REHEARSAL_DATABASE_URL" npm run migrate
+   ```
+
+   Xác nhận `005_ver2_organization_authorization.sql` chỉ xuất hiện một lần
+   trong `schema_migrations`. Không chạy lại câu lệnh này trên production ở
+   giai đoạn rehearsal.
+
+4. **Đối chiếu dữ liệu và schema sau migration.** Tất cả các kiểm tra sau phải
+   cho kết quả mong đợi (không có dòng thiếu/lệch):
+
+   ```bash
+   diff -u before-users.txt <(psql "$REHEARSAL_DATABASE_URL" -Atc \
+     "SELECT user_id FROM users ORDER BY user_id")
+   diff -u before-user-departments.txt <(psql "$REHEARSAL_DATABASE_URL" -Atc \
+     "SELECT user_id || '|' || dept_id FROM user_departments ORDER BY 1")
+   diff -u before-user-roles.txt <(psql "$REHEARSAL_DATABASE_URL" -Atc \
+     "SELECT user_role_id || '|' || user_id FROM user_roles ORDER BY 1")
+
+   psql "$REHEARSAL_DATABASE_URL" -c "
+     SELECT
+       (SELECT count(*) FROM org_site WHERE legacy_primary_bu_id IS NOT NULL) AS expected_mappings,
+       (SELECT count(*) FROM org_site_bu) AS actual_mappings,
+       (SELECT count(*) FROM org_site s
+         WHERE s.legacy_primary_bu_id IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM org_site_bu sb
+                            WHERE sb.site_id = s.site_id
+                              AND sb.bu_id = s.legacy_primary_bu_id)) AS missing_mappings;"
+
+   psql "$REHEARSAL_DATABASE_URL" -c "
+     SELECT count(*) AS active_group_owners_without_admin
+       FROM user_roles g
+      WHERE g.role_code = 'DC_GROUP_OWNER' AND g.is_active
+        AND NOT EXISTS (SELECT 1 FROM user_roles a
+                         WHERE a.user_id = g.user_id
+                           AND a.role_code = 'DC_ADMIN' AND a.is_active);"
+
+   psql "$REHEARSAL_DATABASE_URL" -c "
+     SELECT table_name, is_updatable
+       FROM information_schema.views
+      WHERE table_schema = 'public'
+        AND table_name IN ('app_user_ref', 'app_user_dept', 'app_user_role')
+      ORDER BY table_name;"
+   ```
+
+   `expected_mappings` phải bằng `actual_mappings`, `missing_mappings` và
+   `active_group_owners_without_admin` phải là `0`, ba view compatibility phải
+   có `is_updatable = NO`, và cả ba lệnh `diff` không được in khác biệt.
+
+5. **Kiểm thử nghiệp vụ trên bản rehearsal.** QA gán danh sách chính thức cho
+   `DC_ADMIN`, `DC_DEPT_HEAD`, BU/Site/Group owner (backfill từ Group Owner chỉ
+   là biện pháp chống lockout), rồi xác minh release đúng phạm vi: Group chỉ
+   Group, BU chỉ BU khớp, Site QA chỉ Site khớp, Department Head chỉ Department
+   khớp. Kiểm tra thêm tìm kiếm và màn QA đối với Site có nhiều BU.
+
+6. **Chạy constraint suite trên DB test rỗng, riêng biệt.** Suite này **xóa toàn
+   bộ schema** và hiện chỉ dựng schema kiểm soát nền, nên không thay thế các
+   đối chiếu rehearsal ở bước 4. URL phải có chữ `test` trong tên database:
+
+   ```bash
+   DATABASE_URL_TEST="$DCS_CONSTRAINTS_TEST_DATABASE_URL" npm run test:constraints
+   ```
+
+Chỉ sau khi checklist có bằng chứng, QA phê duyệt role chính thức và backup
+production đã được thử phục hồi mới được lên lịch triển khai production. Giữ
+backup cho tới khi smoke test production, kiểm tra quyền release và đối chiếu
+số liệu hậu triển khai hoàn tất.
+
 ## Nâng cấp phiên bản sau này
 
 ```bash
 cd /opt/dcs && sudo -u dcs git pull && sudo bash deploy/deploy.sh
 ```
 
-Migration idempotent nên chạy lại an toàn — chỉ áp các file `.sql` mới.
+Migration idempotent nên chạy lại an toàn — chỉ áp các file `.sql` mới. Với
+migration 005, tuân thủ checklist rehearsal ở trên trước khi dùng lệnh deploy
+trên production.
 
 ---
 

@@ -9,6 +9,7 @@
 import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
+import { canViewVersion } from './catalog.js';
 
 export interface PrintRecord {
   print_id: string;
@@ -24,6 +25,10 @@ export async function registerPrint(
   input: { versionId: string; printedBy: string; intendedLocation?: string | null },
 ): Promise<PrintRecord> {
   return sql.begin(async (tx) => {
+    const allowed = await canViewVersion(tx as unknown as Sql, input.printedBy, input.versionId);
+    if (!allowed) {
+      throw new BusinessError('print.no_permission', 'Không có quyền in tài liệu này', { httpStatus: 403 });
+    }
     const v = (await tx<{ status: string; doc_id: string; version_no: string }[]>`
       SELECT status, doc_id, version_no FROM document_versions WHERE version_id = ${input.versionId}`)[0];
     if (!v) throw new BusinessError('print.no_version', 'Không tìm thấy phiên bản');

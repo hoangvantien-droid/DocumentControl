@@ -43,6 +43,14 @@ export async function createPackage(
 ): Promise<string> {
   const id = randomUUID();
   await sql.begin(async (tx) => {
+    const isAuthor = (await tx<{ ok: boolean }[]>`
+      SELECT EXISTS (
+        SELECT 1 FROM user_roles
+         WHERE user_id = ${input.createdBy} AND role_code = 'DC_AUTHOR' AND is_active
+      ) AS ok`)[0]?.ok ?? false;
+    if (!isAuthor) {
+      throw new BusinessError('pkg.no_permission', 'Chỉ người đăng ký ban hành được tạo gói', { httpStatus: 403 });
+    }
     await tx`
       INSERT INTO release_packages (package_id, package_code, title, effective_date, created_by)
       VALUES (${id}, ${input.code}, ${input.title}, ${input.effectiveDate}, ${input.createdBy})`;
@@ -64,9 +72,18 @@ export async function attachToPackage(
   input: { versionId: string; packageId: string; userId: string },
 ): Promise<void> {
   await sql.begin(async (tx) => {
-    const v = (await tx<{ status: string }[]>`
-      SELECT status FROM document_versions WHERE version_id = ${input.versionId} FOR UPDATE`)[0];
+    const v = (await tx<{ status: string; registrant_user_id: string }[]>`
+      SELECT status, registrant_user_id FROM document_versions WHERE version_id = ${input.versionId} FOR UPDATE`)[0];
     if (!v) throw new BusinessError('pkg.no_version', 'Không tìm thấy phiên bản');
+    const pkg = (await tx<{ package_id: string }[]>`
+      SELECT package_id FROM release_packages WHERE package_id = ${input.packageId} FOR UPDATE`)[0];
+    if (!pkg) throw new BusinessError('pkg.not_found', 'Không tìm thấy gói ban hành');
+    if (v.registrant_user_id !== input.userId) {
+      throw new BusinessError('pkg.no_permission', 'Chỉ người đăng ký được gắn phiên bản của mình vào gói', { httpStatus: 403 });
+    }
+    if (!['cho_xac_nhan', 'da_dang_ky'].includes(v.status)) {
+      throw new BusinessError('pkg.bad_status', 'Chỉ gắn được đăng ký đang chờ xác nhận hoặc đã đăng ký');
+    }
     await tx`
       UPDATE document_versions
          SET package_id = ${input.packageId}, effective_date = NULL
@@ -85,6 +102,12 @@ export async function movePackageDate(
   input: { packageId: string; newDate: string; userId: string },
 ): Promise<void> {
   await sql.begin(async (tx) => {
+    const pkg = (await tx<{ created_by: string }[]>`
+      SELECT created_by FROM release_packages WHERE package_id = ${input.packageId} FOR UPDATE`)[0];
+    if (!pkg) throw new BusinessError('pkg.not_found', 'Không tìm thấy gói ban hành');
+    if (pkg.created_by !== input.userId) {
+      throw new BusinessError('pkg.no_permission', 'Chỉ người tạo gói được dời ngày hiệu lực', { httpStatus: 403 });
+    }
     await tx`UPDATE release_packages SET effective_date = ${input.newDate} WHERE package_id = ${input.packageId}`;
     await writeAudit(tx as TransactionSql, {
       eventType: 'doi_ngay_goi', actorUserId: input.userId,
@@ -104,12 +127,15 @@ export async function detachMember(
 ): Promise<void> {
   if (!input.reason.trim()) throw new BusinessError('pkg.reason', 'Tháo thành viên bắt buộc ghi lý do');
   await sql.begin(async (tx) => {
-    const row = (await tx<{ package_id: string | null; effective_date: string | null }[]>`
-      SELECT dv.package_id, rp.effective_date::text AS effective_date
+    const row = (await tx<{ package_id: string | null; effective_date: string | null; created_by: string | null }[]>`
+      SELECT dv.package_id, rp.effective_date::text AS effective_date, rp.created_by
         FROM document_versions dv
         LEFT JOIN release_packages rp ON rp.package_id = dv.package_id
        WHERE dv.version_id = ${input.versionId} FOR UPDATE OF dv`)[0];
     if (!row || !row.package_id) throw new BusinessError('pkg.not_member', 'Phiên bản không thuộc gói nào');
+    if (row.created_by !== input.userId) {
+      throw new BusinessError('pkg.no_permission', 'Chỉ người tạo gói được tháo thành viên', { httpStatus: 403 });
+    }
     await tx`
       UPDATE document_versions
          SET package_id = NULL, effective_date = ${row.effective_date}

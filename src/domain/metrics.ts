@@ -38,7 +38,7 @@ export async function usageSummary(sql: Sql): Promise<{
   }[]>`
     SELECT
       (SELECT count(*)::int FROM document_versions WHERE status = 'hieu_luc') AS effective_docs,
-      (SELECT count(*)::int FROM app_user_ref WHERE is_active)                AS total_users,
+      (SELECT count(*)::int FROM users WHERE is_active)                AS total_users,
       (SELECT count(*)::int FROM audit_log WHERE event_type='xac_nhan_doc' AND occurred_at >= CURRENT_DATE - 7) AS acks_last_7d,
       (SELECT count(*)::int FROM audit_log WHERE event_type='tim_kiem' AND occurred_at >= CURRENT_DATE - 7)     AS searches_last_7d`;
   return row!;

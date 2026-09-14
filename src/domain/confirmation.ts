@@ -26,6 +26,7 @@ export interface VersionForConfirm {
   doc_id: string;
   version_no: string;
   title: string;
+  doc_type: string;
   status: string;
   effective_date: string | null;
   file_hash: string;
@@ -42,7 +43,7 @@ export interface VersionForConfirm {
 /** Đọc phiên bản kèm phạm vi tài liệu để dựng checklist và kiểm quyền. */
 export async function loadForConfirm(sql: Sql, versionId: string): Promise<VersionForConfirm | null> {
   const rows = await sql<VersionForConfirm[]>`
-    SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
+    SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
            v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
            v.registrant_user_id, v.supersedes_version_id, v.parse_status,
            d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
@@ -79,8 +80,8 @@ export async function buildChecklist(
   // 4 — tệp mở được, mã băm khớp (giai đoạn này: có file_hash là đạt tối thiểu)
   items.push({ no: '4', label: 'Tệp mở được và mã băm khớp', kind: 'auto', level: 'chan', pass: !!v.file_hash });
 
-  // 5 — bóc tách mục thành công (parse_status). Form không có mục -> coi đạt.
-  const parseOk = v.parse_status === 'thanh_cong' || v.parse_status === 'chua_chay';
+  // 5 — Form không có mục; các loại khác chỉ đạt khi bóc tách thành công.
+  const parseOk = v.doc_type === 'Form' || v.parse_status === 'thanh_cong';
   items.push({ no: '5', label: 'Bóc tách mục thành công', kind: 'auto', level: 'chan', pass: parseOk });
 
   // 6 — mã điều khoản còn hiệu lực (M14). Giai đoạn 1 m14 tắt -> đạt.
@@ -115,15 +116,16 @@ export async function hasViewedDiff(sql: Sql, adminUserId: string, versionId: st
 /**
  * Xác nhận: chuyển cho_xac_nhan -> da_dang_ky, ghi confirmed_at (= NGÀY ĐĂNG KÝ).
  * Guard C.4: nếu effective_date < hôm nay thì KHÔNG xác nhận, tự chuyển tu_choi.
- * Yêu cầu adminChecks: các mục Admin tự tích (7,8,9,[9b]) đều true.
+ * Yêu cầu adminCheckNos: các mục Admin tự tích (7,8,9,[9b]) đều được gửi.
+ * Các mục tự động và bằng chứng xem so sánh được dựng lại trong transaction.
  */
 export async function confirmRegistration(
   sql: Sql,
-  input: { versionId: string; adminUserId: string; adminChecksPassed: boolean },
+  input: { versionId: string; adminUserId: string; adminCheckNos: string[] },
 ): Promise<{ outcome: 'da_dang_ky' | 'tu_choi_tu_dong' }> {
   return sql.begin(async (tx) => {
     const v = (await tx<VersionForConfirm[]>`
-      SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
+      SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
              v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
              v.registrant_user_id, v.supersedes_version_id, v.parse_status,
              d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
@@ -158,9 +160,28 @@ export async function confirmRegistration(
       return { outcome: 'tu_choi_tu_dong' as const };
     }
 
-    if (!input.adminChecksPassed) {
-      throw new BusinessError('conf.checklist', 'Còn mục chặn trong checklist chưa đạt');
+    const checklist = await buildChecklist(tx as unknown as Sql, v, input.adminUserId);
+    const failedAutomaticCheck = checklist.find((item) =>
+      item.kind === 'auto' && item.level === 'chan' && item.pass !== true,
+    );
+    if (failedAutomaticCheck) {
+      throw new BusinessError('conf.checklist_auto', `Mục chặn chưa đạt: ${failedAutomaticCheck.label}`);
     }
+
+    const requiredAdminChecks = v.supersedes_version_id ? ['7', '8', '9', '9b'] : ['7', '8', '9'];
+    const selectedChecks = new Set(input.adminCheckNos);
+    if (!requiredAdminChecks.every((check) => selectedChecks.has(check))) {
+      throw new BusinessError('conf.checklist', 'Còn mục Admin tự kiểm trong checklist chưa được xác nhận');
+    }
+    if (v.supersedes_version_id && !await hasViewedDiff(tx as unknown as Sql, input.adminUserId, v.version_id)) {
+      throw new BusinessError('conf.diff_not_viewed', 'Phải mở so sánh phiên bản trước khi xác nhận mức độ thay đổi');
+    }
+
+    await writeAudit(tx as TransactionSql, {
+      eventType: 'tich_checklist', actorUserId: input.adminUserId,
+      objectType: 'document_versions', objectId: input.versionId,
+      afterState: { admin_checks: requiredAdminChecks },
+    });
 
     // Đạt: chuyển da_dang_ky, confirmed_at = ngày đăng ký.
     await tx`UPDATE document_versions
@@ -182,9 +203,25 @@ export async function rejectRegistration(
 ): Promise<void> {
   if (!input.reason.trim()) throw new BusinessError('conf.reason', 'Từ chối bắt buộc kèm lý do');
   await sql.begin(async (tx) => {
+    const v = (await tx<VersionForConfirm[]>`
+      SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
+             v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
+             v.registrant_user_id, v.supersedes_version_id, v.parse_status,
+             d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+        FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
+       WHERE v.version_id = ${input.versionId} FOR UPDATE OF v`)[0];
+    if (!v) throw new BusinessError('conf.not_found', 'Không tìm thấy phiên bản');
+    if (v.status !== 'cho_xac_nhan') {
+      throw new BusinessError('conf.bad_status', 'Phiên bản không ở trạng thái chờ xác nhận');
+    }
+    const allowed = await canRelease(tx as unknown as Sql, input.adminUserId, {
+      scope_level: v.scope_level, scope_bu_id: v.scope_bu_id,
+      scope_site_id: v.scope_site_id, scope_dept_id: v.scope_dept_id,
+    });
+    if (!allowed) throw new BusinessError('conf.no_permission', 'Không đủ thẩm quyền từ chối tài liệu này', { httpStatus: 403 });
     await tx`UPDATE document_versions
                 SET status = 'tu_choi', admin_user_id = ${input.adminUserId}, rejection_reason = ${input.reason}
-              WHERE version_id = ${input.versionId} AND status = 'cho_xac_nhan'`;
+              WHERE version_id = ${input.versionId}`;
     await writeAudit(tx as TransactionSql, {
       eventType: 'tu_choi_boi_admin', actorUserId: input.adminUserId,
       objectType: 'document_versions', objectId: input.versionId,

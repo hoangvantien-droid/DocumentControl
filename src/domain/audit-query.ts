@@ -48,7 +48,7 @@ export async function queryAudit(sql: Sql, f: AuditFilter): Promise<AuditRow[]> 
            a.actor_user_id, u.full_name AS actor_name, a.actor_type,
            a.event_type, a.object_type, a.object_id
       FROM audit_log a
-      LEFT JOIN app_user_ref u ON u.user_id = a.actor_user_id
+      LEFT JOIN users u ON u.user_id = a.actor_user_id
      WHERE (${f.objectId ?? null}::text IS NULL OR a.object_id = ${f.objectId ?? null})
        AND (${f.eventType ?? null}::text IS NULL OR a.event_type = ${f.eventType ?? null})
        AND (${f.fromDate ?? null}::date IS NULL OR a.occurred_at >= ${f.fromDate ?? null}::date)

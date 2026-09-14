@@ -1,7 +1,7 @@
 <% layout('/layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
 
 <div class="warn-banner">
-  Gán vai trò tạm khi L1 chưa vận hành. Khi L1 lên, vai trò do L1 quản.
+  DCS sở hữu vai trò và phạm vi. Vai trò release phải khớp đúng cấp và đúng đối tượng tài liệu.
 </div>
 
 <h1>Vai trò theo phạm vi</h1>
@@ -30,10 +30,12 @@
     <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
   </select>
   <select name="role_code" required>
+    <option value="DC_ADMIN">DC_ADMIN</option>
+    <option value="DC_AUTHOR">DC_AUTHOR</option>
+    <option value="DC_DEPT_HEAD">DC_DEPT_HEAD</option>
     <option value="DC_GROUP_OWNER">DC_GROUP_OWNER</option>
     <option value="DC_BU_OWNER">DC_BU_OWNER</option>
     <option value="DC_SITE_QA_MANAGER">DC_SITE_QA_MANAGER</option>
-    <option value="DC_AUTHOR">DC_AUTHOR</option>
     <option value="DC_READER">DC_READER</option>
   </select>
   <select name="scope_level" required>

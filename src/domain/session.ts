@@ -37,7 +37,7 @@ export async function resolveSession(
   const rows = await sql<SessionUser[]>`
     UPDATE app_session s
        SET last_seen_at = now()
-      FROM app_user_ref u
+      FROM users u
      WHERE s.session_id = ${sessionId}
        AND s.user_id = u.user_id
        AND s.expires_at > now()

@@ -9,6 +9,7 @@
  */
 import type { Sql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
+import { canRelease } from './permissions.js';
 
 export type Verdict = 'giu_nguyen' | 'can_sua' | 'huy_bo';
 
@@ -22,16 +23,22 @@ export interface ReviewRow {
   verdict: string | null;
   verdict_note: string | null;
   department_name: string | null;
+  scope_level: 'group' | 'bu' | 'site' | 'dept';
+  scope_bu_id: string | null;
+  scope_site_id: string | null;
+  scope_dept_id: string | null;
   so_ngay_qua_han: number;
 }
 
 /** Tồn đọng rà soát — gồm cả nhánh can_sua đang treo (v_review_backlog). */
 export async function reviewBacklog(sql: Sql): Promise<ReviewRow[]> {
   return sql<ReviewRow[]>`
-    SELECT review_id, doc_id, version_no, title, due_date::text AS due_date,
-           status, verdict, verdict_note, department_name, so_ngay_qua_han
-      FROM v_review_backlog
-     ORDER BY so_ngay_qua_han DESC`;
+    SELECT b.review_id, b.doc_id, b.version_no, b.title, b.due_date::text AS due_date,
+           b.status, b.verdict, b.verdict_note, b.department_name, b.so_ngay_qua_han,
+           d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+      FROM v_review_backlog b
+      JOIN documents d ON d.doc_id = b.doc_id
+     ORDER BY b.so_ngay_qua_han DESC`;
 }
 
 /** Ghi kết luận rà soát. giu_nguyen/huy_bo không cần note; can_sua/huy_bo cần giải trình. */
@@ -42,6 +49,19 @@ export async function recordVerdict(
   if (input.verdict !== 'giu_nguyen' && !input.note.trim()) {
     throw new BusinessError('review.note', 'Kết luận này bắt buộc ghi giải trình');
   }
-  // fn_record_review_verdict ép quy tắc và là đường duy nhất sửa next_review_date.
-  await sql`SELECT fn_record_review_verdict(${input.reviewId}, ${input.verdict}, ${input.note || null}, ${input.userId})`;
+  await sql.begin(async (tx) => {
+    const review = (await tx<{
+      scope_level: 'group' | 'bu' | 'site' | 'dept';
+      scope_bu_id: string | null; scope_site_id: string | null; scope_dept_id: string | null;
+    }[]>`
+      SELECT d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+        FROM periodic_reviews p
+        JOIN documents d ON d.doc_id = p.doc_id
+       WHERE p.review_id = ${input.reviewId} FOR UPDATE OF p`)[0];
+    if (!review) throw new BusinessError('review.not_found', 'Không tìm thấy bản ghi rà soát');
+    const allowed = await canRelease(tx as unknown as Sql, input.userId, review);
+    if (!allowed) throw new BusinessError('review.no_permission', 'Không đủ thẩm quyền kết luận rà soát này', { httpStatus: 403 });
+    // fn_record_review_verdict ép quy tắc và là đường duy nhất sửa next_review_date.
+    await tx`SELECT fn_record_review_verdict(${input.reviewId}, ${input.verdict}, ${input.note || null}, ${input.userId})`;
+  });
 }

@@ -1,7 +1,7 @@
 /**
  * src/domain/escalation.ts — leo thang tồn đọng (T-082).
  *
- * Gọi fn_run_escalations (đã sửa ở migration 004 để dùng app_user_role). Mỗi
+ * Gọi fn_run_escalations (migration 005 dùng user_roles Ver2). Mỗi
  * bậc gửi ĐÚNG MỘT LẦN (ràng buộc uq_escalation). Chỉ thông báo, không đổi
  * trạng thái tài liệu. Chạy trong tác vụ nền hằng ngày.
  */

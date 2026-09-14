@@ -2,7 +2,7 @@
  * src/domain/catalog.ts — danh mục và chi tiết tài liệu (T-037, T-038).
  *
  * Danh mục lọc theo quyền: người dùng thấy tài liệu trong phạm vi mình (qua
- * app_user_dept + cây tổ chức), tài liệu mình nộp, và tài liệu mình release
+ * user_departments + cây tổ chức), tài liệu mình nộp, và tài liệu mình release
  * được. Lọc TRƯỚC bằng điều kiện truy vấn, không lọc sau (DCS-2 mục 7.1).
  */
 import type { Sql } from 'postgres';
@@ -36,24 +36,28 @@ export async function listVisibleDocuments(sql: Sql, userId: string): Promise<Ca
        -- Hoặc tài liệu trong phạm vi mình được xem (group, hoặc thuộc cây tổ chức)
        OR d.scope_level = 'group'
        OR EXISTS (
-         SELECT 1 FROM app_user_dept ud
+         SELECT 1 FROM user_departments ud
            JOIN org_department dp ON dp.dept_id = ud.dept_id
            JOIN org_site st ON st.site_id = dp.site_id
           WHERE ud.user_id = ${userId} AND ud.is_active
-            AND ( (d.scope_level='bu'   AND st.bu_id   = d.scope_bu_id)
+            AND ( (d.scope_level='bu'   AND EXISTS (
+                  SELECT 1 FROM org_site_bu sb
+                   WHERE sb.site_id = st.site_id AND sb.bu_id = d.scope_bu_id))
                OR (d.scope_level='site' AND st.site_id = d.scope_site_id)
                OR (d.scope_level='dept' AND dp.dept_id = d.scope_dept_id)))
        -- Hoặc mình có vai trò release phủ tài liệu này
        OR EXISTS (
-         SELECT 1 FROM app_user_role r
+         SELECT 1 FROM user_roles r
           WHERE r.user_id = ${userId} AND r.is_active
-            AND (r.role_code = 'DC_GROUP_OWNER'
-              OR (r.role_code='DC_BU_OWNER'        AND r.scope_bu_id   = d.scope_bu_id)
-              OR (r.role_code='DC_SITE_QA_MANAGER' AND r.scope_site_id = d.scope_site_id)))
+            AND (r.role_code = 'DC_GROUP_OWNER' AND d.scope_level = 'group'
+              OR (r.role_code='DC_BU_OWNER'        AND d.scope_level = 'bu'   AND r.scope_bu_id = d.scope_bu_id)
+              OR (r.role_code='DC_SITE_QA_MANAGER' AND d.scope_level = 'site' AND r.scope_site_id = d.scope_site_id)
+              OR (r.role_code='DC_DEPT_HEAD'       AND d.scope_level = 'dept' AND r.scope_dept_id = d.scope_dept_id)))
      ORDER BY v.doc_id, v.version_no DESC`;
 }
 
 export interface DocumentDetail extends CatalogRow {
+  registrant_user_id: string;
   origin: string;
   scope_bu_id: string | null;
   scope_site_id: string | null;
@@ -72,6 +76,7 @@ export interface DocumentDetail extends CatalogRow {
 export async function loadDetail(sql: Sql, versionId: string): Promise<DocumentDetail | null> {
   const rows = await sql<DocumentDetail[]>`
     SELECT v.doc_id, v.version_id, v.version_no, v.title, v.status,
+           v.registrant_user_id,
            d.doc_type, d.scope_level, d.origin,
            d.scope_bu_id, d.scope_site_id, d.scope_dept_id,
            v.effective_date::text AS effective_date,
@@ -86,6 +91,47 @@ export async function loadDetail(sql: Sql, versionId: string): Promise<DocumentD
       JOIN documents d ON d.doc_id = v.doc_id
      WHERE v.version_id = ${versionId}`;
   return rows[0] ?? null;
+}
+
+export async function canViewVersion(sql: Sql, userId: string, versionId: string): Promise<boolean> {
+  const rows = await sql<{ ok: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1
+        FROM document_versions v
+        JOIN documents d ON d.doc_id = v.doc_id
+       WHERE v.version_id = ${versionId}
+         AND (
+           v.registrant_user_id = ${userId}
+           OR d.scope_level = 'group'
+           OR EXISTS (
+             SELECT 1
+               FROM user_departments ud
+               JOIN org_department dp ON dp.dept_id = ud.dept_id
+               JOIN org_site st ON st.site_id = dp.site_id
+              WHERE ud.user_id = ${userId} AND ud.is_active
+                AND (
+                  (d.scope_level = 'bu' AND EXISTS (
+                    SELECT 1 FROM org_site_bu sb
+                     WHERE sb.site_id = st.site_id AND sb.bu_id = d.scope_bu_id
+                  ))
+                  OR (d.scope_level = 'site' AND st.site_id = d.scope_site_id)
+                  OR (d.scope_level = 'dept' AND dp.dept_id = d.scope_dept_id)
+                )
+           )
+           OR EXISTS (
+             SELECT 1
+               FROM user_roles r
+              WHERE r.user_id = ${userId} AND r.is_active
+                AND (
+                  r.role_code = 'DC_GROUP_OWNER' AND d.scope_level = 'group'
+                  OR (r.role_code = 'DC_BU_OWNER' AND d.scope_level = 'bu' AND r.scope_bu_id = d.scope_bu_id)
+                  OR (r.role_code = 'DC_SITE_QA_MANAGER' AND d.scope_level = 'site' AND r.scope_site_id = d.scope_site_id)
+                  OR (r.role_code = 'DC_DEPT_HEAD' AND d.scope_level = 'dept' AND r.scope_dept_id = d.scope_dept_id)
+                )
+           )
+         )
+    ) AS ok`;
+  return rows[0]?.ok ?? false;
 }
 
 /** Các mục đã bóc tách của phiên bản (giai đoạn 4 mới có nội dung; giờ trả rỗng an toàn). */

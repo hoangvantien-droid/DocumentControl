@@ -13,6 +13,7 @@ import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import type { ScopeLevel } from './roles.js';
+import { canRegisterDocuments } from './permissions.js';
 
 export type DocType = 'SOP' | 'WI' | 'Form' | 'Policy' | 'External';
 export type Origin = 'noi_bo' | 'ngoai_bo';
@@ -128,6 +129,9 @@ export async function submitRegistration(
   opts: { m14Enabled: boolean },
 ): Promise<string> {
   return sql.begin(async (tx) => {
+    if (!await canRegisterDocuments(tx as unknown as Sql, v.registrantUserId)) {
+      throw new BusinessError('reg.no_permission', 'Không có quyền đăng ký ban hành tài liệu', { httpStatus: 403 });
+    }
     await ensureDocument(tx as TransactionSql, doc);
     await validateForSubmit(tx as TransactionSql, v, opts);
 
@@ -197,6 +201,9 @@ export async function saveDraft(
   v: Partial<VersionInput> & { versionNo: string; title: string; registrantUserId: string; ownerDepartmentId: string; filePath: string; fileHash: string },
 ): Promise<string> {
   return sql.begin(async (tx) => {
+    if (!await canRegisterDocuments(tx as unknown as Sql, v.registrantUserId)) {
+      throw new BusinessError('reg.no_permission', 'Không có quyền lưu nháp đăng ký tài liệu', { httpStatus: 403 });
+    }
     await ensureDocument(tx as TransactionSql, doc);
     const versionId = randomUUID();
     await tx`

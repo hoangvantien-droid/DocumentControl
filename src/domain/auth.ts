@@ -42,7 +42,7 @@ export async function authenticate(
   const rows = await sql<
     (UserRef & { password_hash: string | null })[]
   >`SELECT user_id, email, full_name, is_active, password_hash
-      FROM app_user_ref
+      FROM users
      WHERE lower(email) = lower(${email})
      LIMIT 1`;
 

@@ -6,7 +6,7 @@ import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
 import {
-  listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf,
+  listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
 } from '../domain/catalog.js';
 import { recallVersion, recallImpact } from '../domain/lifecycle.js';
 import { canRelease } from '../domain/permissions.js';
@@ -29,7 +29,10 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     const user = requireUser(req, reply);
     if (!user) return reply;
     const detail = await loadDetail(sql, req.params.id);
-    if (!detail) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    if (!detail || !(await canViewVersion(sql, user.user_id, req.params.id))) {
+      reply.code(404);
+      return reply.send('Không tìm thấy tài liệu');
+    }
     const [sections, links] = await Promise.all([
       loadSections(sql, req.params.id), loadLinks(sql, req.params.id),
     ]);
@@ -58,6 +61,11 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     if (!user) return reply;
     const detail = await loadDetail(sql, req.params.id);
     if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
+    const allowed = await canRelease(sql, user.user_id, {
+      scope_level: detail.scope_level as never,
+      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
+    });
+    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền thu hồi tài liệu này'); }
     const impact = await recallImpact(sql, detail.doc_id, req.params.id);
     return reply.view('recall.eta', { d: detail, impact, error: null });
   });
@@ -81,6 +89,11 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     if (!user) return reply;
     const detail = await loadDetail(sql, req.params.id);
     if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
+    const allowed = await canRelease(sql, user.user_id, {
+      scope_level: detail.scope_level as never,
+      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
+    });
+    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
     await addMatrix(sql, {
       docId: detail.doc_id,
       departmentId: req.body.department_id ?? '',
@@ -93,7 +106,16 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/matrix/remove', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    await removeMatrix(sql, req.body.matrix_id ?? '', user.user_id);
+    const matrixId = req.body.matrix_id ?? '';
+    const row = (await sql<{ doc_id: string }[]>`
+      SELECT doc_id FROM distribution_matrix WHERE matrix_id = ${matrixId}`)[0];
+    const detail = row ? await loadDetail(sql, req.params.id) : null;
+    const allowed = detail && row?.doc_id === detail.doc_id && await canRelease(sql, user.user_id, {
+      scope_level: detail.scope_level as never,
+      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
+    });
+    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
+    await removeMatrix(sql, matrixId, user.user_id);
     return reply.redirect(`/documents/${req.params.id}`);
   });
 
@@ -101,6 +123,13 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   app.get<{ Params: { id: string } }>('/documents/:id/matrix-options', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    const detail = await loadDetail(sql, req.params.id);
+    if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
+    const allowed = await canRelease(sql, user.user_id, {
+      scope_level: detail.scope_level as never,
+      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
+    });
+    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
     const [depts, groups] = await Promise.all([listDepartments(sql), listGroups(sql)]);
     return reply.view('matrix-options.eta', { id: req.params.id, depts, groups });
   });
@@ -110,6 +139,16 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   app.post<{ Params: { id: string } }>('/documents/:id/process', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    const detail = await loadDetail(sql, req.params.id);
+    if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
+    const isReleaseAuthority = await canRelease(sql, user.user_id, {
+      scope_level: detail.scope_level as never,
+      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
+    });
+    if (detail.registrant_user_id !== user.user_id && !isReleaseAuthority) {
+      reply.code(403);
+      return reply.send('Chỉ người nộp hoặc người có thẩm quyền release được xử lý nội dung');
+    }
     await processVersionContent(sql, req.params.id, { tesseractPath: config.tesseractPath });
     return reply.redirect(`/documents/${req.params.id}`);
   });

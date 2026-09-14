@@ -80,7 +80,7 @@ export async function countRecipientsFor(
 ): Promise<number> {
   const rows = await sql<{ n: number }[]>`
     SELECT count(DISTINCT ud.user_id)::int AS n
-      FROM app_user_dept ud
+      FROM user_departments ud
      WHERE ud.dept_id = ${departmentId} AND ud.is_active
        AND (${functionalGroupId}::uuid IS NULL
             OR EXISTS (SELECT 1 FROM functional_group_members fm

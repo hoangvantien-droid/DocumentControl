@@ -50,12 +50,21 @@ export async function diffVersions(
 export async function recordViewedDiff(
   sql: Sql,
   userId: string,
-  versionId: string,
-): Promise<void> {
+  fromVersionId: string,
+  toVersionId: string,
+): Promise<boolean> {
+  const matchesSupersededVersion = (await sql<{ ok: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1 FROM document_versions
+       WHERE version_id = ${toVersionId}
+         AND supersedes_version_id = ${fromVersionId}
+    ) AS ok`)[0]?.ok ?? false;
+  if (!matchesSupersededVersion) return false;
   await sql.begin(async (tx) => {
     await writeAudit(tx as TransactionSql, {
       eventType: 'xem_so_sanh', actorUserId: userId,
-      objectType: 'document_versions', objectId: versionId,
+      objectType: 'document_versions', objectId: toVersionId,
     });
   });
+  return true;
 }

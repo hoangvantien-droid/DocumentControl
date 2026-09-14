@@ -10,7 +10,6 @@ import {
   confirmRegistration, rejectRegistration,
 } from '../domain/confirmation.js';
 import { canRelease } from '../domain/permissions.js';
-import { writeAudit } from '../lib/audit.js';
 
 export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void {
   // Hàng chờ tôi xác nhận — lọc theo quyền release (đơn giản: liệt kê cho_xac_nhan
@@ -46,25 +45,15 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
       scope_level: v.scope_level, scope_bu_id: v.scope_bu_id,
       scope_site_id: v.scope_site_id, scope_dept_id: v.scope_dept_id,
     });
+    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền xác nhận tài liệu này'); }
     const checklist = await buildChecklist(sql, v, user.user_id);
     const viewedDiff = v.supersedes_version_id ? await hasViewedDiff(sql, user.user_id, v.version_id) : true;
     const effectivePassed = v.effective_date !== null && v.effective_date >= new Date().toISOString().slice(0, 10);
     return reply.view('confirm.eta', { v, checklist, allowed, viewedDiff, effectivePassed, error: null });
   });
 
-  // Ghi vết đã xem so sánh (mở khoá ô 9b). Giai đoạn 5 có màn so sánh thật;
-  // ở đây ghi sự kiện xem_so_sanh để cơ chế khoá 9b hoạt động đúng.
-  app.post<{ Params: { id: string } }>('/confirm/:id/viewed-diff', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    await sql.begin(async (tx) => {
-      await writeAudit(tx as never, {
-        eventType: 'xem_so_sanh', actorUserId: user.user_id,
-        objectType: 'document_versions', objectId: req.params.id,
-      });
-    });
-    return reply.redirect(`/confirm/${req.params.id}`);
-  });
+  // So sánh chỉ được ghi nhận qua /compare sau khi người dùng thực sự mở kết quả.
+  // Không có endpoint riêng để tự khai “đã xem”, tránh bỏ qua bằng chứng checklist.
 
   // Xác nhận
   app.post<{ Params: { id: string }; Body: Record<string, string> }>(
@@ -72,14 +61,12 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
     async (req, reply) => {
       const user = requireUser(req, reply);
       if (!user) return reply;
-      // Các mục Admin tự tích (7,8,9,[9b]) gửi lên dạng checkbox on.
       const b = req.body;
-      const adminChecksPassed =
-        b.chk7 === 'on' && b.chk8 === 'on' && b.chk9 === 'on' &&
-        (b.needs9b !== 'true' || b.chk9b === 'on');
+      const adminCheckNos = ['7', '8', '9', '9b']
+        .filter((no) => b[`chk${no}`] === 'on');
       try {
         const { outcome } = await confirmRegistration(sql, {
-          versionId: req.params.id, adminUserId: user.user_id, adminChecksPassed,
+          versionId: req.params.id, adminUserId: user.user_id, adminCheckNos,
         });
         return reply.redirect(outcome === 'da_dang_ky' ? '/pending-confirmation' : '/pending-confirmation');
       } catch (err) {
