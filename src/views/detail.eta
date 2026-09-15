@@ -1,27 +1,37 @@
 <% layout('layout.eta', { title: 'Chi tiết — DCS', user: it.user }) %>
 <% var d = it.d; %>
 
-<!-- Điều phải hiện nổi bật (DCS-7 §3.2) -->
-<% if (d.status === 'het_hieu_luc') { %>
-  <div class="danger-banner">
-    Bản này ĐÃ HẾT HIỆU LỰC.
-    <% if (it.current) { %> Bản đang áp dụng: <a href="/documents/<%= it.current.version_id %>">phiên bản <%= it.current.version_no %></a>.<% } %>
+<!-- Đầu trang gom số hiệu + phiên bản + tiêu đề + nhãn trạng thái + nhãn phạm vi
+     và hàng nút hành động (Yêu cầu 17.2). -->
+<div class="detail-header">
+  <h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
+  <p class="doc-title">
+    <%= d.title %>
+    · <%~ include('/components/status-label.eta', { kind: 'doc', code: d.status, text: d.status }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: d.scope_level, text: d.scope_level }) %>
+  </p>
+
+  <div class="detail-actions">
+    <!-- In bản kiểm soát (T-085): chỉ khi hiệu lực -->
+    <% if (d.status === 'hieu_luc') { %>
+      <form method="post" action="/documents/<%= d.version_id %>/print" style="display:inline">
+        <input type="hidden" name="location" value="">
+        <button type="submit" class="btn-diff">In bản kiểm soát</button>
+      </form>
+    <% } %>
   </div>
+</div>
+
+<!-- Điều phải hiện nổi bật ngay dưới đầu trang (DCS-7 §3.2, Yêu cầu 17.3) -->
+<% if (d.status === 'het_hieu_luc') { %>
+  <%~ include('/components/alert-banner.eta', { type: 'error', text: 'Bản này ĐÃ HẾT HIỆU LỰC.' }) %>
+  <% if (it.current) { %>
+    <p class="detail-alert-link">Bản đang áp dụng: <a href="/documents/<%= it.current.version_id %>">phiên bản <%= it.current.version_no %></a>.</p>
+  <% } %>
 <% } else if (d.status === 'thu_hoi') { %>
-  <div class="danger-banner">Tài liệu ĐÃ THU HỒI. Lý do: <%= d.recall_reason %></div>
+  <%~ include('/components/alert-banner.eta', { type: 'error', text: 'Tài liệu ĐÃ THU HỒI. Lý do: ' + (d.recall_reason || '') }) %>
 <% } else if (d.qua_han_xem_xet) { %>
-  <div class="warn-banner">Tài liệu QUÁ HẠN RÀ SOÁT.</div>
-<% } %>
-
-<h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
-<p class="doc-title"><%= d.title %> · <span class="status status-<%= d.status %>"><%= d.status %></span></p>
-
-<!-- In bản kiểm soát (T-085): chỉ khi hiệu lực -->
-<% if (d.status === 'hieu_luc') { %>
-  <form method="post" action="/documents/<%= d.version_id %>/print" style="display:inline">
-    <input type="hidden" name="location" value="">
-    <button type="submit" class="btn-diff">In bản kiểm soát</button>
-  </form>
+  <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Tài liệu QUÁ HẠN RÀ SOÁT.' }) %>
 <% } %>
 
 <!-- Nút xác nhận đọc (T-069, DCS-7 §3.3) -->
@@ -91,4 +101,35 @@
       <p><a href="/documents/<%= d.version_id %>/recall" class="danger-link">Thu hồi tài liệu</a></p>
     <% } %>
   </aside>
+</div>
+
+<!-- Cuối trang: lịch sử phiên bản + ghi vết (Yêu cầu 17.4).
+     Route chi tiết chưa truyền dữ liệu lịch sử/ghi vết nên hiển thị cấu trúc
+     an toàn với dòng gợi ý; không tạo route/truy cập dữ liệu mới. -->
+<div class="detail-footer">
+  <section class="detail-footer__block">
+    <h2>Lịch sử phiên bản</h2>
+    <% if (it.history && it.history.length > 0) { %>
+      <ul class="detail-history">
+        <% it.history.forEach(function(h){ %>
+          <li><a href="/documents/<%= h.version_id %>">phiên bản <%= h.version_no %></a> · <%= h.status %><% if (h.effective_date) { %> · <%= h.effective_date %><% } %></li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="muted">Xem lịch sử phiên bản của tài liệu này trong ghi vết bên dưới.</p>
+    <% } %>
+  </section>
+
+  <section class="detail-footer__block">
+    <h2>Ghi vết</h2>
+    <% if (it.audit && it.audit.length > 0) { %>
+      <ul class="detail-audit">
+        <% it.audit.forEach(function(a){ %>
+          <li><%= a.occurred_at || '' %> · <%= a.actor_name || '' %> · <%= a.event_type || '' %></li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="muted"><a href="/audit?object_id=<%= d.version_id %>">Xem ghi vết đầy đủ của phiên bản này</a>.</p>
+    <% } %>
+  </section>
 </div>

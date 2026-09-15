@@ -1,0 +1,22 @@
+<%
+/* components/status-label.eta — Nhãn trạng thái + Nhãn cấp phạm vi (Yêu cầu 3).
+ *
+ * Viên thuốc bo tròn, luôn kèm chữ mô tả (màu không bao giờ là dấu hiệu duy nhất — Req 2.1).
+ * An toàn với prop thiếu: mặc định kind='doc', text=''.
+ *
+ * Props:
+ *   - kind:  'doc' (mặc định) | 'scope'
+ *   - code:  mã trạng thái tài liệu (khi kind='doc'), ví dụ 'hieu_luc'
+ *   - level: cấp phạm vi (khi kind='scope'), ví dụ 'group' | 'bu' | 'site' | 'department'
+ *   - text:  chữ mô tả hiển thị (Req 3.3)
+ */
+const kind = it.kind || 'doc';
+const text = it.text || '';
+const code = it.code || '';
+const level = it.level || '';
+%>
+<% if (kind === 'scope') { %>
+<span class="scope-label scope-label--<%= level %>"><%= text %></span>
+<% } else { %>
+<span class="status-label status-label--<%= code %>"><%= text %></span>
+<% } %>

@@ -1,0 +1,21 @@
+<%
+/* components/empty-state.eta — Trang trống (Yêu cầu 15).
+ *
+ * Khi không có dữ liệu, hiển thị lý do CỤ THỂ vì sao trống (Req 15.1, 15.3) —
+ * caller truyền chữ cụ thể, thành phần chỉ kết xuất lại. Tuỳ chọn kèm một liên
+ * kết hành động gợi ý bước tiếp theo (Req 15.2) khi có đủ actionLabel + actionHref.
+ * An toàn với prop thiếu: mặc định reason='', hai prop hành động là tuỳ chọn.
+ *
+ * Props:
+ *   - reason: chữ nêu cụ thể vì sao trống (Req 15.1/15.3)
+ *   - actionLabel: nhãn liên kết hành động gợi ý (tuỳ chọn, Req 15.2)
+ *   - actionHref: đích liên kết hành động (tuỳ chọn, Req 15.2)
+ */
+const reason = it.reason || '';
+const actionLabel = it.actionLabel || '';
+const actionHref = it.actionHref || '';
+%>
+<div class="empty-state">
+  <p class="empty-state__reason"><%= reason %></p>
+  <% if (actionLabel && actionHref) { %><a class="empty-state__action" href="<%= actionHref %>"><%= actionLabel %></a><% } %>
+</div>

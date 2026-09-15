@@ -10,49 +10,76 @@
 
 <!-- Guard C.4: ngày hiệu lực đã trôi qua -> ẩn nút Xác nhận, chỉ còn Trả về -->
 <% if (!it.effectivePassed) { %>
-  <div class="warn-banner">
-    Ngày hiệu lực đã qua trong lúc chờ xử lý. Không sửa được ngày ở đây — tài liệu
-    sẽ được trả về người đăng ký để chọn lại ngày.
-  </div>
+  <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Ngày hiệu lực đã qua trong lúc chờ xử lý. Không sửa được ngày ở đây — tài liệu sẽ được trả về người đăng ký để chọn lại ngày.' }) %>
 <% } %>
 
-<section class="checklist">
-  <h2>Checklist xác nhận</h2>
-  <form method="post" action="/confirm/<%= v.version_id %>/approve">
-    <input type="hidden" name="needs9b" value="<%= v.supersedes_version_id ? 'true' : 'false' %>">
-    <ul class="check-list">
-      <% it.checklist.forEach(function(c){ %>
-        <li class="check-item check-<%= c.kind %> level-<%= c.level %>">
-          <span class="check-no"><%= c.no %></span>
-          <% if (c.kind === 'auto') { %>
-            <span class="check-mark <%= c.pass ? 'ok':'fail' %>"><%= c.pass ? '✓' : '✗' %></span>
-            <span class="check-label"><%= c.label %></span>
-            <% if (c.note) { %><small class="check-note"><%= c.note %></small><% } %>
-          <% } else { %>
-            <!-- Mục Admin tự tích. Nhìn khác hẳn nhóm tự động. Không có nút tích tất cả. -->
-            <% if (c.no === '9b' && !it.viewedDiff) { %>
-              <label class="check-label admin locked">
-                <input type="checkbox" disabled> <b><%= c.label %></b>
-              </label>
-              <a class="btn-diff" href="/compare?from=<%= v.supersedes_version_id %>&to=<%= v.version_id %>">Xem so sánh trước</a>
-            <% } else { %>
-              <label class="check-label admin">
-                <input type="checkbox" name="chk<%= c.no %>"> <b><%= c.label %></b>
-              </label>
-            <% } %>
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
-
-    <% if (it.allowed && it.effectivePassed) { %>
-      <button type="submit" class="primary">Xác nhận</button>
+<!-- Bố cục hai cột (Yêu cầu 19.1): vùng xem tệp trái, checklist + nút quyết định cột phải. -->
+<div class="confirm-layout">
+  <!-- Cột trái: vùng xem tệp. Không phát minh route phục vụ tệp; nếu có
+       it.v.file_path thì nhúng/liên kết, ngược lại chỉ là ô placeholder. -->
+  <div class="confirm-file">
+    <div class="confirm-file__title">Xem tệp PDF</div>
+    <% if (v.file_path) { %>
+      <embed class="confirm-file__embed" src="<%= v.file_path %>" type="application/pdf">
+      <p class="confirm-file__link"><a href="<%= v.file_path %>">Mở tệp trong tab mới</a></p>
+    <% } else { %>
+      <div class="confirm-file__placeholder">Chưa có tệp để hiển thị. Đối chiếu nội dung theo checklist bên phải.</div>
     <% } %>
-  </form>
+  </div>
 
-  <!-- Từ chối: bắt buộc lý do -->
-  <form method="post" action="/confirm/<%= v.version_id %>/reject" class="reject-form">
-    <input name="reason" placeholder="Lý do từ chối (bắt buộc)" required>
-    <button type="submit" class="danger">Từ chối / Trả về người đăng ký</button>
-  </form>
-</section>
+  <!-- Cột phải: checklist + nút quyết định (dính theo cuộn). -->
+  <section class="confirm-panel checklist">
+    <h2>Checklist xác nhận</h2>
+    <form method="post" action="/confirm/<%= v.version_id %>/approve">
+      <input type="hidden" name="needs9b" value="<%= v.supersedes_version_id ? 'true' : 'false' %>">
+
+      <!-- Nhóm TỰ ĐỘNG: dấu tự động (Yêu cầu 19.2 / 7). -->
+      <h3 class="check-group__title">TỰ ĐỘNG</h3>
+      <ul class="check-list">
+        <% it.checklist.forEach(function(c){ %>
+          <% if (c.kind === 'auto') { %>
+            <li class="check-item check-<%= c.kind %> level-<%= c.level %>">
+              <span class="check-no"><%= c.no %></span>
+              <span class="check-mark <%= c.pass ? 'ok':'fail' %>"><%= c.pass ? '✓' : '✕' %></span>
+              <span class="check-label"><%= c.label %></span>
+              <% if (c.note) { %><small class="check-note"><%= c.note %></small><% } %>
+            </li>
+          <% } %>
+        <% }) %>
+      </ul>
+
+      <!-- Nhóm TỰ ĐỐI CHIẾU: ô tích thật, chữ đậm, nền khác (Yêu cầu 19.2 / 7.3). -->
+      <h3 class="check-group__title">TỰ ĐỐI CHIẾU</h3>
+      <ul class="check-list">
+        <% it.checklist.forEach(function(c){ %>
+          <% if (c.kind !== 'auto') { %>
+            <!-- Mục Admin tự tích. Nhìn khác hẳn nhóm tự động. Không có nút tích tất cả. -->
+            <li class="check-item check-<%= c.kind %> check-item--manual level-<%= c.level %>">
+              <span class="check-no"><%= c.no %></span>
+              <% if (c.no === '9b' && !it.viewedDiff) { %>
+                <label class="check-label admin locked">
+                  <input type="checkbox" disabled> <span class="lock-glyph" aria-hidden="true">🔒</span> <b><%= c.label %></b>
+                </label>
+                <a class="btn-diff" href="/compare?from=<%= v.supersedes_version_id %>&to=<%= v.version_id %>">Xem so sánh trước</a>
+              <% } else { %>
+                <label class="check-label admin">
+                  <input type="checkbox" name="chk<%= c.no %>"> <b><%= c.label %></b>
+                </label>
+              <% } %>
+            </li>
+          <% } %>
+        <% }) %>
+      </ul>
+
+      <% if (it.allowed && it.effectivePassed) { %>
+        <button type="submit" class="primary">Xác nhận</button>
+      <% } %>
+    </form>
+
+    <!-- Từ chối: bắt buộc lý do -->
+    <form method="post" action="/confirm/<%= v.version_id %>/reject" class="reject-form">
+      <input name="reason" placeholder="Lý do từ chối (bắt buộc)" required>
+      <button type="submit" class="danger">Từ chối / Trả về người đăng ký</button>
+    </form>
+  </section>
+</div>

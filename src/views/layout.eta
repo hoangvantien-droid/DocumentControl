@@ -44,6 +44,7 @@
         <% if (nav.isAdmin) { %><li><a href="/admin/org">Quản trị tổ chức</a></li><% } %>
         <% if (nav.isAdmin) { %><li><a href="/admin/users">Quản trị người dùng</a></li><% } %>
         <% if (nav.isAdmin) { %><li><a href="/admin/roles">Vai trò</a></li><% } %>
+        <% if (nav.isAdmin) { %><li><a href="/design">Trưng bày thành phần</a></li><% } %>
         <% if (nav.canRelease) { %><li><a href="/ops/quality">Chất lượng nạp</a></li><% } %>
         <% if (nav.canRelease) { %><li><a href="/ops/usage">Mức độ sử dụng</a></li><% } %>
         <% if (nav.canRelease) { %><li><a href="/audit">Ghi vết</a></li><% } %>

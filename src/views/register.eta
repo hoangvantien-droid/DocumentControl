@@ -4,8 +4,16 @@
 <h1>Đăng ký tài liệu ban hành</h1>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
+<%~ include('/components/progress-steps.eta', { steps: [
+  { label: '① Tài liệu', state: 'current' },
+  { label: '② Hiệu lực', state: 'todo' },
+  { label: '③ Phân loại', state: 'todo' }
+] }) %>
+
+<div class="reg-layout">
+<div class="reg-main">
 <form method="post" action="/register" class="reg-form" enctype="multipart/form-data">
-  <fieldset>
+  <fieldset id="field-doc_id">
     <legend>Định danh &amp; phạm vi</legend>
     <label>Số hiệu tài liệu
       <input name="doc_id" required value="<%= val.doc_id || '' %>" placeholder="MML/QA/HD-005">
@@ -45,7 +53,7 @@
         <% it.depts.forEach(function(x){ %><option value="<%= x.dept_id %>"><%= x.dept_code %></option><% }) %>
       </select>
     </label>
-    <label>Tệp PDF của tài liệu
+    <label id="field-file">Tệp PDF của tài liệu
       <input type="file" name="file" accept="application/pdf" required>
     </label>
   </fieldset>
@@ -80,7 +88,7 @@
     <div id="recip-count" class="recip-count muted"></div>
   </fieldset>
 
-  <fieldset>
+  <fieldset id="field-change_significance">
     <legend>Phiên bản mới (nếu thay thế bản cũ)</legend>
     <label>version_id bản gốc (supersedes) <input name="supersedes_version_id" value="<%= val.supersedes_version_id || '' %>"></label>
     <label>Mức độ thay đổi
@@ -88,10 +96,11 @@
         <option value="lon">Lớn</option><option value="nho">Nhỏ</option>
       </select>
     </label>
+    <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Thay đổi nhỏ nghĩa là cả xưởng KHÔNG phải xác nhận đọc lại.' }) %>
     <label>Tóm tắt thay đổi (bắt buộc nếu lớn) <input name="change_summary" value="<%= val.change_summary || '' %>"></label>
   </fieldset>
 
-  <fieldset>
+  <fieldset id="field-link_code">
     <legend>Nhãn liên kết (bắt buộc ít nhất một)</legend>
     <label>Loại nhãn
       <select name="link_type">
@@ -108,3 +117,15 @@
   <button type="submit" class="primary">Nộp đăng ký</button>
   <button type="submit" class="btn-diff" formaction="/register/draft">Lưu nháp</button>
 </form>
+</div>
+
+<aside class="reg-checklist">
+  <h2 class="reg-checklist__title">Cần hoàn tất</h2>
+  <ul class="check-list">
+    <a href="#field-doc_id" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đủ trường bắt buộc' }) %></a>
+    <a href="#field-file" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã chọn tệp PDF' }) %></a>
+    <a href="#field-change_significance" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Khai mức độ thay đổi nếu thay thế' }) %></a>
+    <a href="#field-link_code" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã có nhãn liên kết' }) %></a>
+  </ul>
+</aside>
+</div>

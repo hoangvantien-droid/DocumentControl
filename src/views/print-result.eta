@@ -13,3 +13,21 @@
     trang tra cứu không cần đăng nhập, chỉ hiện tình trạng còn dùng được hay không.
   </p>
 </div>
+
+<%/* Lớp phủ bản in (Yêu cầu 13): hiện trên cùng khi in, viền nét đứt + nền xanh
+     rất nhạt (khối cơ sở trong app.css). Không có route ảnh QR nên dùng ô giữ chỗ
+     có viền hiển thị đường dẫn tra cứu thay vì bịa ra ảnh. */%>
+<div class="print-overlay">
+  <div class="print-overlay__qr">
+    <p class="muted">QR tra cứu</p>
+    <code>/verify/<%= rec.verify_token %></code>
+  </div>
+  <div class="print-overlay__meta">
+    <p>Số hiệu: <b><%= rec.doc_id %></b></p>
+    <p>Phiên bản: <%= rec.version_no %></p>
+    <p>Mã bản in: <code><%= rec.print_id %></code></p>
+    <p>Ngày in: <%= rec.printed_at %></p>
+    <p>Đường dẫn tra cứu: <code>/verify/<%= rec.verify_token %></code></p>
+  </div>
+  <p class="print-overlay__warn">Bản in chỉ có giá trị tại thời điểm in — quét QR để kiểm tra</p>
+</div>

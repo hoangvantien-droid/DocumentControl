@@ -2,39 +2,56 @@
 
 <h1>Kết quả tìm kiếm</h1>
 
-<form method="get" action="/search" class="search-bar-full">
-  <input type="search" name="q" value="<%= it.q %>" placeholder="Tìm số hiệu, tiêu đề, nội dung…" autofocus>
-  <label class="hist-toggle">
-    <input type="checkbox" name="historical" value="1" <%= it.includeHistorical ? 'checked' : '' %>>
-    Bao gồm bản lịch sử
-  </label>
-  <button type="submit">Tìm</button>
-</form>
+<%
+/* Trang kết quả tìm kiếm (Yêu cầu 16). Bố cục hai cột:
+ *   - .search-filters: cột lọc trái 200px cố định (16.1). CHỈ TRÌNH BÀY —
+ *     không nối logic lọc phía máy chủ (không đổi route/domain). Các ô tích
+ *     là gợi ý trực quan; "Xoá lọc" quay về /search?q=<q>.
+ *   - .search-results-col: danh sách kết quả chiếm phần còn lại (min-width:0
+ *     để không tràn/cuộn ngang ở 1280px — Yêu cầu 2.3).
+ * Thanh trên (.search-bar-full) giữ ô tìm + công tắc "Bao gồm bản lịch sử"
+ * + số kết quả (16.2). Mỗi kết quả dùng result-card (16.3, Yêu cầu 9.2–9.5).
+ */
+const q = it.q || '';
+const clearHref = '/search?q=' + encodeURIComponent(q);
+const docTypes = ['SOP', 'WI', 'Form', 'Policy', 'External'];
+%>
 
-<% if (it.q && it.hits.length === 0) { %>
-  <!-- Màn không có kết quả (T-058): gợi ý 3 việc, không để hiểu là tài liệu không tồn tại -->
-  <div class="no-results">
-    <p>Không tìm thấy kết quả cho "<b><%= it.q %></b>".</p>
-    <ul>
-      <li>Nới bộ lọc hoặc bỏ bớt từ khoá.</li>
-      <li>Bật "Bao gồm bản lịch sử" ở trên — tài liệu có thể đã hết hiệu lực.</li>
-      <li>Thử hỏi đáp — nội dung có thể diễn đạt khác từ khoá bạn gõ.</li>
-    </ul>
+<div class="search-layout">
+  <aside class="search-filters">
+    <h2>Bộ lọc</h2>
+    <fieldset>
+      <legend>Loại tài liệu</legend>
+      <% docTypes.forEach(function(t){ %>
+        <label class="filter-check"><input type="checkbox" name="doc_type" value="<%= t %>"> <%= t %></label>
+      <% }) %>
+    </fieldset>
+    <a class="filter-clear" href="<%= clearHref %>">Xoá lọc</a>
+  </aside>
+
+  <div class="search-results-col">
+    <form method="get" action="/search" class="search-bar-full">
+      <input type="search" name="q" value="<%= q %>" placeholder="Tìm số hiệu, tiêu đề, nội dung…" autofocus>
+      <label class="hist-toggle">
+        <input type="checkbox" name="historical" value="1" <%= it.includeHistorical ? 'checked' : '' %>>
+        Bao gồm bản lịch sử
+      </label>
+      <button type="submit">Tìm</button>
+    </form>
+
+    <% if (it.q && it.hits.length === 0) { %>
+      <%~ include('/components/empty-state.eta', {
+        reason: 'Không tìm thấy kết quả cho "' + q + '". Tài liệu có thể đã hết hiệu lực hoặc dùng từ khoá khác.',
+        actionLabel: 'Bật "Bao gồm bản lịch sử" và tìm lại',
+        actionHref: '/search?q=' + encodeURIComponent(q) + '&historical=1'
+      }) %>
+    <% } else { %>
+      <p class="result-count"><%= it.hits.length %> kết quả</p>
+      <ul class="result-list">
+        <% it.hits.forEach(function(h){ %>
+          <%~ include('/components/result-card.eta', { hit: h }) %>
+        <% }) %>
+      </ul>
+    <% } %>
   </div>
-<% } else { %>
-  <p class="result-count"><%= it.hits.length %> kết quả</p>
-  <ul class="result-list">
-    <% it.hits.forEach(function(h){ %>
-      <li class="result-item <%= h.status !== 'hieu_luc' ? 'historical' : '' %>">
-        <div class="result-line1">
-          <a href="/documents/<%= h.version_id %>"><b><%= h.doc_id %></b> — <%= h.title %></a>
-          <span class="status status-<%= h.status %>"><%= h.status %></span>
-        </div>
-        <div class="result-line2">Phiên bản <%= h.version_no %> · khớp: <%= h.match_level %></div>
-        <% if (h.match_level === 'section' && h.snippet) { %>
-          <div class="result-snippet"><b><%= h.section_code %> <%= h.section_title %>:</b> <%= h.snippet %></div>
-        <% } %>
-      </li>
-    <% }) %>
-  </ul>
-<% } %>
+</div>

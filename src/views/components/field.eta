@@ -1,0 +1,36 @@
+<%
+/* components/field.eta — Ô nhập + nhãn, 4 trạng thái (Yêu cầu 6).
+ *
+ * Nhãn đặt PHÍA TRÊN ô nhập, không đặt bên trái (Req 6.1). Bốn trạng thái:
+ *   - Thường:    .field (viền xám)
+ *   - Đang nhập: .field__input:focus (viền xanh hải quân — ở CSS, Req 6.2)
+ *   - Lỗi:       .field--error (viền đỏ) + .field__hint--error chữ đỏ nêu
+ *                CÁCH SỬA, không chỉ báo lỗi (Req 6.3) — nội dung từ prop hint.
+ *   - Khoá:      .field--locked (nền phụ) + ổ khoá 🔒 cạnh nhãn và input bị
+ *                disable (Req 6.4). Ổ khoá là ký tự bổ trợ kèm chữ, không
+ *                thay chữ (đúng tinh thần Req 22.3).
+ * An toàn với prop thiếu: mặc định label='', name='', type='text', value='',
+ * state='' (Thường).
+ *
+ * Props:
+ *   - label:  nhãn phía trên ô
+ *   - name:   thuộc tính name/id của ô
+ *   - type:   'text' (mặc định) | 'email' | 'number' | ...
+ *   - value:  giá trị hiện tại
+ *   - state:  '' (Thường, mặc định) | 'error'
+ *   - hint:   ghi chú dưới ô; khi state='error' là chữ đỏ nêu cách sửa
+ *   - locked: khoá ô (boolean) — thêm 🔒 và disable input (Req 6.4)
+ */
+const label = it.label || '';
+const name = it.name || '';
+const type = it.type || 'text';
+const value = it.value || '';
+const state = it.state || '';
+const hint = it.hint || '';
+const locked = !!it.locked;
+%>
+<div class="field field--<%= state %><%= locked ? ' field--locked' : '' %>">
+  <label class="field__label" for="<%= name %>"><%= label %><% if (locked) { %> <span class="field__lock" aria-hidden="true">🔒</span> (đã khoá)<% } %></label>
+  <input class="field__input" id="<%= name %>" name="<%= name %>" type="<%= type %>" value="<%= value %>"<%= locked ? ' disabled' : '' %>>
+  <% if (state === 'error' && hint) { %><small class="field__hint field__hint--error"><%= hint %></small><% } else if (hint) { %><small class="field__hint"><%= hint %></small><% } %>
+</div>

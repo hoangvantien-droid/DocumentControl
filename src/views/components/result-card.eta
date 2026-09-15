@@ -1,0 +1,43 @@
+<%
+/* components/result-card.eta — Thẻ kết quả tìm kiếm (Yêu cầu 9.2–9.5).
+ *
+ * Ba dòng theo DCS-12 §3.8. Chỉ trình bày — KHÔNG truy cập dữ liệu ngoài các
+ * trường có sẵn trên hit. An toàn với prop thiếu: mặc định hit = {}.
+ *
+ * Props:
+ *   - hit: một đối tượng kết quả tìm kiếm, các trường thường có:
+ *       doc_id, version_id, title, status, version_no, match_level,
+ *       section_code, section_title, snippet
+ *     Các trường TÙY CHỌN nếu route cấp: scope_level (nhãn phạm vi),
+ *     effective_date, department_name (dòng 2), current_version_no (bản đang áp dụng).
+ *
+ * Dòng 1 (.result-card__line1): số hiệu ĐẬM + tiêu đề + nhãn trạng thái + nhãn phạm vi (9.2).
+ * Dòng 2 (.result-card__line2): phiên bản · ngày hiệu lực · bộ phận, chữ phụ nhạt (9.3).
+ * Dòng 3 (.result-card__snippet): chỉ khi khớp cấp mục — tên mục + trích nền xám rất
+ *   nhạt, từ khoá bôi vàng qua .hl (9.4).
+ * Bản hết hiệu lực (9.5): .result-card--historical (nền xám toàn thẻ, nhãn đỏ) +
+ *   .result-card__superseded nêu bản đang áp dụng.
+ */
+const hit = it.hit || {};
+const isHistorical = hit.status && hit.status !== 'hieu_luc';
+%>
+<li class="result-card<%= isHistorical ? ' result-card--historical' : '' %>">
+  <div class="result-card__line1">
+    <a href="/documents/<%= hit.version_id %>"><strong><%= hit.doc_id %></strong> — <%= hit.title %></a>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: hit.status, text: hit.status }) %>
+    <% if (hit.scope_level) { %>
+      <%~ include('/components/status-label.eta', { kind: 'scope', level: hit.scope_level, text: hit.scope_level }) %>
+    <% } %>
+  </div>
+  <div class="result-card__line2">Phiên bản <%= hit.version_no %> · khớp: <%= hit.match_level %></div>
+  <% if (hit.match_level === 'section' && hit.snippet) { %>
+    <div class="result-card__snippet"><strong><%= hit.section_code %> <%= hit.section_title %>:</strong> <span class="hl"><%= hit.snippet %></span></div>
+  <% } %>
+  <% if (isHistorical) { %>
+    <% if (hit.current_version_no) { %>
+      <div class="result-card__superseded">Bản đã hết hiệu lực — bản đang áp dụng: phiên bản <%= hit.current_version_no %>.</div>
+    <% } else { %>
+      <div class="result-card__superseded">Bản đã hết hiệu lực — hãy mở bản đang áp dụng hiện hành.</div>
+    <% } %>
+  <% } %>
+</li>

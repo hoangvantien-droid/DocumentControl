@@ -22,7 +22,7 @@
     </main>
   <% } else { %>
     <main class="verify-card verify-bad">
-      <div class="verify-big">✗</div>
+      <div class="verify-big">✕</div>
       <% if (r.status === 'het_hieu_luc') { %>
         <p>Bản này ĐÃ HẾT HIỆU LỰC<% if (r.currentVersionNo) { %> — bản mới nhất là phiên bản <%= r.currentVersionNo %><% } %>.</p>
       <% } else if (r.status === 'thu_hoi') { %>
