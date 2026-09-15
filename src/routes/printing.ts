@@ -17,9 +17,14 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql): void {
     async (req, reply) => {
       const user = requireUser(req, reply);
       if (!user) return reply;
+      // BUG-002: req.body có thể là undefined (POST không có body / content-type
+      // không phải form hay multipart). Đọc req.body.location trực tiếp khi đó
+      // ném "Cannot read properties of undefined" -> 500 trước cả khi vào
+      // registerPrint. Đọc phòng thủ để mọi lần in đều đi đúng luồng nghiệp vụ.
+      const body = (req.body ?? {}) as { location?: string };
       try {
         const rec = await registerPrint(sql, {
-          versionId: req.params.id, printedBy: user.user_id, intendedLocation: req.body.location || null,
+          versionId: req.params.id, printedBy: user.user_id, intendedLocation: body.location || null,
         });
         return reply.view('print-result.eta', { rec });
       } catch (err) {

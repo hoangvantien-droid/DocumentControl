@@ -30,6 +30,43 @@ export interface DocumentInput {
   scopeDeptId?: string | null;
 }
 
+/**
+ * Chuẩn hoá phạm vi tài liệu theo scope_level (khớp CHECK chk_scope_ref của
+ * bảng documents). Form gửi lên có thể để chuỗi rỗng "" ở các con trỏ scope
+ * không dùng — truyền thẳng vào cột uuid sẽ ném 22P02 (invalid input syntax
+ * for type uuid). Thiếu con trỏ đúng cấp thì vi phạm chk_scope_ref (23514).
+ * Đây là ĐIỂM DUY NHẤT xử lý cho cả /register và /register/draft (sửa BUG-003):
+ * giữ đúng một con trỏ theo cấp, các con trỏ khác về NULL, và ném BusinessError
+ * (không để rơi xuống lỗi ràng buộc DB) khi con trỏ bắt buộc bị thiếu.
+ */
+export function normalizeDocumentScope(doc: DocumentInput): DocumentInput {
+  const clean = (v: string | null | undefined): string | null => {
+    if (v == null) return null;
+    const t = String(v).trim();
+    return t === '' ? null : t;
+  };
+  const bu = clean(doc.scopeBuId);
+  const site = clean(doc.scopeSiteId);
+  const dept = clean(doc.scopeDeptId);
+  const base = { docId: doc.docId, docType: doc.docType, origin: doc.origin };
+
+  switch (doc.scopeLevel) {
+    case 'group':
+      return { ...base, scopeLevel: 'group', scopeBuId: null, scopeSiteId: null, scopeDeptId: null };
+    case 'bu':
+      if (!bu) throw new BusinessError('reg.scope_bu', 'Phạm vi cấp Ngành hàng (BU) bắt buộc chọn BU');
+      return { ...base, scopeLevel: 'bu', scopeBuId: bu, scopeSiteId: null, scopeDeptId: null };
+    case 'site':
+      if (!site) throw new BusinessError('reg.scope_site', 'Phạm vi cấp Nhà máy (Site) bắt buộc chọn Site');
+      return { ...base, scopeLevel: 'site', scopeBuId: null, scopeSiteId: site, scopeDeptId: null };
+    case 'dept':
+      if (!dept) throw new BusinessError('reg.scope_dept', 'Phạm vi cấp Bộ phận bắt buộc chọn Bộ phận');
+      return { ...base, scopeLevel: 'dept', scopeBuId: null, scopeSiteId: null, scopeDeptId: dept };
+    default:
+      throw new BusinessError('reg.scope_level', `Cấp phạm vi không hợp lệ: ${String(doc.scopeLevel)}`);
+  }
+}
+
 export interface VersionInput {
   docId: string;
   versionNo: string;
@@ -58,10 +95,13 @@ export interface VersionInput {
 export async function ensureDocument(tx: TransactionSql, doc: DocumentInput): Promise<void> {
   const existing = await tx`SELECT doc_id FROM documents WHERE doc_id = ${doc.docId}`;
   if (existing.length > 0) return;
+  // Chuẩn hoá + kiểm tra phạm vi TRƯỚC khi ghi (sửa BUG-003): mọi con trỏ scope
+  // không dùng về NULL và con trỏ bắt buộc phải có, tránh 22P02 / chk_scope_ref.
+  const d = normalizeDocumentScope(doc);
   await tx`
     INSERT INTO documents (doc_id, doc_type, origin, scope_level, scope_bu_id, scope_site_id, scope_dept_id)
-    VALUES (${doc.docId}, ${doc.docType}, ${doc.origin}, ${doc.scopeLevel},
-            ${doc.scopeBuId ?? null}, ${doc.scopeSiteId ?? null}, ${doc.scopeDeptId ?? null})`;
+    VALUES (${d.docId}, ${d.docType}, ${d.origin}, ${d.scopeLevel},
+            ${d.scopeBuId ?? null}, ${d.scopeSiteId ?? null}, ${d.scopeDeptId ?? null})`;
 }
 
 /** Kiểm tra khi nộp (DCS-3 §C.2, mức Chặn). Ném BusinessError nếu vi phạm. */
@@ -206,6 +246,9 @@ export async function saveDraft(
     }
     await ensureDocument(tx as TransactionSql, doc);
     const versionId = randomUUID();
+    // BUG-003: nháp có thể chưa chọn bộ phận sở hữu. Chuỗi rỗng ghi vào cột uuid
+    // owner_department_id sẽ ném 22P02 — chuyển '' về NULL (cột cho phép NULL).
+    const ownerDeptId = (v.ownerDepartmentId ?? '').trim() || null;
     await tx`
       INSERT INTO document_versions (
         version_id, doc_id, version_no, title,
@@ -218,7 +261,7 @@ export async function saveDraft(
         ${v.issuedDate ?? today()}, ${v.approverName ?? '(chưa điền)'}, ${v.approvalReference ?? null}, ${v.approvalMethod ?? 'ky_so'},
         ${v.effectiveDate ?? today()}, ${v.reviewCycleMonths ?? 12},
         'thu_cong', ${v.filePath}, ${v.fileHash},
-        'cho_hoan_thien', ${v.registrantUserId}, ${v.ownerDepartmentId}
+        'cho_hoan_thien', ${v.registrantUserId}, ${ownerDeptId}
       )`;
     await writeAudit(tx as TransactionSql, {
       eventType: 'sua_truoc_khi_nop', actorUserId: v.registrantUserId,

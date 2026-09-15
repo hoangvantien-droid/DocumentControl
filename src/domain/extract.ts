@@ -60,7 +60,12 @@ export async function extractPdf(filePath: string): Promise<ExtractResult> {
 
   try {
     const pdf = await getDocumentProxy(new Uint8Array(buffer));
-    const { totalPages, text } = await extractText(pdf, { mergePages: true });
+    // BUG-001: KHÔNG dùng mergePages — nó gộp mọi trang thành một chuỗi phẳng và
+    // MẤT ký tự newline, khiến splitSections (khớp HEADING_RE theo dòng) luôn
+    // trả 0 mục và mọi tài liệu SOP/WI/Policy/External kẹt ở kem_tin_cay. Không
+    // merge thì unpdf trả mảng text theo trang, GIỮ newline trong từng trang;
+    // nối các trang bằng '\n' để khôi phục đúng cấu trúc dòng cho bóc tách.
+    const { totalPages, text } = await extractText(pdf, { mergePages: false });
     const fullText = Array.isArray(text) ? text.join('\n') : text;
     const sections = splitSections(fullText);
 

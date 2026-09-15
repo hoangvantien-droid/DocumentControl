@@ -124,28 +124,47 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       filePath = stored.filePath;
       fileHash = stored.fileHash;
     }
-    await saveDraft(
-      sql,
-      {
-        docId: (b.doc_id ?? '').trim(),
-        docType: (b.doc_type ?? 'SOP') as DocType,
-        origin: (b.origin ?? 'noi_bo') as Origin,
-        scopeLevel: (b.scope_level ?? 'site') as ScopeLevel,
-        scopeBuId: b.scope_bu_id || null,
-        scopeSiteId: b.scope_site_id || null,
-        scopeDeptId: b.scope_dept_id || null,
-      },
-      {
-        docId: (b.doc_id ?? '').trim(),
-        versionNo: (b.version_no ?? 'nhap').trim() || 'nhap',
-        title: (b.title ?? '(nháp)').trim() || '(nháp)',
-        registrantUserId: user.user_id,
-        ownerDepartmentId: b.owner_department_id ?? '',
-        filePath: filePath || '(chưa có tệp)',
-        fileHash: fileHash || 'draft',
-      },
-    );
-    return reply.redirect('/my-documents');
+    // BUG-003: lưu nháp là bản CHƯA hoàn thiện, không ép người dùng chọn đủ
+    // phạm vi. Nếu chưa chọn cấp phạm vi (hoặc chọn cấp cần con trỏ mà chưa có
+    // con trỏ), lùi về 'group' — cấp duy nhất không cần con trỏ, hợp lệ với
+    // chk_scope_ref. Khi nộp thật ở /register mới validate phạm vi đầy đủ.
+    const rawLevel = (b.scope_level ?? '').trim();
+    const hasPointer =
+      (rawLevel === 'bu' && !!(b.scope_bu_id || '').trim()) ||
+      (rawLevel === 'site' && !!(b.scope_site_id || '').trim()) ||
+      (rawLevel === 'dept' && !!(b.scope_dept_id || '').trim());
+    const draftScopeLevel = (rawLevel === 'group' || hasPointer ? rawLevel : 'group') as ScopeLevel;
+    try {
+      await saveDraft(
+        sql,
+        {
+          docId: (b.doc_id ?? '').trim(),
+          docType: (b.doc_type ?? 'SOP') as DocType,
+          origin: (b.origin ?? 'noi_bo') as Origin,
+          scopeLevel: draftScopeLevel,
+          scopeBuId: b.scope_bu_id || null,
+          scopeSiteId: b.scope_site_id || null,
+          scopeDeptId: b.scope_dept_id || null,
+        },
+        {
+          docId: (b.doc_id ?? '').trim(),
+          versionNo: (b.version_no ?? 'nhap').trim() || 'nhap',
+          title: (b.title ?? '(nháp)').trim() || '(nháp)',
+          registrantUserId: user.user_id,
+          ownerDepartmentId: b.owner_department_id ?? '',
+          filePath: filePath || '(chưa có tệp)',
+          fileHash: fileHash || 'draft',
+        },
+      );
+      return reply.redirect('/my-documents');
+    } catch (err) {
+      if (isBusinessError(err)) {
+        const [bus, sites, depts] = await Promise.all([listBu(sql), listSites(sql), listDepartments(sql)]);
+        reply.code(err.httpStatus);
+        return reply.view('register.eta', { bus, sites, depts, error: err.message, values: b });
+      }
+      throw err;
+    }
   });
 
   // Đếm số người sẽ nhận theo bộ phận (T-023) — htmx cập nhật realtime.
