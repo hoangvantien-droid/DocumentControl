@@ -1,4 +1,4 @@
-﻿-- 006_fix_verify_token_length.sql — BUG-002 (UAT 2026-09-15, mức Chặn).
+-- 006_fix_verify_token_length.sql — BUG-002 (UAT 2026-09-15, mức Chặn).
 --
 -- Triệu chứng: POST /documents/:id/print trả 500 với Postgres 22001
 --   "value too long for type character varying(43)".
