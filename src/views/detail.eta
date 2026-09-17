@@ -7,7 +7,7 @@
   <h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
   <p class="doc-title">
     <%= d.title %>
-    · <%~ include('/components/status-label.eta', { kind: 'doc', code: d.status, text: d.status }) %>
+    · <%~ include('/components/status-label.eta', { kind: 'doc', code: d.status, text:  (it.statusText || {})[d.status] || d.status }) %>
     <%~ include('/components/status-label.eta', { kind: 'scope', level: d.scope_level, text: d.scope_level }) %>
   </p>
 
@@ -112,7 +112,7 @@
     <% if (it.history && it.history.length > 0) { %>
       <ul class="detail-history">
         <% it.history.forEach(function(h){ %>
-          <li><a href="/documents/<%= h.version_id %>">phiên bản <%= h.version_no %></a> · <%= h.status %><% if (h.effective_date) { %> · <%= h.effective_date %><% } %></li>
+          <li><a href="/documents/<%= h.version_id %>">phiên bản <%= h.version_no %></a> · <%=  (it.statusText || {})[h.status] || h.status %><% if (h.effective_date) { %> · <%= h.effective_date %><% } %></li>
         <% }) %>
       </ul>
     <% } else { %>

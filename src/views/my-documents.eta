@@ -11,7 +11,7 @@
       <td><%= d.doc_id %></td>
       <td><%= d.version_no %></td>
       <td><%= d.title %></td>
-      <td><span class="status status-<%= d.status %>"><%= d.status %></span>
+      <td><span class="status status-<%= d.status %>"><%=  (it.statusText || {})[d.status] || d.status %></span>
         <% if (d.status === 'tu_choi' && d.rejection_reason) { %>
           <div class="reject-reason">Lý do: <%= d.rejection_reason %></div>
         <% } %>

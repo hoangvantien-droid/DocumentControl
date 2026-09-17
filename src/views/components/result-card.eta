@@ -24,7 +24,7 @@ const isHistorical = hit.status && hit.status !== 'hieu_luc';
 <li class="result-card<%= isHistorical ? ' result-card--historical' : '' %>">
   <div class="result-card__line1">
     <a href="/documents/<%= hit.version_id %>"><strong><%= hit.doc_id %></strong> — <%= hit.title %></a>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: hit.status, text: hit.status }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: hit.status, text:  (it.statusText || {})[hit.status] || hit.status }) %>
     <% if (hit.scope_level) { %>
       <%~ include('/components/status-label.eta', { kind: 'scope', level: hit.scope_level, text: hit.scope_level }) %>
     <% } %>

@@ -7,7 +7,7 @@
       <li>
         <a href="/documents/<%= h.version_id %>">
           <b><%= h.doc_id %></b> v<%= h.version_no %> — <%= h.title %>
-          <span class="status status-<%= h.status %>"><%= h.status %></span>
+          <span class="status status-<%= h.status %>"><%=  (it.statusText || {})[h.status] || h.status %></span>
         </a>
       </li>
     <% }) %>

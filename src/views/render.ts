@@ -30,6 +30,17 @@ function applyBasePath(html: string, basePath: string): string {
   });
 }
 
+/** Mã trạng thái máy -> chữ tiếng Việt hiển thị (UAT: bảng danh mục hiện mã thô). */
+export const STATUS_TEXT: Record<string, string> = {
+  cho_hoan_thien: 'Chờ hoàn thiện',
+  cho_xac_nhan: 'Chờ xác nhận',
+  tu_choi: 'Từ chối',
+  da_dang_ky: 'Đã đăng ký',
+  hieu_luc: 'Hiệu lực',
+  het_hieu_luc: 'Hết hiệu lực',
+  thu_hoi: 'Thu hồi',
+};
+
 export function registerViewLayer(app: FastifyInstance, eta: Eta, basePath: string): void {
   app.decorateReply('view', function (template: string, data: Record<string, unknown> = {}) {
     // Tự chèn user hiện tại, cờ thực đơn để mọi view dùng chung. Data route ghi đè.
@@ -38,6 +49,7 @@ export function registerViewLayer(app: FastifyInstance, eta: Eta, basePath: stri
       user: req?.currentUser ?? null,
       nav: req?.nav ?? {},
       basePath,
+      statusText: STATUS_TEXT,
       ...data,
     };
     let html = eta.render(template, merged);

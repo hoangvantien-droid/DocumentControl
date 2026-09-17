@@ -14,6 +14,7 @@ import {
   type DocType, type Origin, type ApprovalMethod, type ChangeSignificance,
 } from '../domain/registration.js';
 import type { ScopeLevel } from '../domain/roles.js';
+import { canRegisterDocuments } from '../domain/permissions.js';
 import { listBu, listSites, listDepartments } from '../domain/org.js';
 import { storeFile } from '../domain/file-store.js';
 import { countRecipientsFor } from '../domain/distribution.js';
@@ -33,10 +34,13 @@ interface RegBody {
 }
 
 export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
-  // Form đăng ký
+  // Form đăng ký — chặn cả GET với người không có quyền nộp (D.1 đã chặn POST).
   app.get('/register', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    if (!await canRegisterDocuments(sql, user.user_id)) {
+      return reply.code(403).send('Không có quyền đăng ký ban hành tài liệu');
+    }
     const [bus, sites, depts] = await Promise.all([listBu(sql), listSites(sql), listDepartments(sql)]);
     return reply.view('register.eta', { bus, sites, depts, error: null, values: {} });
   });
@@ -134,6 +138,9 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       (rawLevel === 'site' && !!(b.scope_site_id || '').trim()) ||
       (rawLevel === 'dept' && !!(b.scope_dept_id || '').trim());
     const draftScopeLevel = (rawLevel === 'group' || hasPointer ? rawLevel : 'group') as ScopeLevel;
+    // Giữ lại dữ liệu đã điền vào nháp (D.13): '' -> undefined để saveDraft
+    // dùng giá trị mặc định (tránh '' lọt vào cột date/number gây lỗi DB).
+    const draftCycle = Number(b.review_cycle_months);
     try {
       await saveDraft(
         sql,
@@ -150,6 +157,13 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
           docId: (b.doc_id ?? '').trim(),
           versionNo: (b.version_no ?? 'nhap').trim() || 'nhap',
           title: (b.title ?? '(nháp)').trim() || '(nháp)',
+          issuedDate: (b.issued_date ?? '').trim() || undefined,
+          approverName: (b.approver_name ?? '').trim() || undefined,
+          approvalReference: (b.approval_reference ?? '').trim() || null,
+          approvalMethod: ((b.approval_method ?? '').trim() || undefined) as ApprovalMethod | undefined,
+          effectiveDate: (b.effective_date ?? '').trim() || undefined,
+          reviewCycleMonths: Number.isFinite(draftCycle) && draftCycle >= 1 ? draftCycle : undefined,
+          expiryDate: (b.expiry_date ?? '').trim() || null,
           registrantUserId: user.user_id,
           ownerDepartmentId: b.owner_department_id ?? '',
           filePath: filePath || '(chưa có tệp)',
