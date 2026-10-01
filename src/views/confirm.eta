@@ -79,7 +79,7 @@
     <!-- Từ chối: bắt buộc lý do -->
     <form method="post" action="/confirm/<%= v.version_id %>/reject" class="reject-form">
       <input name="reason" placeholder="Lý do từ chối (bắt buộc)" required>
-      <button type="submit" class="danger">Từ chối / Trả về người đăng ký</button>
+      <button type="submit" class="danger">Trả lại người đăng ký</button>
     </form>
   </section>
 </div>

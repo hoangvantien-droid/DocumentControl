@@ -25,25 +25,25 @@
 <section class="design-section">
   <h2>1. Nhãn trạng thái (7 trạng thái tài liệu + 4 cấp phạm vi)</h2>
   <p class="design-row">
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_hoan_thien', text: 'Chờ hoàn thiện' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: 'Chờ xác nhận' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'tu_choi', text: 'Từ chối' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'da_dang_ky', text: 'Đã đăng ký' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'hieu_luc', text: 'Hiệu lực' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'het_hieu_luc', text: 'Hết hiệu lực' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'thu_hoi', text: 'Thu hồi' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_hoan_thien', text: it.docStatusLabel('cho_hoan_thien') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: it.docStatusLabel('cho_xac_nhan') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'tu_choi', text: it.docStatusLabel('tu_choi') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'da_dang_ky', text: it.docStatusLabel('da_dang_ky') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'hieu_luc', text: it.docStatusLabel('hieu_luc') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'het_hieu_luc', text: it.docStatusLabel('het_hieu_luc') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'thu_hoi', text: it.docStatusLabel('thu_hoi') }) %>
   </p>
   <p class="design-row">
-    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'group', text: 'Group' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'bu', text: 'BU' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'site', text: 'Site' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'department', text: 'Department' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'group', text: it.scopeLabel('group') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'bu', text: it.scopeLabel('bu') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'site', text: it.scopeLabel('site') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'department', text: it.scopeLabel('department') }) %>
   </p>
   <p class="design-row">
     <!-- Nhãn dài nhất — kiểm bố cục (Yêu cầu 23.2) -->
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'da_dang_ky', text: 'Người đăng ký ban hành' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: 'Treo chờ bản mới' }) %>
-    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_hoan_thien', text: 'Chờ hoàn thiện' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: it.docStatusLabel('cho_xac_nhan') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'da_dang_ky', text: it.docStatusLabel('da_dang_ky') }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'site', text: it.scopeLabel('site') }) %>
   </p>
 </section>
 
@@ -102,13 +102,13 @@
       <tr>
         <td>SOP-001</td>
         <td>Quy trình kiểm soát tài liệu</td>
-        <td><%~ include('/components/status-label.eta', { kind: 'doc', code: 'hieu_luc', text: 'Hiệu lực' }) %></td>
+        <td><%~ include('/components/status-label.eta', { kind: 'doc', code: 'hieu_luc', text: it.docStatusLabel('hieu_luc') }) %></td>
         <td><a href="#">Xem</a></td>
       </tr>
       <tr>
         <td>SOP-002</td>
         <td>Hướng dẫn đăng ký tài liệu</td>
-        <td><%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: 'Chờ xác nhận' }) %></td>
+        <td><%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: it.docStatusLabel('cho_xac_nhan') }) %></td>
         <td><a href="#">Xem</a></td>
       </tr>
       <tr class="empty-row"><td colspan="4">Chưa có tài liệu nào trong phạm vi của bạn.</td></tr>
@@ -130,14 +130,14 @@
 <section class="design-section">
   <h2>8. Thẻ kết quả tìm kiếm (result-card)</h2>
   <ul class="result-list">
-    <%~ include('/components/result-card.eta', { hit: {
+    <%~ include('/components/result-card.eta', { docStatusLabel: it.docStatusLabel, scopeLabel: it.scopeLabel, hit: {
       version_id: 'v1', doc_id: 'SOP-001', title: 'Quy trình kiểm soát tài liệu',
       status: 'hieu_luc', version_no: '2.0', match_level: 'title', scope_level: 'site' } }) %>
-    <%~ include('/components/result-card.eta', { hit: {
+    <%~ include('/components/result-card.eta', { docStatusLabel: it.docStatusLabel, scopeLabel: it.scopeLabel, hit: {
       version_id: 'v0', doc_id: 'SOP-001', title: 'Quy trình kiểm soát tài liệu',
       status: 'het_hieu_luc', version_no: '1.0', match_level: 'title',
       scope_level: 'site', current_version_no: '2.0' } }) %>
-    <%~ include('/components/result-card.eta', { hit: {
+    <%~ include('/components/result-card.eta', { docStatusLabel: it.docStatusLabel, scopeLabel: it.scopeLabel, hit: {
       version_id: 'v2', doc_id: 'SOP-003', title: 'Hướng dẫn vận hành thiết bị',
       status: 'hieu_luc', version_no: '1.0', match_level: 'section',
       section_code: '4.2', section_title: 'An toàn vận hành',

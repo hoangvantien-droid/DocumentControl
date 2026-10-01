@@ -11,8 +11,8 @@
       <td><%= d.version_no %></td>
       <td><%= d.title %></td>
       <td><%= d.doc_type %></td>
-      <td><%= d.scope_level %></td>
-      <td><span class="status status-<%= d.status %>"><%=  (it.statusText || {})[d.status] || d.status %></span></td>
+      <td><%= it.scopeLabel(d.scope_level) %></td>
+      <td><span class="status status-<%= d.status %>"><%= it.docStatusLabel(d.status) %></span></td>
       <td><%= d.effective_date || '' %></td>
     </tr>
     <% }) %>

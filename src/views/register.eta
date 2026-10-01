@@ -28,13 +28,13 @@
     <label>Nguồn
       <select name="origin">
         <option value="noi_bo" <%= val.origin==='noi_bo'?'selected':'' %>>Nội bộ</option>
-        <option value="ngoai_bo" <%= val.origin==='ngoai_bo'?'selected':'' %>>Ngoại bộ</option>
+        <option value="ngoai_bo" <%= val.origin==='ngoai_bo'?'selected':'' %>>Bên ngoài</option>
       </select>
     </label>
     <label>Cấp phạm vi
       <select name="scope_level">
         <% var scopeLevels = ['group','bu','site','dept']; scopeLevels.forEach(function(s){ %>
-          <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= s %></option>
+          <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= it.scopeLabel(s) %></option>
         <% }) %>
       </select>
     </label>
@@ -73,10 +73,10 @@
       </select>
     </label>
     <label>Ngày hiệu lực pháp lý (ngoại bộ) <input type="date" name="external_effective_date" value="<%= val.external_effective_date || '' %>"></label>
-    <label>Ngày hiệu lực (DCS) <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
+    <label>Ngày có hiệu lực áp dụng <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
     <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" value="<%= val.review_cycle_months || '12' %>" min="1"></label>
     <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= val.expiry_date || '' %>"></label>
-    <label>Bộ phận sở hữu
+    <label>Phòng/Ban chủ quản
       <select name="owner_department_id" required
               hx-get="/register/recipient-count" hx-trigger="change"
               hx-target="#recip-count" hx-swap="innerHTML"
@@ -90,7 +90,7 @@
 
   <fieldset id="field-change_significance">
     <legend>Phiên bản mới (nếu thay thế bản cũ)</legend>
-    <label>version_id bản gốc (supersedes) <input name="supersedes_version_id" value="<%= val.supersedes_version_id || '' %>"></label>
+    <label>Phiên bản này thay thế bản nào? <input name="supersedes_version_id" value="<%= val.supersedes_version_id || '' %>"></label>
     <label>Mức độ thay đổi
       <select name="change_significance"><option value="">--</option>
         <option value="lon">Lớn</option><option value="nho">Nhỏ</option>
@@ -114,7 +114,7 @@
     <label>Mã liên kết <input name="link_code" placeholder="BRC-9-5.6.2"></label>
   </fieldset>
 
-  <button type="submit" class="primary">Nộp đăng ký</button>
+  <button type="submit" class="primary">Gửi đăng ký ban hành</button>
   <button type="submit" class="btn-diff" formaction="/register/draft">Lưu nháp</button>
 </form>
 </div>
@@ -124,7 +124,7 @@
   <ul class="check-list">
     <a href="#field-doc_id" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đủ trường bắt buộc' }) %></a>
     <a href="#field-file" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã chọn tệp PDF' }) %></a>
-    <a href="#field-change_significance" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Khai mức độ thay đổi nếu thay thế' }) %></a>
+    <a href="#field-change_significance" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Nếu thay bản cũ, chọn mức độ thay đổi' }) %></a>
     <a href="#field-link_code" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã có nhãn liên kết' }) %></a>
   </ul>
 </aside>

@@ -1,6 +1,6 @@
 <% layout('layout.eta', { title: 'Hỏi đáp — DCS', user: it.user }) %>
 
-<h1>Hỏi đáp tài liệu <span class="tag">đang thử nghiệm</span></h1>
+<h1>Trợ lý tra cứu tài liệu <span class="tag">đang thử nghiệm</span></h1>
 
 <% if (!it.enabled) { %>
   <div class="warn-banner">Hỏi đáp AI chưa được bật (chưa cấu hình API embedding). Tìm kiếm và các chức năng khác vẫn hoạt động.</div>
@@ -8,7 +8,7 @@
 
 <form method="post" action="/qa" class="search-bar-full">
   <input type="text" name="question" value="<%= it.question %>" placeholder="Đặt câu hỏi về tài liệu đang hiệu lực…" autofocus>
-  <button type="submit">Hỏi</button>
+  <button type="submit">Tra cứu</button>
 </form>
 
 <% if (it.result) { %>
