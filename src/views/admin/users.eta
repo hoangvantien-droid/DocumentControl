@@ -18,7 +18,13 @@
       <td>
         <% var ds = (it.deptsByUser[u.user_id] || []); ds.forEach(function(did){
              var d = it.depts.find(function(x){return x.dept_id===did}); %>
-          <span class="chip"><%= d ? d.dept_code : did %></span>
+          <span class="chip"><%= d ? d.dept_code : did %>
+            <form method="post" action="/admin/users/remove-dept" style="display:inline">
+              <input type="hidden" name="user_id" value="<%= u.user_id %>">
+              <input type="hidden" name="dept_id" value="<%= did %>">
+              <button type="submit" class="chip-x" title="Xóa phòng ban này">×</button>
+            </form>
+          </span>
         <% }) %>
       </td>
       <td>
@@ -35,6 +41,12 @@
           <input type="hidden" name="active" value="<%= u.is_active ? 'false' : 'true' %>">
           <button type="submit"><%= u.is_active ? 'Ngừng' : 'Bật lại' %></button>
         </form>
+        <% if (u.is_active) { %>
+        <form method="post" action="/admin/users/delete" class="inline-form">
+          <input type="hidden" name="user_id" value="<%= u.user_id %>">
+          <button type="submit" class="btn--danger" onclick="return confirm('Xoá mềm user này? Họ sẽ không đăng nhập được nhưng dữ liệu giữ nguyên.')">Xoá</button>
+        </form>
+        <% } %>
       </td>
     </tr>
     <% }) %>

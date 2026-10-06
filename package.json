@@ -25,10 +25,12 @@
     "eta": "3.5.0",
     "fastify": "4.28.1",
     "postgres": "3.4.5",
+    "qrcode": "^1.5.4",
     "unpdf": "^0.12.1"
   },
   "devDependencies": {
     "@types/node": "20.14.0",
+    "@types/qrcode": "^1.5.6",
     "pino-pretty": "^11.2.2",
     "tsx": "4.19.2",
     "typescript": "5.6.3"

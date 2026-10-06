@@ -35,17 +35,23 @@
       <ul>
         <li><a href="/">Trang chủ</a></li>
         <li><a href="/documents">Danh mục tài liệu</a></li>
-        <li><a href="/qa">Trợ lý tra cứu (thử nghiệm)</a></li>
-        <% if (nav.canRegister) { %><li><a href="/my-documents">Tài liệu của tôi</a></li><% } %>
-        <% if (nav.canRelease) { %><li><a href="/pending-confirmation">Chờ tôi phê duyệt</a></li><% } %>
+        <li><a href="/qa">Hỏi đáp (thử nghiệm)</a></li>
+        <% if (nav.canSeeMyDocuments) { %><li><a href="/my-documents">Tài liệu của tôi</a></li><% } %>
+        <% if (nav.canRelease) { %><li><a href="/pending-confirmation">Chờ tôi xác nhận</a></li><% } %>
+        <% if (nav.isAuthorOnly) { %><li class="muted">Chờ tôi phê duyệt: không có quyền</li><% } %>
+        <% if (nav.canSeeDataCheck) { %><li><a href="/data-check">Kiểm tra dữ liệu nhập</a></li><% } %>
         <% if (nav.canRelease) { %><li><a href="/reviews">Rà soát định kỳ</a></li><% } %>
-        <% if (nav.canRegister || nav.canRelease) { %><li><a href="/packages">Đợt ban hành</a></li><% } %>
+        <% if (nav.canRegister || nav.canRelease) { %><li><a href="/packages">Gói ban hành</a></li><% } %>
         <% if (nav.canRelease) { %><li><a href="/functional-groups">Nhóm chức năng</a></li><% } %>
         <% if (nav.isAdmin) { %><li><a href="/admin/org">Quản trị tổ chức</a></li><% } %>
         <% if (nav.isAdmin) { %><li><a href="/admin/users">Quản trị người dùng</a></li><% } %>
         <% if (nav.isAdmin) { %><li><a href="/admin/roles">Vai trò</a></li><% } %>
-        <% if (nav.canRelease) { %><li><a href="/ops/quality">Kiểm tra dữ liệu nhập</a></li><% } %>
+        <% if (nav.isAdmin) { %><li><a href="/design">Trưng bày thành phần</a></li><% } %>
+        <% if (nav.canRelease) { %><li><a href="/ops/quality">Chất lượng nạp</a></li><% } %>
+        <% if (nav.canRelease) { %><li><a href="/ops/usage">Mức độ sử dụng</a></li><% } %>
+        <% if (nav.canRelease) { %><li><a href="/audit">Ghi vết</a></li><% } %>
       </ul>
+      <p class="phase-note">Giai đoạn 1 — L1 chưa vận hành</p>
     </nav>
 
     <main class="content">

@@ -10,7 +10,7 @@ import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
 import { registerPrint, verifyToken, auditQrLookup } from '../domain/printing.js';
 
-export function registerPrintingRoutes(app: FastifyInstance, sql: Sql): void {
+export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: { basePath: string; publicUrl: string }): void {
   // In bản kiểm soát — cần đăng nhập.
   app.post<{ Params: { id: string }; Body: { location?: string } }>(
     '/documents/:id/print',
@@ -25,6 +25,7 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql): void {
       try {
         const rec = await registerPrint(sql, {
           versionId: req.params.id, printedBy: user.user_id, intendedLocation: body.location || null,
+          basePath: config.basePath, publicUrl: config.publicUrl,
         });
         return reply.view('print-result.eta', { rec });
       } catch (err) {

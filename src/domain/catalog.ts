@@ -20,8 +20,12 @@ export interface CatalogRow {
   owner_department_id: string | null;
 }
 
-/** Danh mục tài liệu người dùng được thấy. */
-export async function listVisibleDocuments(sql: Sql, userId: string): Promise<CatalogRow[]> {
+/** Danh mục tài liệu người dùng được thấy. status=null không lọc. */
+export async function listVisibleDocuments(
+  sql: Sql,
+  userId: string,
+  status: string | null = null,
+): Promise<CatalogRow[]> {
   return sql<CatalogRow[]>`
     SELECT DISTINCT v.doc_id, v.version_id, v.version_no, v.title, v.status,
            d.doc_type, d.scope_level,
@@ -30,7 +34,7 @@ export async function listVisibleDocuments(sql: Sql, userId: string): Promise<Ca
            v.owner_department_id
       FROM document_versions v
       JOIN documents d ON d.doc_id = v.doc_id
-     WHERE
+     WHERE (
        -- Tài liệu mình nộp (mọi trạng thái)
        v.registrant_user_id = ${userId}
        -- Hoặc tài liệu trong phạm vi mình được xem (group, hoặc thuộc cây tổ chức)
@@ -53,6 +57,9 @@ export async function listVisibleDocuments(sql: Sql, userId: string): Promise<Ca
               OR (r.role_code='DC_BU_OWNER'        AND d.scope_level = 'bu'   AND r.scope_bu_id = d.scope_bu_id)
               OR (r.role_code='DC_SITE_QA_MANAGER' AND d.scope_level = 'site' AND r.scope_site_id = d.scope_site_id)
               OR (r.role_code='DC_DEPT_HEAD'       AND d.scope_level = 'dept' AND r.scope_dept_id = d.scope_dept_id)))
+       )
+       -- Lọc theo trạng thái (lỗi #6)
+       AND (${status}::varchar IS NULL OR v.status = ${status})
      ORDER BY v.doc_id, v.version_no DESC`;
 }
 

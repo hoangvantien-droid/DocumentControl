@@ -6,7 +6,7 @@
   <p><b><%= rec.doc_id %></b> phiên bản <%= rec.version_no %></p>
   <p>Mã bản in: <code><%= rec.print_id %></code></p>
   <p>Thời điểm: <%= rec.printed_at %></p>
-  <p>Mã tra cứu QR (đường dẫn): <code>/verify/<%= rec.verify_token %></code></p>
+  <p>Mã tra cứu QR (đường dẫn đầy đủ): <code><%= rec.verifyUrl %></code></p>
   <p class="muted">
     Lớp phủ đóng dấu (số hiệu, phiên bản, mã bản in, ngày in, QR, cảnh báo giá
     trị tại thời điểm in) được đóng khi kết xuất — tệp gốc không đổi. Quét QR ra
@@ -14,20 +14,18 @@
   </p>
 </div>
 
-<%/* Lớp phủ bản in (Yêu cầu 13): hiện trên cùng khi in, viền nét đứt + nền xanh
-     rất nhạt (khối cơ sở trong app.css). Không có route ảnh QR nên dùng ô giữ chỗ
-     có viền hiển thị đường dẫn tra cứu thay vì bịa ra ảnh. */%>
 <div class="print-overlay">
   <div class="print-overlay__qr">
     <p class="muted">QR tra cứu</p>
-    <code>/verify/<%= rec.verify_token %></code>
+    <%~ rec.qrSvg %>
+    <code><%= rec.verifyUrl %></code>
   </div>
   <div class="print-overlay__meta">
     <p>Số hiệu: <b><%= rec.doc_id %></b></p>
     <p>Phiên bản: <%= rec.version_no %></p>
     <p>Mã bản in: <code><%= rec.print_id %></code></p>
     <p>Ngày in: <%= rec.printed_at %></p>
-    <p>Đường dẫn tra cứu: <code>/verify/<%= rec.verify_token %></code></p>
+    <p>Đường dẫn tra cứu: <code><%= rec.verifyUrl %></code></p>
   </div>
   <p class="print-overlay__warn">Bản in chỉ có giá trị tại thời điểm in — quét QR để kiểm tra</p>
 </div>

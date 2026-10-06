@@ -6,10 +6,19 @@
  * KHI KẾT XUẤT, không sửa tệp gốc (nguyên tắc số 2). Tra cứu QR chỉ trả TÌNH
  * TRẠNG, tuyệt đối không trả nội dung tài liệu.
  */
+import { randomBytes } from 'node:crypto';
 import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import { canViewVersion } from './catalog.js';
+import QRCode from 'qrcode';
+
+/** Sinh token tra cứu QR URL-safe (base64url, không +/=) để tránh route 404. */
+export function generateVerifyToken(): string {
+  return randomBytes(32)
+    .toString('base64url')
+    .replace(/=+$/, '');
+}
 
 export interface PrintRecord {
   print_id: string;
@@ -17,12 +26,16 @@ export interface PrintRecord {
   doc_id: string;
   version_no: string;
   printed_at: string;
+  /** URL tra cứu đầy đủ (public, không cần đăng nhập) để dựng QR. */
+  verifyUrl: string;
+  /** SVG QR inline (lỗi #14) — trước đây chỉ in text đường dẫn. */
+  qrSvg: string;
 }
 
 /** Ghi nhận một lần in — sinh verify_token ngẫu nhiên (DB default). */
 export async function registerPrint(
   sql: Sql,
-  input: { versionId: string; printedBy: string; intendedLocation?: string | null },
+  input: { versionId: string; printedBy: string; intendedLocation?: string | null; basePath: string; publicUrl: string },
 ): Promise<PrintRecord> {
   return sql.begin(async (tx) => {
     const allowed = await canViewVersion(tx as unknown as Sql, input.printedBy, input.versionId);
@@ -35,16 +48,23 @@ export async function registerPrint(
     if (v.status !== 'hieu_luc') {
       throw new BusinessError('print.not_effective', 'Chỉ in được bản đang hiệu lực');
     }
+    const token = generateVerifyToken();
     const row = (await tx<{ print_id: string; verify_token: string; printed_at: string }[]>`
-      INSERT INTO printed_copies (version_id, printed_by, intended_location, overlay_applied)
-      VALUES (${input.versionId}, ${input.printedBy}, ${input.intendedLocation ?? null}, TRUE)
+      INSERT INTO printed_copies (version_id, printed_by, intended_location, overlay_applied, verify_token)
+      VALUES (${input.versionId}, ${input.printedBy}, ${input.intendedLocation ?? null}, TRUE, ${token})
       RETURNING print_id, verify_token, printed_at::text AS printed_at`)[0]!;
     await writeAudit(tx as TransactionSql, {
       eventType: 'in', actorUserId: input.printedBy,
       objectType: 'document_versions', objectId: input.versionId,
       afterState: { print_id: row.print_id },
     });
-    return { print_id: row.print_id, verify_token: row.verify_token, doc_id: v.doc_id, version_no: v.version_no, printed_at: row.printed_at };
+    const verifyUrl = `${input.publicUrl}${input.basePath}/verify/${row.verify_token}`;
+    const qrSvg = await QRCode.toString(verifyUrl, { type: 'svg', width: 120, margin: 1 });
+    return {
+      print_id: row.print_id, verify_token: row.verify_token,
+      doc_id: v.doc_id, version_no: v.version_no, printed_at: row.printed_at,
+      verifyUrl, qrSvg,
+    };
   }) as Promise<PrintRecord>;
 }
 

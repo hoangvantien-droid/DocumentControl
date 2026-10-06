@@ -2,6 +2,8 @@
  * src/routes/catalog.ts — danh mục, chi tiết, thu hồi (T-037, T-038, T-036).
  */
 import type { FastifyInstance } from 'fastify';
+import { existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
@@ -9,6 +11,7 @@ import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
 } from '../domain/catalog.js';
 import { recallVersion, recallImpact } from '../domain/lifecycle.js';
+import { canViewVersion as canViewDoc } from '../domain/catalog.js';
 import { canRelease } from '../domain/permissions.js';
 import { processVersionContent } from '../domain/content.js';
 import { acknowledge, mustAcknowledge, hasAcknowledged } from '../domain/acknowledgement.js';
@@ -18,11 +21,34 @@ import { listGroups } from '../domain/functional-groups.js';
 import type { Config } from '../config.js';
 
 export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
-  app.get('/documents', async (req, reply) => {
+  app.get<{ Querystring: { status?: string } }>('/documents', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const docs = await listVisibleDocuments(sql, user.user_id);
-    return reply.view('catalog.eta', { docs });
+    const status = (req.query.status ?? '').trim();
+    const docs = await listVisibleDocuments(sql, user.user_id, status || null);
+    return reply.view('catalog.eta', { docs, statusFilter: status });
+  });
+
+  // Lỗi #7: tải tệp PDF gốc của phiên bản đã được duyệt (da_dang_ky / hieu_luc).
+  // QAKSTL (và mọi người có quyền xem) được tải — không yêu cầu release.
+  app.get<{ Params: { id: string } }>('/documents/:id/download', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const row = (await sql<{ file_path: string; doc_id: string; version_no: string; status: string }[]>`
+      SELECT file_path, doc_id, version_no, status FROM document_versions
+       WHERE version_id = ${req.params.id}`)[0];
+    if (!row) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    if (!['da_dang_ky', 'hieu_luc'].includes(row.status)) {
+      reply.code(403); return reply.send('Chỉ tải được tệp của tài liệu đã được duyệt');
+    }
+    if (!(await canViewDoc(sql, user.user_id, req.params.id))) {
+      reply.code(403); return reply.send('Không có quyền tải tài liệu này');
+    }
+    const absPath = row.file_path;
+    if (!absPath || !existsSync(absPath)) { reply.code(404); return reply.send('Tệp không còn tồn tại'); }
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename="${row.doc_id}_v${row.version_no}.pdf"`);
+    return reply.send(readFileSync(absPath));
   });
 
   app.get<{ Params: { id: string } }>('/documents/:id', async (req, reply) => {

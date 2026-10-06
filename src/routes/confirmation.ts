@@ -9,14 +9,20 @@ import {
   loadForConfirm, buildChecklist, hasViewedDiff,
   confirmRegistration, rejectRegistration,
 } from '../domain/confirmation.js';
-import { canRelease } from '../domain/permissions.js';
+import { canRelease, roleCodesOf, hasAnyReleaseRole } from '../domain/permissions.js';
 
 export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void {
   // Hàng chờ tôi xác nhận — lọc theo quyền release (đơn giản: liệt kê cho_xac_nhan
   // rồi kiểm canRelease từng cái; quy mô nhỏ nên chấp nhận được).
+  // Lỗi #5: DC_AUTHOR (không có vai trò release) KHÔNG được vào trang này —
+  // chỉ được xem tình trạng phê duyệt read-only qua /my-documents.
   app.get('/pending-confirmation', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    const roles = await roleCodesOf(sql, user.user_id);
+    if (!hasAnyReleaseRole(roles)) {
+      return reply.view('pending.eta', { docs: [], readOnly: true });
+    }
     const rows = await sql`
       SELECT v.version_id, v.doc_id, v.version_no, v.title,
              v.effective_date::text AS effective_date,
@@ -32,7 +38,7 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
       });
       if (ok) visible.push(r);
     }
-    return reply.view('pending.eta', { docs: visible });
+    return reply.view('pending.eta', { docs: visible, readOnly: false });
   });
 
   // Màn xác nhận

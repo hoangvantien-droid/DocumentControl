@@ -32,6 +32,7 @@ import { registerQaRoutes } from './routes/qa.js';
 import { registerOpsRoutes } from './routes/ops.js';
 import { registerAuditRoutes } from './routes/audit.js';
 import { registerDesignRoutes } from './routes/design.js';
+import { registerDataCheckRoutes } from './routes/data-check.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -101,11 +102,12 @@ async function main() {
   registerFunctionalGroupRoutes(app, sql);
   registerReviewRoutes(app, sql);
   registerPackageRoutes(app, sql);
-  registerPrintingRoutes(app, sql);
+  registerPrintingRoutes(app, sql, config);
   registerQaRoutes(app, sql, config);
   registerOpsRoutes(app, sql);
   registerAuditRoutes(app, sql);
   registerDesignRoutes(app, sql);
+  registerDataCheckRoutes(app, sql);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

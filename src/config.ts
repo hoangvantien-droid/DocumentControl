@@ -17,6 +17,8 @@ export interface Config {
   dbPoolMax: number;
   /** Tiền tố đường dẫn khi chạy sau proxy dưới path con (vd /dcs). Rỗng = chạy ở root. */
   basePath: string;
+  /** URL gốc external (https://tienhv.io.vn) cho QR code. */
+  publicUrl: string;
   /** Thiếu thì tắt hỏi đáp AI, phần còn lại vẫn chạy (DCS-8 §6.1). */
   embeddingApiUrl: string | null;
   embeddingApiKey: string | null;
@@ -103,6 +105,9 @@ export function loadConfig(): Config {
   if (basePath && !basePath.startsWith('/')) basePath = '/' + basePath;
   if (basePath.endsWith('/')) basePath = basePath.slice(0, -1);
 
+  // PUBLIC_URL: URL external đầy đủ cho QR code (vd https://tienhv.io.vn).
+  const publicUrl = (env.PUBLIC_URL ?? '').trim();
+
   return {
     nodeEnv,
     port,
@@ -112,6 +117,7 @@ export function loadConfig(): Config {
     fileStoragePath,
     dbPoolMax,
     basePath,
+    publicUrl,
     embeddingApiUrl: env.EMBEDDING_API_URL ?? null,
     embeddingApiKey: env.EMBEDDING_API_KEY ?? null,
     tesseractPath: env.TESSERACT_PATH ?? '/usr/bin/tesseract',

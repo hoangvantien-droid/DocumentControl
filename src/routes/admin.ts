@@ -10,7 +10,7 @@ import {
   listBu, listSites, listDepartments, createBu, createSite, addSiteBu, createDepartment,
 } from '../domain/org.js';
 import {
-  listUsers, createUser, setUserActive, assignToDepartment, departmentsOfUser,
+  listUsers, createUser, setUserActive, assignToDepartment, removeFromDepartment, departmentsOfUser,
 } from '../domain/users.js';
 import { grantRole, rolesOfUser, type RoleCode, type ScopeLevel } from '../domain/roles.js';
 import { hasSystemAdminAccess } from '../domain/permissions.js';
@@ -107,9 +107,29 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
     return reply.redirect('/admin/users');
   });
 
+  // P1 #9: Xóa (soft) phòng ban của user — thêm nút × từng chip.
+  app.post<{ Body: Record<string, string> }>('/admin/users/remove-dept', async (req, reply) => {
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
+    await removeFromDepartment(sql, reqField(req.body, 'user_id'), reqField(req.body, 'dept_id'));
+    return reply.redirect('/admin/users');
+  });
+
   app.post<{ Body: Record<string, string> }>('/admin/users/active', async (req, reply) => {
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
     await setUserActive(sql, reqField(req.body, 'user_id'), req.body.active === 'true');
+    return reply.redirect('/admin/users');
+  });
+
+  // Lỗi #10: xoá mềm user (is_active=false) — không xoá cứng để giữ audit.
+  app.post<{ Body: Record<string, string> }>('/admin/users/delete', async (req, reply) => {
+    if (!await requireSystemAdmin(req, reply, sql)) return reply;
+    const userId = reqField(req.body, 'user_id');
+    if (userId === req.currentUser?.user_id) {
+      reply.code(422);
+      reply.send('Không thể tự xoá tài khoản đang đăng nhập');
+      return reply;
+    }
+    await setUserActive(sql, userId, false);
     return reply.redirect('/admin/users');
   });
 

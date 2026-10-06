@@ -11,13 +11,14 @@
       <td><%= d.doc_id %></td>
       <td><%= d.version_no %></td>
       <td><%= d.title %></td>
-      <td><span class="status status-<%= d.status %>"><%= it.docStatusLabel(d.status) %></span>
+      <td><span class="status status-<%= d.status %>"><%= d.status %></span>
         <% if (d.status === 'tu_choi' && d.rejection_reason) { %>
           <div class="reject-reason">Lý do: <%= d.rejection_reason %></div>
         <% } %>
       </td>
       <td><%= d.effective_date || '' %></td>
       <td>
+        <% if (d.status === 'cho_hoan_thien') { %><a href="/my-documents/<%= d.version_id %>/edit">Sửa</a><% } %>
         <% if (d.status === 'tu_choi') { %><a href="/register">Nộp lại</a><% } %>
       </td>
     </tr>
