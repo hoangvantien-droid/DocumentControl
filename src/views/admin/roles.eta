@@ -30,31 +30,11 @@
     <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
   </select>
   <select name="role_code" required>
-    <option value="DC_ADMIN">DC_ADMIN</option>
-    <option value="DC_AUTHOR">DC_AUTHOR</option>
-    <option value="DC_DEPT_HEAD">DC_DEPT_HEAD</option>
-    <option value="DC_GROUP_OWNER">DC_GROUP_OWNER</option>
-    <option value="DC_BU_OWNER">DC_BU_OWNER</option>
-    <option value="DC_SITE_QA_MANAGER">DC_SITE_QA_MANAGER</option>
-    <option value="DC_READER">DC_READER</option>
+    <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
+    <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
+    <option value="DC_DEPT_HEAD">Phê duyệt — Duyệt theo Dept chính</option>
   </select>
-  <select name="scope_level" required>
-    <option value="group">group</option>
-    <option value="bu">bu</option>
-    <option value="site">site</option>
-    <option value="dept">dept</option>
-  </select>
-  <select name="scope_bu_id">
-    <option value="">(BU nếu cấp bu)</option>
-    <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %></option><% }) %>
-  </select>
-  <select name="scope_site_id">
-    <option value="">(Site nếu cấp site)</option>
-    <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %></option><% }) %>
-  </select>
-  <select name="scope_dept_id">
-    <option value="">(Dept nếu cấp dept)</option>
-    <% it.depts.forEach(function(d){ %><option value="<%= d.dept_id %>"><%= d.dept_code %></option><% }) %>
-  </select>
+  <input type="hidden" name="scope_level" value="group">
+  <p class="muted">3 vai gán ở cấp hệ thống. Phạm vi duyệt lấy từ Dept chính của người dùng, không chọn BU/Site/Dept ở đây.</p>
   <button type="submit">Gán</button>
 </form>

@@ -39,7 +39,8 @@ export interface ScopeRef {
 function normalizeScope(role: RoleCode, scope: ScopeRef): {
   level: ScopeLevel; bu: string | null; site: string | null; dept: string | null;
 } {
-  const globalRoles: RoleCode[] = ['DC_ADMIN', 'DC_AUTHOR', 'DC_READER', 'DC_GROUP_OWNER'];
+  // 3 vai: Admin / Biên soạn / Phê duyệt gán ở cấp hệ thống (group). Phạm vi duyệt lấy từ Dept chính.
+  const globalRoles: RoleCode[] = ['DC_ADMIN', 'DC_AUTHOR', 'DC_READER', 'DC_GROUP_OWNER', 'DC_DEPT_HEAD'];
   if (globalRoles.includes(role)) {
     if (scope.level !== 'group') {
       throw new BusinessError('role.scope', `${role} chỉ được gán ở cấp Group`);

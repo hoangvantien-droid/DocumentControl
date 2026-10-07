@@ -84,14 +84,12 @@ export async function listVisibleDocuments(
                    WHERE sb.site_id = st.site_id AND sb.bu_id = d.scope_bu_id))
                OR (d.scope_level='site' AND st.site_id = d.scope_site_id)
                OR (d.scope_level='dept' AND dp.dept_id = d.scope_dept_id)))
-       -- Hoặc mình có vai trò release phủ tài liệu này
+       -- Hoặc mình có cờ Phê duyệt (DC_DEPT_HEAD group) / Admin — thấy để duyệt, scope chặt ở canRelease
        OR EXISTS (
          SELECT 1 FROM user_roles r
           WHERE r.user_id = ${userId} AND r.is_active
-            AND (r.role_code = 'DC_GROUP_OWNER' AND d.scope_level = 'group'
-              OR (r.role_code='DC_BU_OWNER'        AND d.scope_level = 'bu'   AND r.scope_bu_id = d.scope_bu_id)
-              OR (r.role_code='DC_SITE_QA_MANAGER' AND d.scope_level = 'site' AND r.scope_site_id = d.scope_site_id)
-              OR (r.role_code='DC_DEPT_HEAD'       AND d.scope_level = 'dept' AND r.scope_dept_id = d.scope_dept_id)))
+            AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
+              OR r.role_code = 'DC_ADMIN'))
        )
        -- Lọc theo trạng thái
        AND (${effStatus}::varchar IS NULL OR v.status = ${effStatus})
@@ -175,12 +173,8 @@ export async function canViewVersion(sql: Sql, userId: string, versionId: string
              SELECT 1
                FROM user_roles r
               WHERE r.user_id = ${userId} AND r.is_active
-                AND (
-                  r.role_code = 'DC_GROUP_OWNER' AND d.scope_level = 'group'
-                  OR (r.role_code = 'DC_BU_OWNER' AND d.scope_level = 'bu' AND r.scope_bu_id = d.scope_bu_id)
-                  OR (r.role_code = 'DC_SITE_QA_MANAGER' AND d.scope_level = 'site' AND r.scope_site_id = d.scope_site_id)
-                  OR (r.role_code = 'DC_DEPT_HEAD' AND d.scope_level = 'dept' AND r.scope_dept_id = d.scope_dept_id)
-                )
+                AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
+                  OR r.role_code = 'DC_ADMIN')
            )
          )
     ) AS ok`;

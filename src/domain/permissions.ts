@@ -45,7 +45,7 @@ export async function canApproveDocs(sql: Sql, userId: string): Promise<boolean>
   return hasAnyReleaseRole(roles);
 }
 
-/** Kiểm quyền release: cờ Phê duyệt + scope Dept chính, fallback logic cũ trong giai đoạn chuyển đổi. */
+/** Kiểm quyền release 3 vai: cờ Phê duyệt (DC_DEPT_HEAD group) + scope Dept chính, không kế thừa. */
 export async function canRelease(
   sql: Sql,
   userId: string,
@@ -53,41 +53,23 @@ export async function canRelease(
 ): Promise<boolean> {
   const roles = await roleCodesOf(sql, userId);
   if (!hasAnyReleaseRole(roles)) return false;
-  // Nhóm group giữ chặt: chỉ DC_GROUP_OWNER (tránh site/dept duyệt nhầm tài liệu toàn cục).
+  // Tài liệu toàn cục: chỉ Phê duyệt có Dept chính đặc biệt hoặc Admin (giữ chặt).
   if (doc.scope_level === 'group') {
     const rows = await sql<{ ok: boolean }[]>`
       SELECT EXISTS (
         SELECT 1 FROM user_roles r
          WHERE r.user_id = ${userId} AND r.is_active
-           AND r.role_code = 'DC_GROUP_OWNER' AND r.scope_level = 'group'
+           AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
+             OR r.role_code = 'DC_ADMIN')
       ) AS ok`;
     return rows[0]?.ok ?? false;
   }
-  // Scope mới từ Dept chính.
+  // Scope từ Dept chính: dept/site/bu, không kế thừa chéo.
   const scope = await getUserScope(sql, userId);
   if (doc.scope_level === 'dept' && scope.dept_id && scope.dept_id === doc.scope_dept_id) return true;
   if (doc.scope_level === 'site' && scope.site_id && scope.site_id === doc.scope_site_id) return true;
   if (doc.scope_level === 'bu' && doc.scope_bu_id && scope.bu_ids.includes(doc.scope_bu_id)) return true;
-  // Fallback logic cũ Ver2 để không gãy quyền đang chạy.
-  const rows = await sql<{ ok: boolean }[]>`
-    SELECT EXISTS (
-      SELECT 1
-        FROM user_roles r
-       WHERE r.user_id = ${userId}
-         AND r.is_active
-         AND (
-           (r.role_code = 'DC_BU_OWNER'
-             AND ${doc.scope_level} = 'bu'
-             AND r.scope_bu_id = ${doc.scope_bu_id})
-           OR (r.role_code = 'DC_SITE_QA_MANAGER'
-             AND ${doc.scope_level} = 'site'
-             AND r.scope_site_id = ${doc.scope_site_id})
-           OR (r.role_code = 'DC_DEPT_HEAD'
-             AND ${doc.scope_level} = 'dept'
-             AND r.scope_dept_id = ${doc.scope_dept_id})
-         )
-    ) AS ok`;
-  return rows[0]?.ok ?? false;
+  return false;
 }
 
 export async function canRegisterDocuments(sql: Sql, userId: string): Promise<boolean> {
@@ -120,12 +102,7 @@ export async function roleCodesOf(sql: Sql, userId: string): Promise<Set<string>
   return new Set(rows.map((r) => r.role_code));
 }
 
-/** Người có thể xác nhận ít nhất một phạm vi tài liệu. */
+/** 3 vai: có cờ Phê duyệt (DC_DEPT_HEAD). Mã cũ đã map về DC_DEPT_HEAD group ở migration 013. */
 export function hasAnyReleaseRole(roleCodes: Set<string>): boolean {
-  return (
-    roleCodes.has('DC_GROUP_OWNER') ||
-    roleCodes.has('DC_BU_OWNER') ||
-    roleCodes.has('DC_SITE_QA_MANAGER') ||
-    roleCodes.has('DC_DEPT_HEAD')
-  );
+  return roleCodes.has('DC_DEPT_HEAD') || roleCodes.has('DC_ADMIN');
 }
