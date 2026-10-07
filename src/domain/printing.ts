@@ -6,19 +6,11 @@
  * KHI KẾT XUẤT, không sửa tệp gốc (nguyên tắc số 2). Tra cứu QR chỉ trả TÌNH
  * TRẠNG, tuyệt đối không trả nội dung tài liệu.
  */
-import { randomBytes } from 'node:crypto';
 import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import { canViewVersion } from './catalog.js';
 import QRCode from 'qrcode';
-
-/** Sinh token tra cứu QR URL-safe (base64url, không +/=) để tránh route 404. */
-export function generateVerifyToken(): string {
-  return randomBytes(32)
-    .toString('base64url')
-    .replace(/=+$/, '');
-}
 
 export interface PrintRecord {
   print_id: string;
@@ -48,10 +40,9 @@ export async function registerPrint(
     if (v.status !== 'hieu_luc') {
       throw new BusinessError('print.not_effective', 'Chỉ in được bản đang hiệu lực');
     }
-    const token = generateVerifyToken();
     const row = (await tx<{ print_id: string; verify_token: string; printed_at: string }[]>`
-      INSERT INTO printed_copies (version_id, printed_by, intended_location, overlay_applied, verify_token)
-      VALUES (${input.versionId}, ${input.printedBy}, ${input.intendedLocation ?? null}, TRUE, ${token})
+      INSERT INTO printed_copies (version_id, printed_by, intended_location, overlay_applied)
+      VALUES (${input.versionId}, ${input.printedBy}, ${input.intendedLocation ?? null}, TRUE)
       RETURNING print_id, verify_token, printed_at::text AS printed_at`)[0]!;
     await writeAudit(tx as TransactionSql, {
       eventType: 'in', actorUserId: input.printedBy,
@@ -70,22 +61,26 @@ export async function registerPrint(
 
 export interface VerifyResult {
   found: boolean;
-  /** con_hieu_luc | het_hieu_luc | thu_hoi | ban_in_thu_hoi | khong_ro */
+  /** con_hieu_luc | het_hieu_luc | thu_hoi | ban_in_thu_hoi | khong_ro | chua_ap_dung | tam_hoan */
   status: string;
   doc_id?: string;
   version_no?: string;
   currentVersionNo?: string | null;
+  site_code?: string | null;
+  site_name?: string | null;
+  rollout_status?: string | null;
+  applied_date?: string | null;
 }
 
 /**
  * Tra cứu QR — KHÔNG cần đăng nhập, CHỈ trả tình trạng "tờ này còn dùng được
  * không". Tuyệt đối không trả nội dung tài liệu, nhãn, danh sách người nhận.
  */
-export async function verifyToken(sql: Sql, token: string): Promise<VerifyResult> {
+export async function verifyToken(sql: Sql, token: string, siteId?: string | null): Promise<VerifyResult> {
   const rows = await sql<{
-    recall_status: string; ver_status: string; doc_id: string; version_no: string;
+    recall_status: string; ver_status: string; doc_id: string; version_no: string; version_id: string;
   }[]>`
-    SELECT p.recall_status, v.status AS ver_status, v.doc_id, v.version_no
+    SELECT p.recall_status, v.status AS ver_status, v.doc_id, v.version_no, v.version_id
       FROM printed_copies p JOIN document_versions v ON v.version_id = p.version_id
      WHERE p.verify_token = ${token}`;
   const row = rows[0];
@@ -105,9 +100,34 @@ export async function verifyToken(sql: Sql, token: string): Promise<VerifyResult
   else if (row.ver_status === 'thu_hoi') status = 'thu_hoi';
   else if (row.ver_status === 'het_hieu_luc') status = 'het_hieu_luc';
 
+  // Rollout theo site: nếu có siteId, ghi đè trạng thái theo site đó.
+  let site_code: string | null = null;
+  let site_name: string | null = null;
+  let rollout_status: string | null = null;
+  let applied_date: string | null = null;
+  if (siteId) {
+    const rr = (await sql<{ site_code: string; site_name: string; status: string; applied_date: string | null }[]>`
+      SELECT s.site_code, s.name AS site_name, r.status,
+             r.applied_date::text AS applied_date
+        FROM document_site_rollout r
+        JOIN org_site s ON s.site_id = r.site_id
+       WHERE r.version_id = ${row.version_id} AND r.site_id = ${siteId}`)[0];
+    if (rr) {
+      site_code = rr.site_code;
+      site_name = rr.site_name;
+      rollout_status = rr.status;
+      applied_date = rr.applied_date;
+      if (status === 'con_hieu_luc') {
+        if (rr.status === 'chua_ap_dung') status = 'chua_ap_dung';
+        else if (rr.status === 'tam_hoan') status = 'tam_hoan';
+      }
+    }
+  }
+
   return {
     found: true, status, doc_id: row.doc_id, version_no: row.version_no,
     currentVersionNo: current?.version_no ?? null,
+    site_code, site_name, rollout_status, applied_date,
   };
 }
 

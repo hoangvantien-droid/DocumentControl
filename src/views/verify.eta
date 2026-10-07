@@ -18,7 +18,17 @@
   <% } else if (r.status === 'con_hieu_luc') { %>
     <main class="verify-card verify-ok">
       <div class="verify-big">✓</div>
-      <p>Bản này CÒN HIỆU LỰC.</p>
+      <p>Bản này CÒN HIỆU LỰC.<% if (r.site_code) { %> · Site <%= r.site_code %><% if (r.applied_date) { %> từ <%= r.applied_date %><% } %><% } %></p>
+    </main>
+  <% } else if (r.status === 'chua_ap_dung') { %>
+    <main class="verify-card verify-bad">
+      <div class="verify-big">…</div>
+      <p>Site <%= r.site_code || '' %> CHƯA ÁP DỤNG bản này.</p>
+    </main>
+  <% } else if (r.status === 'tam_hoan') { %>
+    <main class="verify-card verify-bad">
+      <div class="verify-big">‖</div>
+      <p>Site <%= r.site_code || '' %> TẠM HOÃN áp dụng.</p>
     </main>
   <% } else { %>
     <main class="verify-card verify-bad">

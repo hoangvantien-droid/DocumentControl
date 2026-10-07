@@ -49,7 +49,7 @@ const docTypes = ['SOP', 'WI', 'Form', 'Policy', 'External'];
       <p class="result-count"><%= it.hits.length %> kết quả</p>
       <ul class="result-list">
         <% it.hits.forEach(function(h){ %>
-          <%~ include('/components/result-card.eta', { hit: h, docStatusLabel: it.docStatusLabel, scopeLabel: it.scopeLabel }) %>
+          <%~ include('/components/result-card.eta', { hit: h }) %>
         <% }) %>
       </ul>
     <% } %>

@@ -1,7 +1,7 @@
 <% layout('layout.eta', { title: 'Tài liệu của tôi — DCS', user: it.user }) %>
 
 <h1>Tài liệu của tôi</h1>
-<p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p>
+<% if (it.nav && it.nav.canRegister) { %><p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p><% } %>
 
 <table class="data-table">
   <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Ngày hiệu lực</th><th></th></tr></thead>

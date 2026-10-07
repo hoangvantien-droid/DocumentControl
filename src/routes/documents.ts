@@ -11,7 +11,7 @@ import { requireUser } from '../middleware/auth.js';
 import { isBusinessError, BusinessError } from '../lib/errors.js';
 import {
   submitRegistration, addLink, saveDraft,
-  type DocType, type Origin, type ApprovalMethod, type ChangeSignificance,
+  type DocType, type Origin, type ChangeSignificance,
 } from '../domain/registration.js';
 import type { ScopeLevel } from '../domain/roles.js';
 import { listBu, listSites, listDepartments } from '../domain/org.js';
@@ -23,7 +23,6 @@ interface RegBody {
   doc_id?: string; doc_type?: string; origin?: string;
   scope_level?: string; scope_bu_id?: string; scope_site_id?: string; scope_dept_id?: string;
   version_no?: string; title?: string; issued_date?: string;
-  approver_name?: string; approval_reference?: string; approval_url?: string; approval_method?: string;
   external_effective_date?: string; effective_date?: string; review_cycle_months?: string; expiry_date?: string;
   file_path?: string; file_hash?: string; owner_department_id?: string;
   supersedes_version_id?: string; change_significance?: string; change_summary?: string;
@@ -33,10 +32,12 @@ interface RegBody {
 }
 
 export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
-  // Form đăng ký
+  // Form đăng ký — 3 vai: chỉ Biên soạn (có DC_AUTHOR) được mở.
   app.get('/register', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    const { canRegisterDocuments } = await import('../domain/permissions.js');
+    if (!await canRegisterDocuments(sql, user.user_id)) { reply.code(403); return reply.send('Không có quyền đăng ký ban hành tài liệu'); }
     const [bus, sites, depts, supersedeable] = await Promise.all([
       listBu(sql), listSites(sql), listDepartments(sql), listSupersedeableVersions(),
     ]);
@@ -87,10 +88,6 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
           versionNo: (b.version_no ?? '').trim(),
           title: (b.title ?? '').trim(),
           issuedDate: b.issued_date ?? '',
-          approverName: (b.approver_name ?? '').trim(),
-          approvalReference: b.approval_reference || null,
-          approvalUrl: b.approval_url || null,
-          approvalMethod: (b.approval_method ?? 'ky_so') as ApprovalMethod,
           externalEffectiveDate: b.external_effective_date || null,
           effectiveDate: b.effective_date ?? '',
           reviewCycleMonths: Number(b.review_cycle_months ?? '12'),
@@ -222,8 +219,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     if (!user) return reply;
     const rows = await sql`
       SELECT v.version_id, v.doc_id, v.version_no, v.title,
-             v.issued_date::text AS issued_date, v.approver_name,
-             v.approval_reference, v.approval_url, v.approval_method,
+             v.issued_date::text AS issued_date,
              v.external_effective_date::text AS external_effective_date,
              v.effective_date::text AS effective_date, v.review_cycle_months,
              v.expiry_date::text AS expiry_date, v.file_path, v.file_hash,

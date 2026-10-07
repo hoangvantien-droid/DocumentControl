@@ -30,7 +30,6 @@ export interface VersionForConfirm {
   status: string;
   effective_date: string | null;
   file_hash: string;
-  approval_reference: string | null;
   registrant_user_id: string;
   supersedes_version_id: string | null;
   parse_status: string;
@@ -44,7 +43,7 @@ export interface VersionForConfirm {
 export async function loadForConfirm(sql: Sql, versionId: string): Promise<VersionForConfirm | null> {
   const rows = await sql<VersionForConfirm[]>`
     SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
-           v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
+           v.effective_date::text AS effective_date, v.file_hash,
            v.registrant_user_id, v.supersedes_version_id, v.parse_status,
            d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
       FROM document_versions v
@@ -89,7 +88,7 @@ export async function buildChecklist(
 
   // 7-9 — Admin tự kiểm
   items.push({ no: '7', label: 'Số hiệu trên tệp khớp số hiệu đã khai', kind: 'admin', level: 'chan', pass: null });
-  items.push({ no: '8', label: 'Ngày ban hành và người duyệt khớp chữ ký trên tệp', kind: 'admin', level: 'chan', pass: null });
+  items.push({ no: '8', label: 'Ngày ban hành và số hiệu khớp nội dung trên tệp', kind: 'admin', level: 'chan', pass: null });
   items.push({ no: '9', label: 'Loại tài liệu khai đúng', kind: 'admin', level: 'chan', pass: null });
   if (v.supersedes_version_id) {
     items.push({ no: '9b', label: 'Mức độ thay đổi khai đúng (phải xem so sánh trước)', kind: 'admin', level: 'chan', pass: null });
@@ -126,7 +125,7 @@ export async function confirmRegistration(
   return sql.begin(async (tx) => {
     const v = (await tx<VersionForConfirm[]>`
       SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
-             v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
+             v.effective_date::text AS effective_date, v.file_hash,
              v.registrant_user_id, v.supersedes_version_id, v.parse_status,
              d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
         FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
@@ -205,7 +204,7 @@ export async function rejectRegistration(
   await sql.begin(async (tx) => {
     const v = (await tx<VersionForConfirm[]>`
       SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
-             v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
+             v.effective_date::text AS effective_date, v.file_hash,
              v.registrant_user_id, v.supersedes_version_id, v.parse_status,
              d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
         FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id

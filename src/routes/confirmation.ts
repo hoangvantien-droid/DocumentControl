@@ -26,12 +26,15 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
     const rows = await sql`
       SELECT v.version_id, v.doc_id, v.version_no, v.title,
              v.effective_date::text AS effective_date,
+             v.registrant_user_id,
              d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
         FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
        WHERE v.status = 'cho_xac_nhan'
        ORDER BY v.submitted_at`;
     const visible = [];
     for (const r of rows) {
+      // 3 vai: loại bài do chính mình nộp — không được tự duyệt.
+      if (r.registrant_user_id === user.user_id) continue;
       const ok = await canRelease(sql, user.user_id, {
         scope_level: r.scope_level, scope_bu_id: r.scope_bu_id,
         scope_site_id: r.scope_site_id, scope_dept_id: r.scope_dept_id,
@@ -47,6 +50,8 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
     if (!user) return reply;
     const v = await loadForConfirm(sql, req.params.id);
     if (!v) { reply.code(404); return reply.send('Không tìm thấy'); }
+    // 3 vai: người nộp không được mở màn duyệt bài của chính mình.
+    if (v.registrant_user_id === user.user_id) { reply.code(403); return reply.send('Bạn là người nộp, không được tự duyệt tài liệu này'); }
     const allowed = await canRelease(sql, user.user_id, {
       scope_level: v.scope_level, scope_bu_id: v.scope_bu_id,
       scope_site_id: v.scope_site_id, scope_dept_id: v.scope_dept_id,

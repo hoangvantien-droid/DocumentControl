@@ -20,7 +20,7 @@
             <option value="huy_bo">Huỷ bỏ</option>
           </select>
           <input name="note" placeholder="Giải trình (bắt buộc nếu không giữ nguyên)">
-          <button type="submit">Lưu kết luận rà soát</button>
+          <button type="submit">Ghi kết luận</button>
         </form>
       </td>
     </tr>

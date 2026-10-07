@@ -19,13 +19,13 @@ export function registerDataCheckRoutes(app: FastifyInstance, sql: Sql): void {
     const rows = await sql<{
       version_id: string; doc_id: string; version_no: string; title: string;
       doc_type: string; status: string; effective_date: string | null;
-      file_hash: string; approval_reference: string | null;
+      file_hash: string;
       registrant_user_id: string; supersedes_version_id: string | null;
       parse_status: string; scope_level: 'group' | 'bu' | 'site' | 'dept';
       scope_bu_id: string | null; scope_site_id: string | null; scope_dept_id: string | null;
     }[]>`
       SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
-             v.effective_date::text AS effective_date, v.file_hash, v.approval_reference,
+             v.effective_date::text AS effective_date, v.file_hash,
              v.registrant_user_id, v.supersedes_version_id, v.parse_status,
              d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
         FROM document_versions v

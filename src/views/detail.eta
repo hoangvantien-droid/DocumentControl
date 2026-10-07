@@ -7,8 +7,8 @@
   <h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
   <p class="doc-title">
     <%= d.title %>
-    · <%~ include('/components/status-label.eta', { kind: 'doc', code: d.status, text: it.docStatusLabel(d.status) }) %>
-    <%~ include('/components/status-label.eta', { kind: 'scope', level: d.scope_level, text: it.scopeLabel(d.scope_level) }) %>
+    · <%~ include('/components/status-label.eta', { kind: 'doc', code: d.status, text: d.status }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: d.scope_level, text: d.scope_level }) %>
   </p>
 
   <div class="detail-actions">
@@ -49,9 +49,9 @@
   <div class="detail-main">
     <h2>Nội dung</h2>
     <% if (it.sections.length === 0) { %>
-      <p class="muted">Tài liệu chưa được tách nội dung để tra cứu.</p>
+      <p class="muted">Chưa bóc tách nội dung.</p>
       <form method="post" action="/documents/<%= d.version_id %>/process">
-        <button type="submit" class="btn-diff">Tách nội dung từ tệp PDF</button>
+        <button type="submit" class="btn-diff">Bóc tách nội dung từ tệp</button>
       </form>
     <% } else { %>
       <% it.sections.forEach(function(s){ %>
@@ -64,10 +64,8 @@
     <h2>Thông tin</h2>
     <dl>
       <dt>Loại</dt><dd><%= d.doc_type %> (<%= d.origin %>)</dd>
-      <dt>Phạm vi</dt><dd><%= it.scopeLabel(d.scope_level) %></dd>
-      <dt>Ngày ban hành</dt><dd><%= d.issued_date || '' %></dd>
-      <dt>Người phê duyệt</dt><dd><%= d.approver_name || '' %></dd>
-      <dt>Số hồ sơ phê duyệt</dt><dd><%= d.approval_reference || '' %></dd>
+      <dt>Phạm vi</dt><dd><%= d.scope_level %></dd>
+      <dt>Ngày áp dụng dự kiến</dt><dd><%= d.issued_date || '' %></dd>
       <dt>Ngày hiệu lực</dt><dd><%= d.effective_date || '' %></dd>
       <dt>Rà soát tới</dt><dd><%= d.next_review_date || '' %></dd>
     </dl>
@@ -75,6 +73,43 @@
     <h3>Nhãn liên kết</h3>
     <% if (it.links.length === 0) { %><p class="muted">Chưa có.</p><% } else { %>
       <% it.links.forEach(function(l){ %><span class="chip"><%= l.link_type %>: <%= l.link_code %></span><% }) %>
+    <% } %>
+
+    <h3>Áp dụng theo site</h3>
+    <% if (!it.rollout || it.rollout.length === 0) { %><p class="muted">Chưa khai site áp dụng.</p><% } else { %>
+      <ul class="matrix-list">
+        <% it.rollout.forEach(function(r){ %>
+          <li>
+            <b><%= r.site_code %></b> — <%= r.site_name %> · <%= r.status %>
+            <% if (r.planned_date) { %> · dự kiến <%= r.planned_date %><% } %>
+            <% if (r.applied_date) { %> · áp dụng <%= r.applied_date %><% } %>
+            <% if (r.status === 'tam_hoan' && r.pause_reason) { %> · lý do: <%= r.pause_reason %><% } %>
+            <% if (it.canManageRollout) { %>
+              <form method="post" action="/documents/<%= d.version_id %>/rollout/status" style="display:inline">
+                <input type="hidden" name="site_id" value="<%= r.site_id %>">
+                <select name="status">
+                  <option value="chua_ap_dung" <%= r.status==='chua_ap_dung'?'selected':'' %>>Chưa áp dụng</option>
+                  <option value="da_ap_dung" <%= r.status==='da_ap_dung'?'selected':'' %>>Đã áp dụng</option>
+                  <option value="tam_hoan" <%= r.status==='tam_hoan'?'selected':'' %>>Tạm hoãn</option>
+                </select>
+                <input type="date" name="applied_date" value="<%= r.applied_date || '' %>" placeholder="ngày áp dụng">
+                <input name="pause_reason" value="<%= r.pause_reason || '' %>" placeholder="lý do tạm hoãn">
+                <button type="submit">Lưu</button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (it.canManageRollout) { %>
+      <form method="post" action="/documents/<%= d.version_id %>/rollout/add" class="inline-form">
+        <select name="site_id">
+          <option value="">-- thêm site --</option>
+          <%~ it.siteOptions %>
+        </select>
+        <input type="date" name="planned_date">
+        <button type="submit">Thêm site</button>
+      </form>
     <% } %>
 
     <h3>Phân phối tới</h3>
@@ -98,7 +133,7 @@
     <% } %>
 
     <% if (it.canRecall && (d.status === 'da_dang_ky' || d.status === 'hieu_luc')) { %>
-      <p><a href="/documents/<%= d.version_id %>/recall" class="danger-link">Thu hồi tài liệu này</a></p>
+      <p><a href="/documents/<%= d.version_id %>/recall" class="danger-link">Thu hồi tài liệu</a></p>
     <% } %>
   </aside>
 </div>
@@ -112,16 +147,16 @@
     <% if (it.history && it.history.length > 0) { %>
       <ul class="detail-history">
         <% it.history.forEach(function(h){ %>
-          <li><a href="/documents/<%= h.version_id %>">phiên bản <%= h.version_no %></a> · <%= it.docStatusLabel(h.status) %><% if (h.effective_date) { %> · <%= h.effective_date %><% } %></li>
+          <li><a href="/documents/<%= h.version_id %>">phiên bản <%= h.version_no %></a> · <%= h.status %><% if (h.effective_date) { %> · <%= h.effective_date %><% } %></li>
         <% }) %>
       </ul>
     <% } else { %>
-      <p class="muted">Xem lịch sử phiên bản của tài liệu này trong nhật ký hoạt động bên dưới.</p>
+      <p class="muted">Xem lịch sử phiên bản của tài liệu này trong ghi vết bên dưới.</p>
     <% } %>
   </section>
 
   <section class="detail-footer__block">
-    <h2>Nhật ký hoạt động</h2>
+    <h2>Ghi vết</h2>
     <% if (it.audit && it.audit.length > 0) { %>
       <ul class="detail-audit">
         <% it.audit.forEach(function(a){ %>
@@ -129,7 +164,7 @@
         <% }) %>
       </ul>
     <% } else { %>
-      <p class="muted"><a href="/audit?object_id=<%= d.version_id %>">Xem nhật ký hoạt động đầy đủ của phiên bản này</a>.</p>
+      <p class="muted"><a href="/audit?object_id=<%= d.version_id %>">Xem ghi vết đầy đủ của phiên bản này</a>.</p>
     <% } %>
   </section>
 </div>

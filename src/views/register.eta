@@ -64,16 +64,7 @@
     <legend>Hồ sơ phê duyệt &amp; hiệu lực</legend>
     <label>Phiên bản <span class="req">*</span> <input name="version_no" required value="<%= val.version_no || '' %>" placeholder="1.0"></label>
     <label>Tiêu đề <span class="req">*</span> <input name="title" required value="<%= val.title || '' %>"></label>
-    <label>Ngày ban hành <span class="req">*</span> <input type="date" name="issued_date" required value="<%= val.issued_date || '' %>"></label>
-    <label>Người phê duyệt / tổ chức phát hành <span class="req">*</span> <input name="approver_name" required value="<%= val.approver_name || '' %>"></label>
-    <label>Số hồ sơ phê duyệt (nội bộ) <input name="approval_reference" value="<%= val.approval_reference || '' %>"></label>
-    <label>Hình thức phê duyệt
-      <select name="approval_method">
-        <option value="ky_so">Ký số</option>
-        <option value="ky_tay_so_hoa">Ký tay số hoá</option>
-        <option value="thu_dien_tu_luu_vet">Thư điện tử có lưu vết</option>
-      </select>
-    </label>
+    <label>Ngày áp dụng dự kiến <span class="req">*</span> <input type="date" name="issued_date" required value="<%= val.issued_date || '' %>"></label>
     <label>Ngày hiệu lực pháp lý (ngoại bộ) <input type="date" name="external_effective_date" value="<%= val.external_effective_date || '' %>"></label>
     <label>Ngày hiệu lực (DCS) <span class="req">*</span> <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
     <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" value="<%= val.review_cycle_months || '12' %>" min="1"></label>

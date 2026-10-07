@@ -20,8 +20,6 @@ export interface MigratedVersionInput {
   versionNo: string;
   title: string;
   issuedDate: string;
-  approverName: string;
-  approvalReference?: string | null;
   /** Ngày hiệu lực THẬT ngoài đời (quá khứ) — bắt buộc với bản nạp. */
   originalEffectiveDate: string;
   reviewCycleMonths: number;
@@ -48,14 +46,14 @@ export async function loadMigratedVersion(
     await tx`
       INSERT INTO document_versions (
         version_id, doc_id, version_no, title,
-        issued_date, approver_name, approval_reference, approval_method,
+        issued_date,
         effective_date, review_cycle_months,
         source_channel, file_path, file_hash,
         status, registrant_user_id, owner_department_id,
         migrated_record, original_effective_date, submitted_at
       ) VALUES (
         ${versionId}, ${v.docId}, ${v.versionNo}, ${v.title},
-        ${v.issuedDate}, ${v.approverName}, ${v.approvalReference ?? null}, 'ky_tay_so_hoa',
+        ${v.issuedDate},
         ${today}, ${v.reviewCycleMonths},
         'thu_cong', ${v.filePath}, ${v.fileHash},
         'cho_xac_nhan', ${v.registrantUserId}, ${v.ownerDepartmentId},

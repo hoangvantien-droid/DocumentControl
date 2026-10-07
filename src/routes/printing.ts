@@ -35,9 +35,10 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: {
     },
   );
 
-  // Tra cứu QR — KHÔNG yêu cầu đăng nhập. Chỉ trả tình trạng.
-  app.get<{ Params: { token: string } }>('/verify/:token', async (req, reply) => {
-    const result = await verifyToken(sql, req.params.token);
+  // Tra cứu QR — KHÔNG yêu cầu đăng nhập. Chỉ trả tình trạng. Hỗ trợ ?site_id= để trả theo site.
+  app.get<{ Params: { token: string }; Querystring: { site_id?: string } }>('/verify/:token', async (req, reply) => {
+    const siteId = ((req.query as { site_id?: string }).site_id ?? '').trim() || null;
+    const result = await verifyToken(sql, req.params.token, siteId);
     await auditQrLookup(sql, req.params.token);
     reply.type('text/html; charset=utf-8');
     return reply.view('verify.eta', { result });

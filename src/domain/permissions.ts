@@ -13,12 +13,62 @@ export interface DocScope {
   scope_dept_id: string | null;
 }
 
-/** Kiểm quyền release chính xác theo DCS-11 §A.4. */
+/** 3 vai đơn giản: Admin / Biên soạn / Phê duyệt. Scope lấy từ Dept chính, không kế thừa. */
+export type VaiTro = 'admin' | 'biensoan' | 'pheduyet';
+
+export interface UserScope {
+  dept_id: string | null;
+  site_id: string | null;
+  bu_ids: string[];
+}
+
+/** Scope suy từ primary_dept_id: dept -> site -> bu (qua org_site_bu). */
+export async function getUserScope(sql: Sql, userId: string): Promise<UserScope> {
+  const rows = await sql<{ dept_id: string | null; site_id: string | null }[]>`
+    SELECT u.primary_dept_id AS dept_id, dp.site_id AS site_id
+      FROM users u LEFT JOIN org_department dp ON dp.dept_id = u.primary_dept_id
+     WHERE u.user_id = ${userId}`;
+  const dept_id = rows[0]?.dept_id ?? null;
+  const site_id = rows[0]?.site_id ?? null;
+  let bu_ids: string[] = [];
+  if (site_id) {
+    const br = await sql<{ bu_id: string }[]>`
+      SELECT bu_id FROM org_site_bu WHERE site_id = ${site_id}`;
+    bu_ids = br.map((r) => r.bu_id);
+  }
+  return { dept_id, site_id, bu_ids };
+}
+
+/** Có cờ Phê duyệt: 1 trong 4 role duyệt cũ. Giữ tương thích ngược. */
+export async function canApproveDocs(sql: Sql, userId: string): Promise<boolean> {
+  const roles = await roleCodesOf(sql, userId);
+  return hasAnyReleaseRole(roles);
+}
+
+/** Kiểm quyền release: cờ Phê duyệt + scope Dept chính, fallback logic cũ trong giai đoạn chuyển đổi. */
 export async function canRelease(
   sql: Sql,
   userId: string,
   doc: DocScope,
 ): Promise<boolean> {
+  const roles = await roleCodesOf(sql, userId);
+  if (!hasAnyReleaseRole(roles)) return false;
+  // Nhóm group giữ chặt: chỉ DC_GROUP_OWNER (tránh site/dept duyệt nhầm tài liệu toàn cục).
+  if (doc.scope_level === 'group') {
+    const rows = await sql<{ ok: boolean }[]>`
+      SELECT EXISTS (
+        SELECT 1 FROM user_roles r
+         WHERE r.user_id = ${userId} AND r.is_active
+           AND r.role_code = 'DC_GROUP_OWNER' AND r.scope_level = 'group'
+      ) AS ok`;
+    return rows[0]?.ok ?? false;
+  }
+  // Scope mới từ Dept chính.
+  const scope = await getUserScope(sql, userId);
+  if (doc.scope_level === 'dept' && scope.dept_id && scope.dept_id === doc.scope_dept_id) return true;
+  if (doc.scope_level === 'site' && scope.site_id && scope.site_id === doc.scope_site_id) return true;
+  if (doc.scope_level === 'bu' && doc.scope_bu_id && scope.bu_ids.includes(doc.scope_bu_id)) return true;
+  // Fallback logic cũ Ver2 để không gãy quyền đang chạy.
   const rows = await sql<{ ok: boolean }[]>`
     SELECT EXISTS (
       SELECT 1
@@ -26,10 +76,7 @@ export async function canRelease(
        WHERE r.user_id = ${userId}
          AND r.is_active
          AND (
-           (r.role_code = 'DC_GROUP_OWNER'
-             AND ${doc.scope_level} = 'group'
-             AND r.scope_level = 'group')
-           OR (r.role_code = 'DC_BU_OWNER'
+           (r.role_code = 'DC_BU_OWNER'
              AND ${doc.scope_level} = 'bu'
              AND r.scope_bu_id = ${doc.scope_bu_id})
            OR (r.role_code = 'DC_SITE_QA_MANAGER'

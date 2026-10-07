@@ -17,7 +17,6 @@ import { canRegisterDocuments } from './permissions.js';
 
 export type DocType = 'SOP' | 'WI' | 'Form' | 'Policy' | 'External';
 export type Origin = 'noi_bo' | 'ngoai_bo';
-export type ApprovalMethod = 'ky_so' | 'ky_tay_so_hoa' | 'thu_dien_tu_luu_vet';
 export type ChangeSignificance = 'lon' | 'nho';
 
 export interface DocumentInput {
@@ -72,10 +71,6 @@ export interface VersionInput {
   versionNo: string;
   title: string;
   issuedDate: string;
-  approverName: string;
-  approvalReference?: string | null;
-  approvalUrl?: string | null;
-  approvalMethod: ApprovalMethod;
   externalEffectiveDate?: string | null;
   effectiveDate: string;
   reviewCycleMonths: number;
@@ -110,12 +105,9 @@ export async function validateForSubmit(
   v: VersionInput,
   opts: { m14Enabled: boolean },
 ): Promise<void> {
-  // C.2.1 — đủ trường bắt buộc theo origin
+  // C.2.1 — đủ trường bắt buộc theo origin (đã bỏ quản lý phê duyệt: không ép approval_reference).
   const doc = (await tx<{ origin: Origin }[]>`SELECT origin FROM documents WHERE doc_id = ${v.docId}`)[0];
   if (!doc) throw new BusinessError('reg.no_doc', 'Chưa có bản ghi tài liệu cho số hiệu này');
-  if (doc.origin === 'noi_bo' && !v.approvalReference) {
-    throw new BusinessError('reg.approval_ref', 'Tài liệu nội bộ bắt buộc có số hồ sơ phê duyệt');
-  }
   if (doc.origin === 'ngoai_bo' && !v.externalEffectiveDate) {
     throw new BusinessError('reg.ext_date', 'Tài liệu ngoại bộ bắt buộc có ngày hiệu lực pháp lý');
   }
@@ -179,7 +171,7 @@ export async function submitRegistration(
     await tx`
       INSERT INTO document_versions (
         version_id, doc_id, version_no, title,
-        issued_date, approver_name, approval_reference, approval_url, approval_method,
+        issued_date,
         external_effective_date, effective_date, review_cycle_months, expiry_date,
         source_channel, file_path, file_hash,
         status, registrant_user_id, owner_department_id,
@@ -187,7 +179,7 @@ export async function submitRegistration(
         required_reader_dept_ids, submitted_at
       ) VALUES (
         ${versionId}, ${v.docId}, ${v.versionNo}, ${v.title},
-        ${v.issuedDate}, ${v.approverName}, ${v.approvalReference ?? null}, ${v.approvalUrl ?? null}, ${v.approvalMethod},
+        ${v.issuedDate},
         ${v.externalEffectiveDate ?? null}, ${v.effectiveDate}, ${v.reviewCycleMonths}, ${v.expiryDate ?? null},
         ${v.sourceChannel}, ${v.filePath}, ${v.fileHash},
         'cho_xac_nhan', ${v.registrantUserId}, ${v.ownerDepartmentId},
@@ -252,13 +244,13 @@ export async function saveDraft(
     await tx`
       INSERT INTO document_versions (
         version_id, doc_id, version_no, title,
-        issued_date, approver_name, approval_reference, approval_method,
+        issued_date,
         effective_date, review_cycle_months,
         source_channel, file_path, file_hash,
         status, registrant_user_id, owner_department_id
       ) VALUES (
         ${versionId}, ${v.docId ?? doc.docId}, ${v.versionNo}, ${v.title},
-        ${v.issuedDate ?? today()}, ${v.approverName ?? '(chưa điền)'}, ${v.approvalReference ?? null}, ${v.approvalMethod ?? 'ky_so'},
+        ${v.issuedDate ?? today()},
         ${v.effectiveDate ?? today()}, ${v.reviewCycleMonths ?? 12},
         'thu_cong', ${v.filePath}, ${v.fileHash},
         'cho_hoan_thien', ${v.registrantUserId}, ${ownerDeptId}

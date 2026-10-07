@@ -24,13 +24,14 @@ export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavF
   if (!user) return { canRegister: false, canRelease: false, isAdmin: false, isAuthorOnly: false, canSeeMyDocuments: false, canSeeDataCheck: false };
   const roles = await roleCodesOf(sql, user.user_id);
   const canRelease = hasAnyReleaseRole(roles);
+  const canRegister = roles.has('DC_AUTHOR');
   return {
-    canRegister: roles.has('DC_AUTHOR'),
+    canRegister,
     canRelease,
     isAdmin: roles.has('DC_ADMIN'),
-    isAuthorOnly: roles.has('DC_AUTHOR') && !canRelease,
-    // Lỗi #13: mọi user đã đăng nhập đều thấy "Tài liệu của tôi" (lọc theo registrant_user_id).
-    canSeeMyDocuments: true,
+    isAuthorOnly: canRegister && !canRelease,
+    // 3 vai: Tài liệu của tôi chỉ khi có Biên soạn (có DC_AUTHOR).
+    canSeeMyDocuments: canRegister,
     // Lỗi #16: mọi user đã đăng nhập đều thấy "Kiểm tra dữ liệu nhập" (read-only).
     canSeeDataCheck: true,
   };

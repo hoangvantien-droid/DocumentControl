@@ -20,18 +20,53 @@ export interface CatalogRow {
   owner_department_id: string | null;
 }
 
-/** Danh mục tài liệu người dùng được thấy. status=null không lọc. */
+export interface CatalogFilters {
+  status?: string | null;
+  q?: string | null;
+  doc_type?: string | null;
+  origin?: string | null;
+  eff_from?: string | null;
+  eff_to?: string | null;
+  preset?: string | null;
+  sort?: string | null;
+  site_id?: string | null;
+  rollout_status?: string | null;
+}
+
+/** Danh mục tài liệu người dùng được thấy. Filters giữ trên URL để share/bookmark. */
 export async function listVisibleDocuments(
   sql: Sql,
   userId: string,
-  status: string | null = null,
+  statusOrFilters: string | CatalogFilters | null = null,
 ): Promise<CatalogRow[]> {
+  const f: CatalogFilters = typeof statusOrFilters === 'string' || statusOrFilters == null
+    ? { status: (statusOrFilters as string | null) ?? null }
+    : statusOrFilters;
+  const status = (f.status ?? '').trim() || null;
+  const q = (f.q ?? '').trim() || null;
+  const docType = (f.doc_type ?? '').trim() || null;
+  const origin = (f.origin ?? '').trim() || null;
+  const effFrom = (f.eff_from ?? '').trim() || null;
+  const effTo = (f.eff_to ?? '').trim() || null;
+  const preset = (f.preset ?? '').trim() || null;
+  const siteId = (f.site_id ?? '').trim() || null;
+  const rolloutStatus = (f.rollout_status ?? '').trim() || null;
+  const sort = (f.sort ?? '').trim() || 'hieu_luc_moi';
+  const orderBy = sort === 'ban_hanh_moi' ? 'v.issued_date DESC NULLS LAST, v.doc_id'
+    : sort === 'sap_het_han' ? 'v.expiry_date ASC NULLS LAST, v.doc_id'
+    : sort === 'so_hieu' ? 'v.doc_id ASC, v.version_no DESC'
+    : 'v.effective_date DESC NULLS LAST, v.doc_id';
+  // preset chuẩn: hieu_luc | new30 | expiring30 | overdue
+  const presetStatus = preset === 'hieu_luc' ? 'hieu_luc' : null;
+  const effStatus = status ?? presetStatus;
   return sql<CatalogRow[]>`
-    SELECT DISTINCT v.doc_id, v.version_id, v.version_no, v.title, v.status,
+    SELECT v.doc_id, v.version_id, v.version_no, v.title, v.status,
            d.doc_type, d.scope_level,
            v.effective_date::text AS effective_date,
            v.next_review_date::text AS next_review_date,
-           v.owner_department_id
+           v.owner_department_id,
+           v.issued_date::text AS issued_date,
+           v.expiry_date::text AS expiry_date
       FROM document_versions v
       JOIN documents d ON d.doc_id = v.doc_id
      WHERE (
@@ -58,9 +93,24 @@ export async function listVisibleDocuments(
               OR (r.role_code='DC_SITE_QA_MANAGER' AND d.scope_level = 'site' AND r.scope_site_id = d.scope_site_id)
               OR (r.role_code='DC_DEPT_HEAD'       AND d.scope_level = 'dept' AND r.scope_dept_id = d.scope_dept_id)))
        )
-       -- Lọc theo trạng thái (lỗi #6)
-       AND (${status}::varchar IS NULL OR v.status = ${status})
-     ORDER BY v.doc_id, v.version_no DESC`;
+       -- Lọc theo trạng thái
+       AND (${effStatus}::varchar IS NULL OR v.status = ${effStatus})
+       AND (${docType}::varchar IS NULL OR d.doc_type = ${docType})
+       AND (${origin}::varchar IS NULL OR d.origin = ${origin})
+       AND (${effFrom}::date IS NULL OR v.effective_date >= ${effFrom}::date)
+       AND (${effTo}::date IS NULL OR v.effective_date <= ${effTo}::date)
+       AND (${q}::text IS NULL OR v.doc_id ILIKE '%' || ${q} || '%' OR v.title ILIKE '%' || ${q} || '%' OR COALESCE(array_to_string(v.keywords, ' '), '') ILIKE '%' || ${q} || '%')
+       AND ((${preset}::varchar IS NULL OR ${preset} = 'hieu_luc')
+         OR (${preset} = 'new30' AND v.effective_date >= CURRENT_DATE - INTERVAL '30 days')
+         OR (${preset} = 'expiring30' AND v.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days')
+         OR (${preset} = 'overdue' AND v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE))
+       AND (${siteId}::uuid IS NULL OR EXISTS (SELECT 1 FROM document_site_rollout r WHERE r.version_id = v.version_id AND r.site_id = ${siteId}::uuid))
+       AND (${rolloutStatus}::varchar IS NULL OR EXISTS (SELECT 1 FROM document_site_rollout r WHERE r.version_id = v.version_id AND (${siteId}::uuid IS NULL OR r.site_id = ${siteId}::uuid) AND r.status = ${rolloutStatus}))
+     ORDER BY
+       CASE WHEN ${sort} = 'ban_hanh_moi' THEN v.issued_date END DESC NULLS LAST,
+       CASE WHEN ${sort} = 'sap_het_han' THEN v.expiry_date END ASC NULLS LAST,
+       CASE WHEN ${sort} = 'so_hieu' THEN v.doc_id END ASC,
+       v.effective_date DESC NULLS LAST, v.doc_id`;
 }
 
 export interface DocumentDetail extends CatalogRow {
@@ -70,9 +120,6 @@ export interface DocumentDetail extends CatalogRow {
   scope_site_id: string | null;
   scope_dept_id: string | null;
   issued_date: string | null;
-  approver_name: string | null;
-  approval_reference: string | null;
-  approval_url: string | null;
   expiry_date: string | null;
   rejection_reason: string | null;
   recall_reason: string | null;
@@ -89,8 +136,7 @@ export async function loadDetail(sql: Sql, versionId: string): Promise<DocumentD
            v.effective_date::text AS effective_date,
            v.next_review_date::text AS next_review_date,
            v.owner_department_id,
-           v.issued_date::text AS issued_date, v.approver_name,
-           v.approval_reference, v.approval_url,
+           v.issued_date::text AS issued_date,
            v.expiry_date::text AS expiry_date,
            v.rejection_reason, v.recall_reason,
            (v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE) AS qua_han_xem_xet

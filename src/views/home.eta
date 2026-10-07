@@ -13,7 +13,7 @@
 
   <% if (it.pending && it.pending.length > 0) { %>
     <div class="home-block">
-      <h2>Việc chờ tôi phê duyệt (<%= it.pending.length %>)</h2>
+      <h2>Việc chờ tôi xác nhận (<%= it.pending.length %>)</h2>
       <ul class="home-list">
         <% it.pending.forEach(function(p){ %>
           <li><a href="/confirm/<%= p.version_id %>"><%= p.doc_id %> v<%= p.version_no %> — <%= p.title %></a></li>
@@ -37,6 +37,6 @@
   <% } %>
 
   <% if ((!it.pending || it.pending.length===0) && (!it.rejected || it.rejected.length===0)) { %>
-    <p class="build-note">Hôm nay bạn chưa có việc nào cần xử lý.</p>
+    <p class="build-note">Không có việc nào cần bạn xử lý hôm nay.</p>
   <% } %>
 </section>

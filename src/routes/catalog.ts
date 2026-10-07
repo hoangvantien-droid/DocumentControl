@@ -10,6 +10,8 @@ import { isBusinessError } from '../lib/errors.js';
 import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
 } from '../domain/catalog.js';
+import { listRollout, addSiteRollout, setSiteRolloutStatus, isDraftingDept } from '../domain/rollout.js';
+import { listSites } from '../domain/org.js';
 import { recallVersion, recallImpact } from '../domain/lifecycle.js';
 import { canViewVersion as canViewDoc } from '../domain/catalog.js';
 import { canRelease } from '../domain/permissions.js';
@@ -21,12 +23,28 @@ import { listGroups } from '../domain/functional-groups.js';
 import type { Config } from '../config.js';
 
 export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
-  app.get<{ Querystring: { status?: string } }>('/documents', async (req, reply) => {
+  app.get<{ Querystring: { status?: string; q?: string; doc_type?: string; origin?: string; eff_from?: string; eff_to?: string; preset?: string; sort?: string; site_id?: string; rollout_status?: string } }>('/documents', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const status = (req.query.status ?? '').trim();
-    const docs = await listVisibleDocuments(sql, user.user_id, status || null);
-    return reply.view('catalog.eta', { docs, statusFilter: status });
+    const f = {
+      status: (req.query.status ?? '').trim() || null,
+      q: (req.query.q ?? '').trim() || null,
+      doc_type: (req.query.doc_type ?? '').trim() || null,
+      origin: (req.query.origin ?? '').trim() || null,
+      eff_from: (req.query.eff_from ?? '').trim() || null,
+      eff_to: (req.query.eff_to ?? '').trim() || null,
+      preset: (req.query.preset ?? '').trim() || null,
+      site_id: (req.query.site_id ?? '').trim() || null,
+      rollout_status: (req.query.rollout_status ?? '').trim() || null,
+      sort: (req.query.sort ?? '').trim() || 'hieu_luc_moi',
+    };
+    const [docs, sites] = await Promise.all([
+      listVisibleDocuments(sql, user.user_id, f),
+      listSites(sql),
+    ]);
+    const escS = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const siteOptions = sites.map((s) => `<option value="${escS(s.site_id)}"${f.site_id === s.site_id ? ' selected' : ''}>${escS(s.site_code)} — ${escS(s.name)}</option>`).join('');
+    return reply.view('catalog.eta', { docs, statusFilter: f.status ?? '', filters: f, sites, siteOptions });
   });
 
   // Lỗi #7: tải tệp PDF gốc của phiên bản đã được duyệt (da_dang_ky / hieu_luc).
@@ -78,7 +96,52 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       }
     }
     const matrix = await listMatrix(sql, detail.doc_id);
-    return reply.view('detail.eta', { d: detail, sections, links, current, canRecall, ackState, matrix, canRecallMatrix: canRecall });
+    const [rollout, sites] = await Promise.all([
+      listRollout(sql, req.params.id),
+      listSites(sql),
+    ]);
+    const canManageRollout = await isDraftingDept(sql, user.user_id, req.params.id);
+    const escD = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const siteOptions = sites.map((s) => `<option value="${escD(s.site_id)}">${escD(s.site_code)} — ${escD(s.name)}</option>`).join('');
+    return reply.view('detail.eta', { d: detail, sections, links, current, canRecall, ackState, matrix, canRecallMatrix: canRecall, rollout, sites, siteOptions, canManageRollout });
+  });
+
+  // Rollout theo site: thêm site + ngày áp dụng dự kiến (bộ phận soạn thảo).
+  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/rollout/add', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    try {
+      await addSiteRollout(sql, {
+        versionId: req.params.id,
+        siteId: (req.body.site_id ?? '').trim(),
+        plannedDate: (req.body.planned_date ?? '').trim() || null,
+        actorUserId: user.user_id,
+      });
+      return reply.redirect(`/documents/${req.params.id}`);
+    } catch (err) {
+      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      throw err;
+    }
+  });
+
+  // Rollout theo site: cập nhật đã áp dụng / tạm hoãn (bộ phận soạn thảo).
+  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/rollout/status', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    try {
+      await setSiteRolloutStatus(sql, {
+        versionId: req.params.id,
+        siteId: (req.body.site_id ?? '').trim(),
+        status: (req.body.status ?? '').trim() as 'chua_ap_dung' | 'da_ap_dung' | 'tam_hoan',
+        appliedDate: (req.body.applied_date ?? '').trim() || null,
+        pauseReason: (req.body.pause_reason ?? '').trim() || null,
+        actorUserId: user.user_id,
+      });
+      return reply.redirect(`/documents/${req.params.id}`);
+    } catch (err) {
+      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      throw err;
+    }
   });
 
   // Thu hồi: hiện tác động trước, rồi xác nhận.
