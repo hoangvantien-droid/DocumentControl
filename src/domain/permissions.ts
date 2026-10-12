@@ -13,6 +13,77 @@ export interface DocScope {
   scope_dept_id: string | null;
 }
 
+// ============================================================================
+// Hàm quyết định quyền THUẦN (không chạm DB) — tách để kiểm thử đơn vị và dùng
+// lại trong các hàm async bên dưới. Nguồn vào là TẬP MÃ VAI TRÒ đang active và
+// phạm vi (scope). 3 vai: Admin / Biên soạn (DC_AUTHOR) / Phê duyệt (DC_DEPT_HEAD).
+// ============================================================================
+
+/** Người chỉ-xem: không đăng ký, không xác nhận, không quản trị. */
+export function isReadOnlyUser(roleCodes: Set<string>): boolean {
+  const canRegister = roleCodes.has('DC_AUTHOR');
+  const canRelease = roleCodes.has('DC_DEPT_HEAD') || roleCodes.has('DC_ADMIN');
+  const isAdmin = roleCodes.has('DC_ADMIN');
+  return !canRegister && !canRelease && !isAdmin;
+}
+
+/**
+ * Tập trạng thái tài liệu người xem được phép thấy trong danh mục.
+ * - Người chỉ-xem (Reader): CHỈ tài liệu hiện hành (đang áp dụng / đã xác nhận
+ *   chờ hiệu lực). Không thấy bản lỗi thời, thu hồi, nháp, chờ.
+ * - Người có vai nghiệp vụ (Biên soạn/Phê duyệt/Admin): null = không giới hạn
+ *   trạng thái (để tra cứu lịch sử bản lỗi thời).
+ */
+export const CURRENT_VIEW_STATUSES = ['hieu_luc', 'da_dang_ky'] as const;
+
+export function allowedStatusesForViewer(roleCodes: Set<string>): readonly string[] | null {
+  return isReadOnlyUser(roleCodes) ? CURRENT_VIEW_STATUSES : null;
+}
+
+/** Phạm vi suy từ Dept chính của người dùng (để kiểm quyền release không-group). */
+export interface UserScopeRef {
+  dept_id: string | null;
+  site_id: string | null;
+  bu_ids: string[];
+}
+
+/**
+ * Quyết định quyền release THUẦN theo 3 vai + phạm vi, không chạm DB.
+ * - Phải có cờ Phê duyệt (DC_DEPT_HEAD hoặc DC_ADMIN) mới xét tiếp.
+ * - Tài liệu cấp 'group' (toàn tập đoàn): CHỈ DC_ADMIN. Siết leo thang quyền —
+ *   migration 013 gộp các vai duyệt cũ (Site QA/BU/Group owner) thành
+ *   DC_DEPT_HEAD@group; nếu cho DC_DEPT_HEAD duyệt group thì mọi người từng là
+ *   Site QA sẽ duyệt được tài liệu toàn tập đoàn (ngoài ý muốn).
+ * - Các cấp bu/site/dept: khớp đúng phạm vi suy từ Dept chính, không kế thừa chéo.
+ */
+export function canUserRelease(
+  roleCodes: Set<string>,
+  doc: DocScope,
+  userScope: UserScopeRef,
+): boolean {
+  const isAdmin = roleCodes.has('DC_ADMIN');
+  const hasReleaseFlag = roleCodes.has('DC_DEPT_HEAD') || isAdmin;
+  if (!hasReleaseFlag) return false;
+
+  // Admin duyệt được mọi phạm vi, kể cả tài liệu toàn tập đoàn.
+  if (isAdmin) return true;
+
+  if (doc.scope_level === 'group') {
+    // Chỉ Admin (đã trả true ở trên). DC_DEPT_HEAD@group KHÔNG duyệt được group.
+    return false;
+  }
+  if (doc.scope_level === 'dept') {
+    return !!userScope.dept_id && userScope.dept_id === doc.scope_dept_id;
+  }
+  if (doc.scope_level === 'site') {
+    return !!userScope.site_id && userScope.site_id === doc.scope_site_id;
+  }
+  if (doc.scope_level === 'bu') {
+    return !!doc.scope_bu_id && userScope.bu_ids.includes(doc.scope_bu_id);
+  }
+  return false;
+}
+
 /** 3 vai đơn giản: Admin / Biên soạn / Phê duyệt. Scope lấy từ Dept chính, không kế thừa. */
 export type VaiTro = 'admin' | 'biensoan' | 'pheduyet';
 
@@ -39,13 +110,11 @@ export async function getUserScope(sql: Sql, userId: string): Promise<UserScope>
   return { dept_id, site_id, bu_ids };
 }
 
-/** Có cờ Phê duyệt: 1 trong 4 role duyệt cũ. Giữ tương thích ngược. */
-export async function canApproveDocs(sql: Sql, userId: string): Promise<boolean> {
-  const roles = await roleCodesOf(sql, userId);
-  return hasAnyReleaseRole(roles);
-}
-
-/** Kiểm quyền release 3 vai: cờ Phê duyệt (DC_DEPT_HEAD group) + scope Dept chính, không kế thừa. */
+/**
+ * Kiểm quyền release 3 vai (async): đọc role + Dept chính từ DB rồi giao cho hàm
+ * thuần canUserRelease quyết định. Tài liệu cấp group CHỈ Admin (chống leo thang
+ * sau migration 013); bu/site/dept khớp Dept chính, không kế thừa chéo.
+ */
 export async function canRelease(
   sql: Sql,
   userId: string,
@@ -53,23 +122,10 @@ export async function canRelease(
 ): Promise<boolean> {
   const roles = await roleCodesOf(sql, userId);
   if (!hasAnyReleaseRole(roles)) return false;
-  // Tài liệu toàn cục: chỉ Phê duyệt có Dept chính đặc biệt hoặc Admin (giữ chặt).
-  if (doc.scope_level === 'group') {
-    const rows = await sql<{ ok: boolean }[]>`
-      SELECT EXISTS (
-        SELECT 1 FROM user_roles r
-         WHERE r.user_id = ${userId} AND r.is_active
-           AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
-             OR r.role_code = 'DC_ADMIN')
-      ) AS ok`;
-    return rows[0]?.ok ?? false;
-  }
-  // Scope từ Dept chính: dept/site/bu, không kế thừa chéo.
+  // Admin không cần Dept chính; tránh truy vấn thừa.
+  if (roles.has('DC_ADMIN')) return true;
   const scope = await getUserScope(sql, userId);
-  if (doc.scope_level === 'dept' && scope.dept_id && scope.dept_id === doc.scope_dept_id) return true;
-  if (doc.scope_level === 'site' && scope.site_id && scope.site_id === doc.scope_site_id) return true;
-  if (doc.scope_level === 'bu' && doc.scope_bu_id && scope.bu_ids.includes(doc.scope_bu_id)) return true;
-  return false;
+  return canUserRelease(roles, doc, scope);
 }
 
 export async function canRegisterDocuments(sql: Sql, userId: string): Promise<boolean> {

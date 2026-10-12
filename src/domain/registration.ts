@@ -83,7 +83,6 @@ export interface VersionInput {
   supersedesVersionId?: string | null;
   changeSignificance?: ChangeSignificance | null;
   changeSummary?: string | null;
-  requiredReaderDeptIds?: string[];
 }
 
 /** Tạo bản ghi documents nếu chưa có (doc_id do người nhập, không tự sinh). */
@@ -176,7 +175,7 @@ export async function submitRegistration(
         source_channel, file_path, file_hash,
         status, registrant_user_id, owner_department_id,
         supersedes_version_id, change_significance, change_summary,
-        required_reader_dept_ids, submitted_at
+        submitted_at
       ) VALUES (
         ${versionId}, ${v.docId}, ${v.versionNo}, ${v.title},
         ${v.issuedDate},
@@ -184,7 +183,7 @@ export async function submitRegistration(
         ${v.sourceChannel}, ${v.filePath}, ${v.fileHash},
         'cho_xac_nhan', ${v.registrantUserId}, ${v.ownerDepartmentId},
         ${v.supersedesVersionId ?? null}, ${v.changeSignificance ?? null}, ${v.changeSummary ?? null},
-        ${v.requiredReaderDeptIds ?? null}, now()
+        now()
       )`;
 
     await writeAudit(tx as TransactionSql, {

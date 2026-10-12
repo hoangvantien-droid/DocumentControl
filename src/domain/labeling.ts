@@ -22,9 +22,7 @@ export async function copyDocumentLabels(
     UPDATE document_versions t
        SET scope = f.scope,
            keywords = f.keywords,
-           applicable_site_ids = f.applicable_site_ids,
-           applicable_product_groups = f.applicable_product_groups,
-           required_reader_dept_ids = f.required_reader_dept_ids
+           applicable_product_groups = f.applicable_product_groups
       FROM document_versions f
      WHERE t.version_id = ${toVersionId} AND f.version_id = ${fromVersionId}`;
 }

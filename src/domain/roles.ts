@@ -39,31 +39,23 @@ export interface ScopeRef {
 function normalizeScope(role: RoleCode, scope: ScopeRef): {
   level: ScopeLevel; bu: string | null; site: string | null; dept: string | null;
 } {
-  // 3 vai: Admin / Biên soạn / Phê duyệt gán ở cấp hệ thống (group). Phạm vi duyệt lấy từ Dept chính.
-  const globalRoles: RoleCode[] = ['DC_ADMIN', 'DC_AUTHOR', 'DC_READER', 'DC_GROUP_OWNER', 'DC_DEPT_HEAD'];
-  if (globalRoles.includes(role)) {
+  // Mô hình 3 vai: Admin / Biên soạn (DC_AUTHOR) / Phê duyệt (DC_DEPT_HEAD) đều
+  // gán ở cấp hệ thống (group). Phạm vi duyệt suy từ Dept chính của người dùng.
+  // DC_READER, DC_GROUP_OWNER giữ ở group cho tương thích dữ liệu lịch sử.
+  const groupRoles: RoleCode[] = ['DC_ADMIN', 'DC_AUTHOR', 'DC_DEPT_HEAD', 'DC_READER', 'DC_GROUP_OWNER'];
+  if (groupRoles.includes(role)) {
     if (scope.level !== 'group') {
       throw new BusinessError('role.scope', `${role} chỉ được gán ở cấp Group`);
     }
     return { level: 'group', bu: null, site: null, dept: null };
   }
 
-  if (role === 'DC_BU_OWNER') {
-    if (scope.level !== 'bu' || !scope.buId) {
-      throw new BusinessError('role.scope', 'DC_BU_OWNER bắt buộc có phạm vi BU');
-    }
-    return { level: 'bu', bu: scope.buId, site: null, dept: null };
-  }
-  if (role === 'DC_SITE_QA_MANAGER') {
-    if (scope.level !== 'site' || !scope.siteId) {
-      throw new BusinessError('role.scope', 'DC_SITE_QA_MANAGER bắt buộc có phạm vi Site');
-    }
-    return { level: 'site', bu: null, site: scope.siteId, dept: null };
-  }
-  if (scope.level !== 'dept' || !scope.deptId) {
-    throw new BusinessError('role.scope', 'DC_DEPT_HEAD bắt buộc có phạm vi Department');
-  }
-  return { level: 'dept', bu: null, site: null, dept: scope.deptId };
+  // Các vai cũ theo phạm vi (DC_BU_OWNER, DC_SITE_QA_MANAGER) đã bị migration 013
+  // gộp về DC_DEPT_HEAD@group và không còn gán mới qua UI 3 vai. Chặn tường minh.
+  throw new BusinessError(
+    'role.scope',
+    `Vai trò ${role} không còn được gán trong mô hình 3 vai (đã gộp về Phê duyệt ở cấp Group)`,
+  );
 }
 
 /** Gán vai trò cho người dùng ở một phạm vi. Idempotent. */

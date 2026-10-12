@@ -2,7 +2,7 @@
 
 <h1>Chờ tôi xác nhận</h1>
 <% if (it.readOnly) { %>
-<div class="alert-banner alert-banner--info"><strong>Thông tin:</strong> Bạn là tác giả (Author) — không có quyền phê duyệt. Chỉ xem được tình trạng phê duyệt tại <a href="/my-documents">Tài liệu của tôi</a>.</div>
+<div class="alert-banner alert-banner--info"><strong>Thông tin:</strong> Bạn là người biên soạn — không có quyền xác nhận. Chỉ xem được tình trạng xác nhận tại <a href="/my-documents">Tài liệu của tôi</a>.</div>
 <% } %>
 
 <table class="data-table">

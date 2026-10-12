@@ -1,17 +1,35 @@
 /**
  * src/routes/packages.ts — gói ban hành (T-078→T-081).
  */
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { canRegisterDocuments } from '../domain/permissions.js';
 import {
   listPackages, packageMembers, createPackage, attachToPackage, movePackageDate, detachMember,
 } from '../domain/package.js';
 
 export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
-  app.get('/packages', async (req, reply) => {
+  /**
+   * Cổng chặn: gói ban hành là việc của người Biên soạn (DC_AUTHOR). Chặn sớm ở
+   * route để không lộ trang/endpoint cho người chỉ-xem (phòng thủ sâu — domain
+   * vẫn kiểm chủ sở hữu từng thao tác). Trả về user nếu hợp lệ, null nếu đã gửi
+   * phản hồi (chuyển hướng đăng nhập hoặc 403).
+   */
+  async function requireRegistrar(req: FastifyRequest, reply: FastifyReply) {
     const user = requireUser(req, reply);
+    if (!user) return null;
+    if (!(await canRegisterDocuments(sql, user.user_id))) {
+      reply.code(403);
+      reply.send('Không đủ thẩm quyền truy cập gói ban hành');
+      return null;
+    }
+    return user;
+  }
+
+  app.get('/packages', async (req, reply) => {
+    const user = await requireRegistrar(req, reply);
     if (!user) return reply;
     const packages = await listPackages(sql);
     const membersByPkg: Record<string, Awaited<ReturnType<typeof packageMembers>>> = {};
@@ -27,7 +45,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/packages', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireRegistrar(req, reply);
     if (!user) return reply;
     try {
       await createPackage(sql, {
@@ -44,7 +62,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/packages/attach', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireRegistrar(req, reply);
     if (!user) return reply;
     try {
       await attachToPackage(sql, {
@@ -58,7 +76,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/packages/move-date', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireRegistrar(req, reply);
     if (!user) return reply;
     try {
       await movePackageDate(sql, {
@@ -72,7 +90,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
   });
 
   app.post<{ Body: Record<string, string> }>('/packages/detach', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireRegistrar(req, reply);
     if (!user) return reply;
     try {
       await detachMember(sql, {

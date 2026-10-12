@@ -5,7 +5,7 @@
 <p class="doc-title"><%= v.title %></p>
 
 <% if (!it.allowed) { %>
-  <div class="login-error">Bạn không đủ thẩm quyền xác nhận tài liệu này. Hãy tìm người có quyền release ở cấp phạm vi tương ứng.</div>
+  <div class="login-error">Bạn không đủ thẩm quyền xác nhận tài liệu này. Hãy tìm người có quyền xác nhận ở cấp phạm vi tương ứng.</div>
 <% } %>
 
 <!-- Guard C.4: ngày hiệu lực đã trôi qua -> ẩn nút Xác nhận, chỉ còn Trả về -->

@@ -33,11 +33,17 @@ export interface CatalogFilters {
   rollout_status?: string | null;
 }
 
-/** Danh mục tài liệu người dùng được thấy. Filters giữ trên URL để share/bookmark. */
+/**
+ * Danh mục tài liệu người dùng được thấy. Filters giữ trên URL để share/bookmark.
+ * readOnlyViewer=true (người chỉ-xem/Reader): CHỈ hiện tài liệu hiện hành
+ * (hieu_luc / da_dang_ky), ẩn bản lỗi thời/thu hồi/nháp/chờ — lọc TRƯỚC trong
+ * truy vấn (DCS-2 §7.1), không lọc sau.
+ */
 export async function listVisibleDocuments(
   sql: Sql,
   userId: string,
   statusOrFilters: string | CatalogFilters | null = null,
+  readOnlyViewer = false,
 ): Promise<CatalogRow[]> {
   const f: CatalogFilters = typeof statusOrFilters === 'string' || statusOrFilters == null
     ? { status: (statusOrFilters as string | null) ?? null }
@@ -91,6 +97,8 @@ export async function listVisibleDocuments(
             AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
               OR r.role_code = 'DC_ADMIN'))
        )
+       -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (hieu_luc / da_dang_ky).
+       AND (${!readOnlyViewer} OR v.status IN ('hieu_luc', 'da_dang_ky'))
        -- Lọc theo trạng thái
        AND (${effStatus}::varchar IS NULL OR v.status = ${effStatus})
        AND (${docType}::varchar IS NULL OR d.doc_type = ${docType})
@@ -109,6 +117,14 @@ export async function listVisibleDocuments(
        CASE WHEN ${sort} = 'sap_het_han' THEN v.expiry_date END ASC NULLS LAST,
        CASE WHEN ${sort} = 'so_hieu' THEN v.doc_id END ASC,
        v.effective_date DESC NULLS LAST, v.doc_id`;
+}
+
+/** Trạng thái tài liệu được coi là "hiện hành" (người chỉ-xem được phép xem). */
+export const CURRENT_DOC_STATUSES = ['hieu_luc', 'da_dang_ky'] as const;
+
+/** Người chỉ-xem có bị chặn/điều hướng khỏi version này không (vì không hiện hành). */
+export function isCurrentStatus(status: string): boolean {
+  return (CURRENT_DOC_STATUSES as readonly string[]).includes(status);
 }
 
 export interface DocumentDetail extends CatalogRow {
@@ -144,13 +160,20 @@ export async function loadDetail(sql: Sql, versionId: string): Promise<DocumentD
   return rows[0] ?? null;
 }
 
-export async function canViewVersion(sql: Sql, userId: string, versionId: string): Promise<boolean> {
+export async function canViewVersion(
+  sql: Sql,
+  userId: string,
+  versionId: string,
+  readOnlyViewer = false,
+): Promise<boolean> {
   const rows = await sql<{ ok: boolean }[]>`
     SELECT EXISTS (
       SELECT 1
         FROM document_versions v
         JOIN documents d ON d.doc_id = v.doc_id
        WHERE v.version_id = ${versionId}
+         -- Người chỉ-xem (Reader): chỉ bản hiện hành (hieu_luc / da_dang_ky).
+         AND (${!readOnlyViewer} OR v.status IN ('hieu_luc', 'da_dang_ky'))
          AND (
            v.registrant_user_id = ${userId}
            OR d.scope_level = 'group'

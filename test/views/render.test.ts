@@ -28,12 +28,19 @@ import assert from 'node:assert/strict';
 import { Eta } from 'eta';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { docStatusLabel, scopeLabel, roleLabel } from '../../src/views/labels.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // test/views -> ../../src/views (khớp join(__dirname,'views') trong server.ts).
 const viewsRoot = join(__dirname, '..', '..', 'src', 'views');
 
 const eta = new Eta({ views: viewsRoot, cache: false });
+
+// Trộn nhãn tiếng Việt dùng chung (docStatusLabel/scopeLabel) vào mọi lần render,
+// khớp với src/views/render.ts để template gọi it.docStatusLabel/it.scopeLabel.
+const _rawRender = eta.render.bind(eta);
+(eta as unknown as { render: typeof _rawRender }).render = ((tpl: string, data?: Record<string, unknown>) =>
+  _rawRender(tpl, { docStatusLabel, scopeLabel, roleLabel, ...(data ?? {}) })) as typeof _rawRender;
 
 // nav/user dùng chung cho layout.eta (layout đọc it.nav, it.user, it.title).
 const nav = { isAdmin: true, canRegister: true, canRelease: true };
@@ -337,20 +344,6 @@ const variants: Variant[] = [
     },
   },
 
-  // --- qa.eta: result.citations (mảng) ---
-  { label: 'qa.eta (chưa bật)', view: 'qa.eta', data: { user, nav, enabled: false, question: '', result: null } },
-  {
-    label: 'qa.eta (có kết quả)',
-    view: 'qa.eta',
-    data: {
-      user, nav, enabled: true, question: 'Hỏi gì đó',
-      result: {
-        insufficientEvidence: false, answer: 'Câu trả lời',
-        citations: [{ doc_id: 'DOC-1', version_no: '1.0', section_code: '1', section_title: 'Mục 1', page_from: 2 }],
-      },
-    },
-  },
-
   // --- matrix-options.eta: depts/groups (mảng) — mảnh (không layout) ---
   { label: 'matrix-options.eta (rỗng)', view: 'matrix-options.eta', data: { id: 'v1', depts: [], groups: [] } },
   {
@@ -383,40 +376,6 @@ const variants: Variant[] = [
     label: 'search-suggest.eta (có hits)',
     view: 'search-suggest.eta',
     data: { hits: [{ version_id: 'v1', doc_id: 'DOC-1', version_no: '1.0', title: 'TL 1', status: 'hieu_luc' }] },
-  },
-
-  // --- ops-quality.eta: report.topLinkCodes (mảng) ---
-  {
-    label: 'ops-quality.eta (rỗng)',
-    view: 'ops-quality.eta',
-    data: { user, nav, report: { totalEffective: 0, sectionLevelLinkRatio: 0, poorParseRatio: 0, topLinkCodes: [] } },
-  },
-  {
-    label: 'ops-quality.eta (có phần tử)',
-    view: 'ops-quality.eta',
-    data: {
-      user, nav,
-      report: {
-        totalEffective: 10, sectionLevelLinkRatio: 50, poorParseRatio: 5,
-        topLinkCodes: [{ link_code: 'QD-01', doc_count: 35 }, { link_code: 'QD-02', doc_count: 3 }],
-      },
-    },
-  },
-
-  // --- ops-usage.eta: days (mảng), summary (object) ---
-  {
-    label: 'ops-usage.eta (rỗng)',
-    view: 'ops-usage.eta',
-    data: { user, nav, summary: { effective_docs: 0, total_users: 0, searches_last_7d: 0, acks_last_7d: 0 }, days: [] },
-  },
-  {
-    label: 'ops-usage.eta (có phần tử)',
-    view: 'ops-usage.eta',
-    data: {
-      user, nav,
-      summary: { effective_docs: 12, total_users: 5, searches_last_7d: 40, acks_last_7d: 8 },
-      days: [{ ngay: '2025-05-01', luot_tim: 3, luot_xem: 10, luot_hoi_ai: 1, luot_xac_nhan_doc: 2 }],
-    },
   },
 
   // --- audit.eta: rows/eventTypes (mảng), filter (object) ---

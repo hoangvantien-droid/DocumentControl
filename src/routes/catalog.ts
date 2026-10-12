@@ -9,6 +9,7 @@ import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
 import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
+  isCurrentStatus,
 } from '../domain/catalog.js';
 import { listRollout, addSiteRollout, setSiteRolloutStatus, isDraftingDept } from '../domain/rollout.js';
 import { listSites } from '../domain/org.js';
@@ -39,7 +40,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       sort: (req.query.sort ?? '').trim() || 'hieu_luc_moi',
     };
     const [docs, sites] = await Promise.all([
-      listVisibleDocuments(sql, user.user_id, f),
+      listVisibleDocuments(sql, user.user_id, f, req.nav.isReadOnly),
       listSites(sql),
     ]);
     const escS = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -73,7 +74,17 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     const user = requireUser(req, reply);
     if (!user) return reply;
     const detail = await loadDetail(sql, req.params.id);
-    if (!detail || !(await canViewVersion(sql, user.user_id, req.params.id))) {
+    if (!detail) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    // Người chỉ-xem (Reader): nếu mở trực tiếp bản KHÔNG hiện hành (lỗi thời/thu
+    // hồi/nháp...), chuyển hướng về bản đang áp dụng của cùng doc_id; không có
+    // bản hiện hành thì 404 (không lộ bản lỗi thời).
+    if (req.nav.isReadOnly && !isCurrentStatus(detail.status)) {
+      const current = await currentVersionOf(sql, detail.doc_id);
+      if (current) return reply.redirect(`/documents/${current.version_id}`);
+      reply.code(404);
+      return reply.send('Không tìm thấy tài liệu');
+    }
+    if (!(await canViewVersion(sql, user.user_id, req.params.id, req.nav.isReadOnly))) {
       reply.code(404);
       return reply.send('Không tìm thấy tài liệu');
     }

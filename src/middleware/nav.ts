@@ -5,23 +5,23 @@
  * active của người dùng. isAdmin theo Ver2: role DC_ADMIN.
  */
 import type { Sql } from 'postgres';
-import { roleCodesOf, hasAnyReleaseRole } from '../domain/permissions.js';
+import { roleCodesOf, hasAnyReleaseRole, isReadOnlyUser } from '../domain/permissions.js';
 import type { SessionUser } from '../domain/session.js';
 
 export interface NavFlags {
   canRegister: boolean;
   canRelease: boolean;
   isAdmin: boolean;
-  /** Lỗi #13: user chỉ là Author (không có vai trò release) — ẩn "Chờ tôi phê duyệt". */
+  /** Lỗi #13: user chỉ là Author (không có vai trò release) — ẩn "Chờ tôi xác nhận". */
   isAuthorOnly: boolean;
   /** Lỗi #13: hiện "Tài liệu của tôi" cho mọi user đã đăng nhập (không chỉ DC_AUTHOR). */
   canSeeMyDocuments: boolean;
-  /** Lỗi #16: hiện "Kiểm tra dữ liệu nhập" cho mọi user đã đăng nhập. */
-  canSeeDataCheck: boolean;
+  /** Người chỉ-xem (Reader): không đăng ký, không xác nhận, không quản trị. */
+  isReadOnly: boolean;
 }
 
 export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavFlags> {
-  if (!user) return { canRegister: false, canRelease: false, isAdmin: false, isAuthorOnly: false, canSeeMyDocuments: false, canSeeDataCheck: false };
+  if (!user) return { canRegister: false, canRelease: false, isAdmin: false, isAuthorOnly: false, canSeeMyDocuments: false, isReadOnly: true };
   const roles = await roleCodesOf(sql, user.user_id);
   const canRelease = hasAnyReleaseRole(roles);
   const canRegister = roles.has('DC_AUTHOR');
@@ -32,7 +32,6 @@ export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavF
     isAuthorOnly: canRegister && !canRelease,
     // 3 vai: Tài liệu của tôi chỉ khi có Biên soạn (có DC_AUTHOR).
     canSeeMyDocuments: canRegister,
-    // Lỗi #16: mọi user đã đăng nhập đều thấy "Kiểm tra dữ liệu nhập" (read-only).
-    canSeeDataCheck: true,
+    isReadOnly: isReadOnlyUser(roles),
   };
 }

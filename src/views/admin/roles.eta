@@ -1,7 +1,7 @@
 <% layout('/layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
 
 <div class="warn-banner">
-  DCS sở hữu vai trò và phạm vi. Vai trò release phải khớp đúng cấp và đúng đối tượng tài liệu.
+  Mô hình 3 vai: Admin / Biên soạn / Phê duyệt. Vai trò gán ở cấp hệ thống; phạm vi xác nhận lấy từ Dept chính của người dùng.
 </div>
 
 <h1>Vai trò theo phạm vi</h1>
@@ -15,7 +15,7 @@
       <td><%= u.full_name %> <small>(<%= u.email %>)</small></td>
       <td>
         <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
-          <span class="chip"><%= r.role_code %> @ <%= r.scope_level %></span>
+          <span class="chip"><%= it.roleLabel(r.role_code) %></span>
         <% }) %>
       </td>
     </tr>
@@ -32,7 +32,7 @@
   <select name="role_code" required>
     <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
     <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
-    <option value="DC_DEPT_HEAD">Phê duyệt — Duyệt theo Dept chính</option>
+    <option value="DC_DEPT_HEAD">Phê duyệt — Xác nhận theo Dept chính</option>
   </select>
   <input type="hidden" name="scope_level" value="group">
   <p class="muted">3 vai gán ở cấp hệ thống. Phạm vi duyệt lấy từ Dept chính của người dùng, không chọn BU/Site/Dept ở đây.</p>

@@ -28,7 +28,7 @@
       </select>
     </label>
     <label>Nguồn
-      <select name="origin">
+      <select name="origin" id="origin">
         <option value="noi_bo" <%= val.origin==='noi_bo'?'selected':'' %>>Nội bộ</option>
         <option value="ngoai_bo" <%= val.origin==='ngoai_bo'?'selected':'' %>>Ngoại bộ</option>
       </select>
@@ -36,7 +36,7 @@
     <label>Cấp phạm vi
       <select name="scope_level">
         <% var scopeLevels = ['group','bu','site','dept']; scopeLevels.forEach(function(s){ %>
-          <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= s %></option>
+          <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= it.scopeLabel(s) %></option>
         <% }) %>
       </select>
     </label>
@@ -61,11 +61,11 @@
   </fieldset>
 
   <fieldset>
-    <legend>Hồ sơ phê duyệt &amp; hiệu lực</legend>
+    <legend>Hiệu lực &amp; bộ phận sở hữu</legend>
     <label>Phiên bản <span class="req">*</span> <input name="version_no" required value="<%= val.version_no || '' %>" placeholder="1.0"></label>
     <label>Tiêu đề <span class="req">*</span> <input name="title" required value="<%= val.title || '' %>"></label>
     <label>Ngày áp dụng dự kiến <span class="req">*</span> <input type="date" name="issued_date" required value="<%= val.issued_date || '' %>"></label>
-    <label>Ngày hiệu lực pháp lý (ngoại bộ) <input type="date" name="external_effective_date" value="<%= val.external_effective_date || '' %>"></label>
+    <label id="field-external-eff" style="display:<%= val.origin==='ngoai_bo'?'block':'none' %>">Ngày hiệu lực pháp lý (ngoại bộ) <input type="date" name="external_effective_date" value="<%= val.external_effective_date || '' %>"></label>
     <label>Ngày hiệu lực (DCS) <span class="req">*</span> <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
     <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" value="<%= val.review_cycle_months || '12' %>" min="1"></label>
     <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= val.expiry_date || '' %>"></label>
@@ -135,6 +135,11 @@
   var mode = document.getElementById('reg_mode');
   var upd = document.getElementById('update_block');
   var sup = document.getElementById('supersedes_version_id');
+  var origin = document.getElementById('origin');
+  var extEff = document.getElementById('field-external-eff');
+  // Chỉ hiện "Ngày hiệu lực pháp lý (ngoại bộ)" khi Nguồn = Ngoại bộ.
+  function toggleExtEff(){ if(origin && extEff){ extEff.style.display = origin.value === 'ngoai_bo' ? 'block' : 'none'; } }
+  if(origin){ origin.addEventListener('change', toggleExtEff); toggleExtEff(); }
   if(!form) return;
   function check(){
     if(!sel||!sum||!err) return true;

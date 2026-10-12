@@ -6,6 +6,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import type { Eta } from 'eta';
+import { docStatusLabel, scopeLabel, roleLabel } from './labels.js';
 
 declare module 'fastify' {
   interface FastifyReply {
@@ -38,6 +39,10 @@ export function registerViewLayer(app: FastifyInstance, eta: Eta, basePath: stri
       user: req?.currentUser ?? null,
       nav: req?.nav ?? {},
       basePath,
+      // Nhãn tiếng Việt dùng chung cho mọi view (không in thẳng mã enum).
+      docStatusLabel,
+      scopeLabel,
+      roleLabel,
       ...data,
     };
     let html = eta.render(template, merged);

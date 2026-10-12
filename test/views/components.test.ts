@@ -20,12 +20,17 @@ import assert from 'node:assert/strict';
 import { Eta } from 'eta';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { docStatusLabel, scopeLabel, roleLabel } from '../../src/views/labels.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // test/views -> ../../src/views (khớp join(__dirname,'views') trong server.ts).
 const viewsRoot = join(__dirname, '..', '..', 'src', 'views');
 
 const eta = new Eta({ views: viewsRoot, cache: false });
+// Trộn nhãn dùng chung (khớp src/views/render.ts) để partial gọi được.
+const _rawRender = eta.render.bind(eta);
+(eta as unknown as { render: typeof _rawRender }).render = ((tpl: string, data?: Record<string, unknown>) =>
+  _rawRender(tpl, { docStatusLabel, scopeLabel, roleLabel, ...(data ?? {}) })) as typeof _rawRender;
 
 // Tiện ích: render một biến thể, khẳng định không ném lỗi + HTML không rỗng.
 function renderOk(view: string, props: Record<string, unknown>, msg: string): string {
@@ -411,65 +416,4 @@ for (const partial of ALL_PARTIALS) {
   });
 }
 
-/* =========================================================================
- * design.eta — Trang trưng bày thành phần (/design), Task 7.4.
- *
- * MỤC ĐÍCH: Hàng rào hồi quy MỘT-TEST cho trang tài liệu sống /design. Trang này
- * kết xuất TOÀN BỘ 14 thành phần bằng chính các partial thật dưới /components/*,
- * bọc trong layout.eta. Test khẳng định:
- *   1) Render KHÔNG ném lỗi và trả HTML không rỗng.
- *   2) Có khung layout: thẻ <html> và class="sidebar" (layout đọc it.nav, it.user).
- *   3) Chứa dấu hiệu class ĐẠI DIỆN cho cả 14 thành phần — nếu một partial vỡ
- *      hoặc bị gỡ khỏi trang trưng bày, test này bắt được ngay.
- *   4) Chứa ít nhất một nhãn tiếng Việt DÀI ('Người đăng ký ban hành') — bằng
- *      chứng trang có nhồi nhãn dài để kiểm bố cục (Yêu cầu 21/23).
- *
- * Khẳng định dùng includes/match (không phụ thuộc whitespace chính xác).
- *
- * _Requirements: 21.1, 21.2_
- * ========================================================================= */
-
-test('design.eta — render OK với khung layout + đại diện 14 thành phần', () => {
-  const html = renderOk(
-    'design.eta',
-    {
-      user: { user_id: 'u1', email: 'admin@example.com', full_name: 'Quản trị viên' },
-      nav: { isAdmin: true, canRegister: true, canRelease: true },
-    },
-    'design.eta không được ném lỗi khi render',
-  );
-
-  // Khung layout (layout.eta) đã ghép.
-  assert.match(html, /<html/, 'phải chứa thẻ <html> từ layout.eta');
-  assert.match(html, /class="sidebar"/, 'phải chứa class="sidebar" từ layout.eta');
-
-  // Dấu hiệu class đại diện cho cả 14 thành phần.
-  const COMPONENT_MARKERS = [
-    'status-label',
-    'alert-banner',
-    'btn--primary',
-    'field',
-    'check-item',
-    'data-table',
-    'card',
-    'result-card',
-    'compare-grid',
-    'steps',
-    'org-health',
-    'print-overlay',
-    'toast',
-    'empty-state',
-  ];
-  for (const marker of COMPONENT_MARKERS) {
-    assert.ok(
-      html.includes(marker),
-      `trang trưng bày phải chứa dấu hiệu thành phần "${marker}"`,
-    );
-  }
-
-  // Ít nhất một nhãn tiếng Việt dài (kiểm bố cục nhãn dài).
-  assert.ok(
-    html.includes('Người đăng ký ban hành'),
-    'phải chứa nhãn dài "Người đăng ký ban hành"',
-  );
-});
+// Trang trưng bày thành phần (/design) đã được gỡ khỏi hệ thống — test tương ứng loại bỏ.
