@@ -1,0 +1,57 @@
+<% layout('layout.eta', { title: 'Kết quả tìm — DCS', user: it.user }) %>
+
+<h1>Kết quả tìm kiếm</h1>
+
+<%
+/* Trang kết quả tìm kiếm (Yêu cầu 16). Bố cục hai cột:
+ *   - .search-filters: cột lọc trái 200px cố định (16.1). CHỈ TRÌNH BÀY —
+ *     không nối logic lọc phía máy chủ (không đổi route/domain). Các ô tích
+ *     là gợi ý trực quan; "Xoá lọc" quay về /search?q=<q>.
+ *   - .search-results-col: danh sách kết quả chiếm phần còn lại (min-width:0
+ *     để không tràn/cuộn ngang ở 1280px — Yêu cầu 2.3).
+ * Thanh trên (.search-bar-full) giữ ô tìm + công tắc "Bao gồm bản lịch sử"
+ * + số kết quả (16.2). Mỗi kết quả dùng result-card (16.3, Yêu cầu 9.2–9.5).
+ */
+const q = it.q || '';
+const clearHref = '/search?q=' + encodeURIComponent(q);
+const docTypes = ['SOP', 'WI', 'Form', 'Policy', 'External'];
+%>
+
+<div class="search-layout">
+  <aside class="search-filters">
+    <h2>Bộ lọc</h2>
+    <fieldset>
+      <legend>Loại tài liệu</legend>
+      <% docTypes.forEach(function(t){ %>
+        <label class="filter-check"><input type="checkbox" name="doc_type" value="<%= t %>"> <%= t %></label>
+      <% }) %>
+    </fieldset>
+    <a class="filter-clear" href="<%= clearHref %>">Xoá lọc</a>
+  </aside>
+
+  <div class="search-results-col">
+    <form method="get" action="/search" class="search-bar-full">
+      <input type="search" name="q" value="<%= q %>" placeholder="Tìm số hiệu, tiêu đề, nội dung…" autofocus>
+      <label class="hist-toggle">
+        <input type="checkbox" name="historical" value="1" <%= it.includeHistorical ? 'checked' : '' %>>
+        Bao gồm bản lịch sử
+      </label>
+      <button type="submit">Tìm</button>
+    </form>
+
+    <% if (it.q && it.hits.length === 0) { %>
+      <%~ include('/components/empty-state.eta', {
+        reason: 'Không tìm thấy kết quả cho "' + q + '". Tài liệu có thể đã hết hiệu lực hoặc dùng từ khoá khác.',
+        actionLabel: 'Bật "Bao gồm bản lịch sử" và tìm lại',
+        actionHref: '/search?q=' + encodeURIComponent(q) + '&historical=1'
+      }) %>
+    <% } else { %>
+      <p class="result-count"><%= it.hits.length %> kết quả</p>
+      <ul class="result-list">
+        <% it.hits.forEach(function(h){ %>
+          <%~ include('/components/result-card.eta', { hit: h }) %>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+</div>

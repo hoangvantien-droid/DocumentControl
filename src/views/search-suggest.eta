@@ -1,0 +1,15 @@
+<!-- Mảnh HTML cho htmx: gợi ý tìm kiếm (tối đa 5, khớp số hiệu lên đầu) -->
+<% if (it.hits.length === 0) { %>
+  <div class="suggest-empty">Không có gợi ý</div>
+<% } else { %>
+  <ul class="suggest-list">
+    <% it.hits.forEach(function(h){ %>
+      <li>
+        <a href="/documents/<%= h.version_id %>">
+          <b><%= h.doc_id %></b> v<%= h.version_no %> — <%= h.title %>
+          <span class="status status-<%= h.status %>"><%= h.status %></span>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>

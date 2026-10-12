@@ -1,0 +1,34 @@
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Runtime
+node_modules/
+*.log
+logs/
+
+# Databases
+data/
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# Backups
+*.bak
+*.bak-*
+*.backup

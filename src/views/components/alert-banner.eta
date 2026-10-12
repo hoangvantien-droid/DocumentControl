@@ -1,0 +1,19 @@
+<%
+/* components/alert-banner.eta — Dải cảnh báo, 4 loại (Yêu cầu 4).
+ *
+ * Chiếm trọn chiều rộng, viền trái 3px, nền nhạt (Req 4.1). Đặt ngay dưới
+ * tiêu đề trang (Req 4.3). Luôn kèm chữ mô tả và prefix loại bằng chữ tiếng
+ * Việt để màu không bao giờ là dấu hiệu duy nhất (Req 4.4 / 2.2 — in đen
+ * trắng vẫn phân biệt được).
+ * An toàn với prop thiếu: mặc định type='info', text=''.
+ *
+ * Props:
+ *   - type: 'error' | 'warning' | 'info' (mặc định) | 'success'
+ *   - text: chữ mô tả nội dung cảnh báo (Req 4.4)
+ */
+const type = it.type || 'info';
+const text = it.text || '';
+const prefixes = { error: 'Lỗi', warning: 'Cảnh báo', info: 'Thông tin', success: 'Thành công' };
+const prefix = prefixes[type] || prefixes.info;
+%>
+<div class="alert-banner alert-banner--<%= type %>"><strong><%= prefix %>:</strong> <%= text %></div>

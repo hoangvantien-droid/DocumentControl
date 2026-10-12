@@ -1,0 +1,36 @@
+<%
+/* components/progress-steps.eta — Thanh tiến độ ba bước (Yêu cầu 11).
+ *
+ * Chỉ trình bày — trạng thái do dữ liệu route truyền vào (steps + current),
+ * KHÔNG suy diễn ở view/CSS. An toàn với prop thiếu: mặc định steps = [],
+ * current không bắt buộc (mỗi bước tự mang state riêng).
+ *
+ * Props:
+ *   - steps: mảng các bước, mỗi bước là { label, href, state } với
+ *       state ∈ 'done' | 'current' | 'todo'. Nếu caller chỉ truyền label
+ *       (thiếu state) thì bước được coi là 'todo' để render an toàn.
+ *   - current: bước hiện tại (tuỳ chọn) — chỉ để tương thích chữ ký;
+ *       trạng thái emphasize đã nằm trong step.state === 'current'.
+ *
+ * Ba trạng thái phân biệt bằng KÝ HIỆU + văn bản, không chỉ bằng màu (11.1):
+ *   - done:    liên kết bấm được để quay lại (11.2), có dấu '✓' + label.
+ *   - current: tô đậm, là <span> (không phải liên kết).
+ *   - todo:    màu nhạt, <span> KHÔNG bấm được (11.3).
+ */
+const steps = Array.isArray(it.steps) ? it.steps : [];
+%>
+<ol class="steps">
+<% steps.forEach(function (step, i) {
+     const s = step || {};
+     const state = s.state === 'done' || s.state === 'current' ? s.state : 'todo';
+     const label = s.label != null ? s.label : '';
+%>
+  <% if (state === 'done' && s.href) { %>
+  <li class="step step--done"><a href="<%= s.href %>">✓ <%= label %></a></li>
+  <% } else if (state === 'current') { %>
+  <li class="step step--current"><span><%= label %></span></li>
+  <% } else { %>
+  <li class="step step--todo"><span><%= label %></span></li>
+  <% } %>
+<% }); %>
+</ol>

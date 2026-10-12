@@ -1,0 +1,30 @@
+<%
+/* components/toast.eta — Thông báo nổi (Yêu cầu 14).
+ *
+ * Thông báo NGẮN, tự biến mất, CHỈ cho hành động đã hoàn tất (Req 14.1, 14.2,
+ * 14.3): góc dưới-phải, ba tông default/success/error. KHÔNG dùng cho lỗi chặn
+ * người dùng — lỗi chặn hiển thị inline nơi khác (Req 14.4, không cần mã ở đây).
+ * An toàn với prop thiếu: mặc định tone='default', text=''.
+ *
+ * Tự ẩn sau 4000ms bằng một đoạn <script> tối giản (đặt display:none rồi gỡ nút),
+ * KHÔNG phụ thuộc framework, KHÔNG dùng transition/animation CSS.
+ *
+ * Props:
+ *   - tone: 'default' (mặc định) | 'success' | 'error'
+ *   - text: chữ nội dung thông báo (Req 14.1)
+ */
+const tone = it.tone || 'default';
+const text = it.text || '';
+%>
+<div class="toast toast--<%= tone %>" role="status" data-toast><%= text %></div>
+<script>
+(function () {
+  var els = document.querySelectorAll('[data-toast]');
+  var el = els[els.length - 1];
+  if (!el) return;
+  setTimeout(function () {
+    el.style.display = 'none';
+    if (el.parentNode) el.parentNode.removeChild(el);
+  }, 4000);
+})();
+</script>

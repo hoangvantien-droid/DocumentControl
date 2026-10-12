@@ -1,0 +1,41 @@
+<%
+/* components/check-item.eta — Ô checklist, 3 ký hiệu + mục tự tích (Yêu cầu 7).
+ *
+ * Ba ký hiệu RIÊNG — phân biệt bằng ký hiệu, KHÔNG chỉ bằng màu (Req 7.1, 7.2):
+ *   - Đạt:      mark='ok'   -> '✓' (xanh lá, .check-mark.ok)
+ *   - Chặn:     mark='fail' -> '✕' (đỏ chữ đậm, .check-mark.fail)
+ *   - Cảnh báo: mark='warn' -> '!' (vàng, .check-mark.warn)
+ *
+ * Mục cần người tự tích (Req 7.3) hiển thị KHÁC HẲN mục tự động: chữ đậm hơn,
+ * ô tích THẬT, nền hơi khác, viền trái vàng — qua class .check-item--manual.
+ * Nếu bị khoá (locked) — chỉ áp cho mục tự tích — render ô tích disabled kèm
+ * ổ khoá 🔒 (ký tự bổ trợ kèm chữ, không thay chữ) và đánh dấu nhãn .locked.
+ *
+ * An toàn với prop thiếu: mặc định mark='ok', label='' — không ném lỗi khi
+ * vắng prop.
+ *
+ * Props:
+ *   - mark:   'ok' (mặc định) | 'fail' | 'warn' — trạng thái mục tự động
+ *   - label:  chữ mô tả mục
+ *   - manual: mục cần người tự tích (boolean) — thêm .check-item--manual + ô tích thật
+ *   - locked: khoá mục tự tích (boolean) — ô tích disabled + 🔒 + nhãn .locked
+ *   - no:     số hiệu mục (tùy chọn) — hiện trong .check-no
+ */
+const mark = it.mark || 'ok';
+const label = it.label || '';
+const manual = !!it.manual;
+const locked = !!it.locked;
+const no = it.no;
+const symbol = mark === 'fail' ? '✕' : (mark === 'warn' ? '!' : '✓');
+%>
+<li class="check-item<%= manual ? ' check-item--manual' : '' %>">
+  <% if (no) { %><span class="check-no"><%= no %></span><% } %>
+  <% if (manual) { %>
+    <label class="check-label admin<%= locked ? ' locked' : '' %>">
+      <input type="checkbox"<%= locked ? ' disabled' : '' %>> <b><%= label %></b><% if (locked) { %> <span class="check-lock" aria-hidden="true">🔒</span> (đã khoá)<% } %>
+    </label>
+  <% } else { %>
+    <span class="check-mark <%= mark %>"><%= symbol %></span>
+    <span class="check-label"><%= label %></span>
+  <% } %>
+</li>

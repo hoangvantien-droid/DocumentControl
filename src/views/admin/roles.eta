@@ -1,0 +1,40 @@
+<% layout('/layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
+
+<div class="warn-banner">
+  DCS sở hữu vai trò và phạm vi. Vai trò release phải khớp đúng cấp và đúng đối tượng tài liệu.
+</div>
+
+<h1>Vai trò theo phạm vi</h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<table class="data-table">
+  <thead><tr><th>Người dùng</th><th>Vai trò hiện có</th></tr></thead>
+  <tbody>
+    <% it.users.forEach(function(u){ %>
+    <tr>
+      <td><%= u.full_name %> <small>(<%= u.email %>)</small></td>
+      <td>
+        <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
+          <span class="chip"><%= r.role_code %> @ <%= r.scope_level %></span>
+        <% }) %>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<h2>Gán vai trò</h2>
+<form method="post" action="/admin/roles" class="role-form">
+  <select name="user_id" required>
+    <option value="">-- người dùng --</option>
+    <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
+  </select>
+  <select name="role_code" required>
+    <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
+    <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
+    <option value="DC_DEPT_HEAD">Phê duyệt — Duyệt theo Dept chính</option>
+  </select>
+  <input type="hidden" name="scope_level" value="group">
+  <p class="muted">3 vai gán ở cấp hệ thống. Phạm vi duyệt lấy từ Dept chính của người dùng, không chọn BU/Site/Dept ở đây.</p>
+  <button type="submit">Gán</button>
+</form>

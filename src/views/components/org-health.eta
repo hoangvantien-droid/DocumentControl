@@ -1,0 +1,32 @@
+<%
+/* components/org-health.eta — Khối sức khoẻ tổ chức (Yêu cầu 12).
+ *
+ * Chỉ trình bày — dữ liệu `findings` do route truyền vào và ĐÃ sắp sẵn
+ * theo mức nghiêm trọng (hai loại "chưa có ai giữ vai trò release" lên
+ * đầu — Req 12.2). VIEW KHÔNG sắp lại; render đúng thứ tự nhận được.
+ * An toàn với prop thiếu: mặc định findings = [].
+ *
+ * Props:
+ *   - findings: mảng các phát hiện, mỗi phát hiện là
+ *       { type, target, consequence } — loại vấn đề, đối tượng, hậu quả
+ *       (Req 12.1). Mỗi mục hiển thị cả ba để màu không là dấu hiệu duy nhất.
+ *
+ * Khối rỗng (Req 12.3): hiện dòng XANH *Không phát hiện vấn đề nào*
+ * (`.org-health--ok`, dùng --status-success-*).
+ */
+const findings = Array.isArray(it.findings) ? it.findings : [];
+%>
+<% if (findings.length === 0) { %>
+<div class="org-health org-health--ok">Không phát hiện vấn đề nào</div>
+<% } else { %>
+<div class="org-health">
+<% findings.forEach(function (f) {
+     const item = f || {};
+     const type = item.type != null ? item.type : '';
+     const target = item.target != null ? item.target : '';
+     const consequence = item.consequence != null ? item.consequence : '';
+%>
+  <div class="org-health__item"><strong><%= type %></strong> — <%= target %> <span class="org-health__consequence"><%= consequence %></span></div>
+<% }); %>
+</div>
+<% } %>

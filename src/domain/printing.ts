@@ -1,0 +1,142 @@
+/**
+ * src/domain/printing.ts — bản in kiểm soát + tra cứu QR (T-085, T-086).
+ *
+ * Mỗi lần in sinh một bản ghi printed_copies với verify_token NGẪU NHIÊN
+ * (DEFAULT gen_random_bytes ở DB, không tuần tự — chống dò quét). Lớp phủ đóng
+ * KHI KẾT XUẤT, không sửa tệp gốc (nguyên tắc số 2). Tra cứu QR chỉ trả TÌNH
+ * TRẠNG, tuyệt đối không trả nội dung tài liệu.
+ */
+import type { Sql, TransactionSql } from 'postgres';
+import { BusinessError } from '../lib/errors.js';
+import { writeAudit } from '../lib/audit.js';
+import { canViewVersion } from './catalog.js';
+import QRCode from 'qrcode';
+
+export interface PrintRecord {
+  print_id: string;
+  verify_token: string;
+  doc_id: string;
+  version_no: string;
+  printed_at: string;
+  /** URL tra cứu đầy đủ (public, không cần đăng nhập) để dựng QR. */
+  verifyUrl: string;
+  /** SVG QR inline (lỗi #14) — trước đây chỉ in text đường dẫn. */
+  qrSvg: string;
+}
+
+/** Ghi nhận một lần in — sinh verify_token ngẫu nhiên (DB default). */
+export async function registerPrint(
+  sql: Sql,
+  input: { versionId: string; printedBy: string; intendedLocation?: string | null; basePath: string; publicUrl: string },
+): Promise<PrintRecord> {
+  return sql.begin(async (tx) => {
+    const allowed = await canViewVersion(tx as unknown as Sql, input.printedBy, input.versionId);
+    if (!allowed) {
+      throw new BusinessError('print.no_permission', 'Không có quyền in tài liệu này', { httpStatus: 403 });
+    }
+    const v = (await tx<{ status: string; doc_id: string; version_no: string }[]>`
+      SELECT status, doc_id, version_no FROM document_versions WHERE version_id = ${input.versionId}`)[0];
+    if (!v) throw new BusinessError('print.no_version', 'Không tìm thấy phiên bản');
+    if (v.status !== 'hieu_luc') {
+      throw new BusinessError('print.not_effective', 'Chỉ in được bản đang hiệu lực');
+    }
+    const row = (await tx<{ print_id: string; verify_token: string; printed_at: string }[]>`
+      INSERT INTO printed_copies (version_id, printed_by, intended_location, overlay_applied)
+      VALUES (${input.versionId}, ${input.printedBy}, ${input.intendedLocation ?? null}, TRUE)
+      RETURNING print_id, verify_token, printed_at::text AS printed_at`)[0]!;
+    await writeAudit(tx as TransactionSql, {
+      eventType: 'in', actorUserId: input.printedBy,
+      objectType: 'document_versions', objectId: input.versionId,
+      afterState: { print_id: row.print_id },
+    });
+    const verifyUrl = `${input.publicUrl}${input.basePath}/verify/${row.verify_token}`;
+    const qrSvg = await QRCode.toString(verifyUrl, { type: 'svg', width: 120, margin: 1 });
+    return {
+      print_id: row.print_id, verify_token: row.verify_token,
+      doc_id: v.doc_id, version_no: v.version_no, printed_at: row.printed_at,
+      verifyUrl, qrSvg,
+    };
+  }) as Promise<PrintRecord>;
+}
+
+export interface VerifyResult {
+  found: boolean;
+  /** con_hieu_luc | het_hieu_luc | thu_hoi | ban_in_thu_hoi | khong_ro | chua_ap_dung | tam_hoan */
+  status: string;
+  doc_id?: string;
+  version_no?: string;
+  currentVersionNo?: string | null;
+  site_code?: string | null;
+  site_name?: string | null;
+  rollout_status?: string | null;
+  applied_date?: string | null;
+}
+
+/**
+ * Tra cứu QR — KHÔNG cần đăng nhập, CHỈ trả tình trạng "tờ này còn dùng được
+ * không". Tuyệt đối không trả nội dung tài liệu, nhãn, danh sách người nhận.
+ */
+export async function verifyToken(sql: Sql, token: string, siteId?: string | null): Promise<VerifyResult> {
+  const rows = await sql<{
+    recall_status: string; ver_status: string; doc_id: string; version_no: string; version_id: string;
+  }[]>`
+    SELECT p.recall_status, v.status AS ver_status, v.doc_id, v.version_no, v.version_id
+      FROM printed_copies p JOIN document_versions v ON v.version_id = p.version_id
+     WHERE p.verify_token = ${token}`;
+  const row = rows[0];
+  if (!row) return { found: false, status: 'khong_ro' };
+
+  // Bản in bị thu hồi
+  if (row.recall_status === 'da_thu_hoi') {
+    return { found: true, status: 'ban_in_thu_hoi', doc_id: row.doc_id, version_no: row.version_no };
+  }
+
+  // Phiên bản còn hiệu lực?
+  const current = (await sql<{ version_no: string }[]>`
+    SELECT version_no FROM document_versions WHERE doc_id = ${row.doc_id} AND status = 'hieu_luc' LIMIT 1`)[0];
+
+  let status = 'khong_ro';
+  if (row.ver_status === 'hieu_luc') status = 'con_hieu_luc';
+  else if (row.ver_status === 'thu_hoi') status = 'thu_hoi';
+  else if (row.ver_status === 'het_hieu_luc') status = 'het_hieu_luc';
+
+  // Rollout theo site: nếu có siteId, ghi đè trạng thái theo site đó.
+  let site_code: string | null = null;
+  let site_name: string | null = null;
+  let rollout_status: string | null = null;
+  let applied_date: string | null = null;
+  if (siteId) {
+    const rr = (await sql<{ site_code: string; site_name: string; status: string; applied_date: string | null }[]>`
+      SELECT s.site_code, s.name AS site_name, r.status,
+             r.applied_date::text AS applied_date
+        FROM document_site_rollout r
+        JOIN org_site s ON s.site_id = r.site_id
+       WHERE r.version_id = ${row.version_id} AND r.site_id = ${siteId}`)[0];
+    if (rr) {
+      site_code = rr.site_code;
+      site_name = rr.site_name;
+      rollout_status = rr.status;
+      applied_date = rr.applied_date;
+      if (status === 'con_hieu_luc') {
+        if (rr.status === 'chua_ap_dung') status = 'chua_ap_dung';
+        else if (rr.status === 'tam_hoan') status = 'tam_hoan';
+      }
+    }
+  }
+
+  return {
+    found: true, status, doc_id: row.doc_id, version_no: row.version_no,
+    currentVersionNo: current?.version_no ?? null,
+    site_code, site_name, rollout_status, applied_date,
+  };
+}
+
+/** Ghi vết một lượt tra cứu QR (không cần user). */
+export async function auditQrLookup(sql: Sql, token: string): Promise<void> {
+  await sql.begin(async (tx) => {
+    await writeAudit(tx as TransactionSql, {
+      eventType: 'tra_cuu_qr', actorType: 'he_thong',
+      objectType: 'printed_copies', objectId: token.slice(0, 64),
+    });
+  });
+}

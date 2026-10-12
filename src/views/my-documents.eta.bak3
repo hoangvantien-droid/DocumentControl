@@ -1,0 +1,28 @@
+<% layout('layout.eta', { title: 'Tài liệu của tôi — DCS', user: it.user }) %>
+
+<h1>Tài liệu của tôi</h1>
+<p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p>
+
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Ngày hiệu lực</th><th></th></tr></thead>
+  <tbody>
+    <% it.docs.forEach(function(d){ %>
+    <tr>
+      <td><%= d.doc_id %></td>
+      <td><%= d.version_no %></td>
+      <td><%= d.title %></td>
+      <td><span class="status status-<%= d.status %>"><%= d.status %></span>
+        <% if (d.status === 'tu_choi' && d.rejection_reason) { %>
+          <div class="reject-reason">Lý do: <%= d.rejection_reason %></div>
+        <% } %>
+      </td>
+      <td><%= d.effective_date || '' %></td>
+      <td>
+        <% if (d.status === 'cho_hoan_thien') { %><a href="/my-documents/<%= d.version_id %>/edit">Sửa</a><% } %>
+        <% if (d.status === 'tu_choi') { %><a href="/register">Nộp lại</a><% } %>
+      </td>
+    </tr>
+    <% }) %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="6">Chưa có tài liệu nào.</td></tr><% } %>
+  </tbody>
+</table>

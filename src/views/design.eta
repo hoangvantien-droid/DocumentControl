@@ -1,0 +1,229 @@
+<% layout('layout.eta', { title: 'Trưng bày thành phần — DCS', user: it.user }) %>
+
+<%
+/* design.eta — Trang trưng bày thành phần (/design), Yêu cầu 21.
+ *
+ * Tài liệu SỐNG: kết xuất TOÀN BỘ 14 thành phần ở MỌI trạng thái tài liệu hoá
+ * (21.1, 21.2) bằng chính các partial thật dưới /components/*. Cũng là công cụ
+ * kiểm nghiệm thu Yêu cầu 23 (1280px, nhãn dài, in B/W, zoom 150%): trang có
+ * nhét sẵn các nhãn tiếng Việt DÀI NHẤT ("Người đăng ký ban hành", "Treo chờ
+ * bản mới", "Chờ hoàn thiện") để kiểm bố cục không vỡ.
+ *
+ * Chỉ trình bày — không dữ liệu/route/domain. Mọi text dùng <%= %> tự escape.
+ * An toàn khi it.user không có (layout xử lý user/nav).
+ */
+%>
+
+<h1>Trưng bày thành phần — DCS</h1>
+<p class="design-intro">
+  Trang tài liệu sống hiển thị toàn bộ 14 thành phần ở mọi trạng thái. Dùng để
+  kiểm hồi quy thị giác: 1280px không cuộn ngang, nhãn dài không vỡ, in đen
+  trắng phân biệt được, và zoom 150% vẫn dùng được.
+</p>
+
+<!-- ========================================================== 1. Nhãn trạng thái -->
+<section class="design-section">
+  <h2>1. Nhãn trạng thái (7 trạng thái tài liệu + 4 cấp phạm vi)</h2>
+  <p class="design-row">
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_hoan_thien', text: 'Chờ hoàn thiện' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: 'Chờ xác nhận' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'tu_choi', text: 'Từ chối' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'da_dang_ky', text: 'Đã đăng ký' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'hieu_luc', text: 'Hiệu lực' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'het_hieu_luc', text: 'Hết hiệu lực' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'thu_hoi', text: 'Thu hồi' }) %>
+  </p>
+  <p class="design-row">
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'group', text: 'Group' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'bu', text: 'BU' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'site', text: 'Site' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'scope', level: 'department', text: 'Department' }) %>
+  </p>
+  <p class="design-row">
+    <!-- Nhãn dài nhất — kiểm bố cục (Yêu cầu 23.2) -->
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'da_dang_ky', text: 'Người đăng ký ban hành' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: 'Treo chờ bản mới' }) %>
+    <%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_hoan_thien', text: 'Chờ hoàn thiện' }) %>
+  </p>
+</section>
+
+<!-- ========================================================== 2. Dải cảnh báo -->
+<section class="design-section">
+  <h2>2. Dải cảnh báo (4 loại)</h2>
+  <%~ include('/components/alert-banner.eta', { type: 'error', text: 'Không thể lưu — kiểm tra lại các ô bắt buộc phía dưới.' }) %>
+  <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Mức độ thay đổi lớn sẽ yêu cầu xác nhận lại từ tất cả người nhận.' }) %>
+  <%~ include('/components/alert-banner.eta', { type: 'info', text: 'Bản này đang chờ xác nhận của người có thẩm quyền release.' }) %>
+  <%~ include('/components/alert-banner.eta', { type: 'success', text: 'Đã ban hành phiên bản mới thành công.' }) %>
+</section>
+
+<!-- ========================================================== 3. Nút -->
+<section class="design-section">
+  <h2>3. Nút (5 kiểu + khoá kèm lý do)</h2>
+  <p class="design-row">
+    <%~ include('/components/button.eta', { variant: 'primary', label: 'Người đăng ký ban hành' }) %>
+    <%~ include('/components/button.eta', { variant: 'secondary', label: 'Treo chờ bản mới' }) %>
+    <%~ include('/components/button.eta', { variant: 'danger', label: 'Thu hồi' }) %>
+    <%~ include('/components/button.eta', { variant: 'success', label: 'Xác nhận' }) %>
+    <%~ include('/components/button.eta', { variant: 'small', label: 'Xem so sánh' }) %>
+  </p>
+  <p class="design-row">
+    <%~ include('/components/button.eta', { variant: 'primary', label: 'Ban hành', disabled: true, reason: 'Chưa xem so sánh phiên bản' }) %>
+  </p>
+</section>
+
+<!-- ========================================================== 4. Ô nhập + nhãn -->
+<section class="design-section">
+  <h2>4. Ô nhập + nhãn (4 trạng thái)</h2>
+  <div class="design-fields">
+    <%~ include('/components/field.eta', { label: 'Tiêu đề tài liệu', name: 'title_normal', value: 'Quy trình kiểm soát', hint: 'Nhập tiêu đề đầy đủ theo mẫu.' }) %>
+    <%~ include('/components/field.eta', { label: 'Số hiệu', name: 'doc_id_err', value: '', state: 'error', hint: 'Số hiệu không được để trống — nhập theo dạng SOP-XXX.' }) %>
+    <%~ include('/components/field.eta', { label: 'Người đăng ký ban hành', name: 'issuer_locked', value: 'Nguyễn Văn A', locked: true }) %>
+  </div>
+</section>
+
+<!-- ========================================================== 5. Ô checklist -->
+<section class="design-section">
+  <h2>5. Ô checklist (3 ký hiệu + mục tự tích)</h2>
+  <ul class="check-list">
+    <%~ include('/components/check-item.eta', { mark: 'ok', no: '1', label: 'Đã có người phê duyệt hợp lệ' }) %>
+    <%~ include('/components/check-item.eta', { mark: 'fail', no: '2', label: 'Thiếu tệp đính kèm bắt buộc' }) %>
+    <%~ include('/components/check-item.eta', { mark: 'warn', no: '3', label: 'Ngày hiệu lực nằm trong quá khứ' }) %>
+    <%~ include('/components/check-item.eta', { manual: true, no: '10', label: 'Tôi đã đối chiếu nội dung với bản gốc' }) %>
+    <%~ include('/components/check-item.eta', { manual: true, locked: true, no: '9b', label: 'Tôi đã xem so sánh mức độ thay đổi' }) %>
+  </ul>
+</section>
+
+<!-- ========================================================== 6. Bảng dữ liệu -->
+<section class="design-section">
+  <h2>6. Bảng dữ liệu (.data-table)</h2>
+  <table class="data-table">
+    <thead><tr><th>Số hiệu</th><th>Tiêu đề</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>SOP-001</td>
+        <td>Quy trình kiểm soát tài liệu</td>
+        <td><%~ include('/components/status-label.eta', { kind: 'doc', code: 'hieu_luc', text: 'Hiệu lực' }) %></td>
+        <td><a href="#">Xem</a></td>
+      </tr>
+      <tr>
+        <td>SOP-002</td>
+        <td>Hướng dẫn đăng ký tài liệu</td>
+        <td><%~ include('/components/status-label.eta', { kind: 'doc', code: 'cho_xac_nhan', text: 'Chờ xác nhận' }) %></td>
+        <td><a href="#">Xem</a></td>
+      </tr>
+      <tr class="empty-row"><td colspan="4">Chưa có tài liệu nào trong phạm vi của bạn.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ========================================================== 7. Thẻ -->
+<section class="design-section">
+  <h2>7. Thẻ (.card)</h2>
+  <div class="card">
+    <div class="card__title">Chờ hoàn thiện</div>
+    <p>Thẻ dùng nền trắng, viền mảnh, bo góc và một mức đổ bóng duy nhất. Tiêu đề
+      thẻ dùng cỡ chữ tiêu đề nhỏ.</p>
+  </div>
+</section>
+
+<!-- ========================================================== 8. Thẻ kết quả tìm kiếm -->
+<section class="design-section">
+  <h2>8. Thẻ kết quả tìm kiếm (result-card)</h2>
+  <ul class="result-list">
+    <%~ include('/components/result-card.eta', { hit: {
+      version_id: 'v1', doc_id: 'SOP-001', title: 'Quy trình kiểm soát tài liệu',
+      status: 'hieu_luc', version_no: '2.0', match_level: 'title', scope_level: 'site' } }) %>
+    <%~ include('/components/result-card.eta', { hit: {
+      version_id: 'v0', doc_id: 'SOP-001', title: 'Quy trình kiểm soát tài liệu',
+      status: 'het_hieu_luc', version_no: '1.0', match_level: 'title',
+      scope_level: 'site', current_version_no: '2.0' } }) %>
+    <%~ include('/components/result-card.eta', { hit: {
+      version_id: 'v2', doc_id: 'SOP-003', title: 'Hướng dẫn vận hành thiết bị',
+      status: 'hieu_luc', version_no: '1.0', match_level: 'section',
+      section_code: '4.2', section_title: 'An toàn vận hành',
+      snippet: 'Trước khi vận hành phải kiểm tra nguồn điện và cảnh báo.' } }) %>
+  </ul>
+</section>
+
+<!-- ========================================================== 9. Khối so sánh phiên bản -->
+<section class="design-section">
+  <h2>9. Khối so sánh phiên bản (.compare-grid)</h2>
+  <div class="compare-grid">
+    <div class="compare-head">Bản cũ</div>
+    <div class="compare-head">Bản mới</div>
+
+    <!-- Thêm: trái trống + phải xanh nhạt -->
+    <div class="compare-cell empty">(không có)</div>
+    <div class="compare-cell added"><b>5 Mục bổ sung</b><p>Nội dung mới được thêm vào.</p></div>
+
+    <!-- Xoá: trái đỏ nhạt + phải trống -->
+    <div class="compare-cell removed"><b>3 Mục cũ</b><p>Nội dung đã bị loại bỏ.</p></div>
+    <div class="compare-cell empty">(không có)</div>
+
+    <!-- Đổi: trái đỏ nhạt / phải xanh nhạt -->
+    <div class="compare-cell changed left"><b>2 Phạm vi áp dụng</b><p>Áp dụng cho một site.</p></div>
+    <div class="compare-cell changed right"><b>2 Phạm vi áp dụng</b><p>Áp dụng cho toàn BU.</p></div>
+  </div>
+  <details class="compare-collapsed">
+    <summary>1 Mục không đổi — Mục đích (bấm để mở)</summary>
+    <div class="compare-grid">
+      <div class="compare-cell"><b>1 Mục đích</b><p>Không thay đổi giữa hai phiên bản.</p></div>
+      <div class="compare-cell"><b>1 Mục đích</b><p>Không thay đổi giữa hai phiên bản.</p></div>
+    </div>
+  </details>
+</section>
+
+<!-- ========================================================== 10. Thanh tiến độ -->
+<section class="design-section">
+  <h2>10. Thanh tiến độ ba bước (progress-steps)</h2>
+  <%~ include('/components/progress-steps.eta', { steps: [
+    { label: 'Chọn loại tài liệu', href: '#step1', state: 'done' },
+    { label: 'Nhập thông tin', state: 'current' },
+    { label: 'Xác nhận', state: 'todo' }
+  ] }) %>
+</section>
+
+<!-- ========================================================== 11. Khối sức khoẻ tổ chức -->
+<section class="design-section">
+  <h2>11. Khối sức khoẻ tổ chức (org-health)</h2>
+  <h3>Có phát hiện</h3>
+  <%~ include('/components/org-health.eta', { findings: [
+    { type: 'Chưa có ai giữ vai trò release', target: 'Site Hà Nội', consequence: 'Không thể ban hành tài liệu mới.' },
+    { type: 'Chu kỳ rà soát quá hạn', target: 'Nhóm chức năng An toàn', consequence: '3 tài liệu cần rà soát lại.' }
+  ] }) %>
+  <h3>Không có phát hiện</h3>
+  <%~ include('/components/org-health.eta', { findings: [] }) %>
+</section>
+
+<!-- ========================================================== 12. Lớp phủ bản in -->
+<section class="design-section">
+  <h2>12. Lớp phủ bản in (.print-overlay)</h2>
+  <div class="print-overlay">
+    <div class="print-overlay__qr" aria-hidden="true"></div>
+    <div class="print-overlay__meta">Số hiệu: SOP-001 · Phiên bản: 2.0</div>
+    <div class="print-overlay__meta">Mã bản in: PR-2025-000123 · Ngày in: 2025-05-01 · Người in: Nguyễn Văn A</div>
+    <div class="print-overlay__warn">Bản in chỉ có giá trị tại thời điểm in — quét QR để kiểm tra</div>
+  </div>
+</section>
+
+<!-- ========================================================== 13. Thông báo nổi -->
+<section class="design-section">
+  <h2>13. Thông báo nổi (toast)</h2>
+  <p class="design-intro">Ba tông thông báo (tự gỡ sau 4 giây — theo thiết kế). Chỉ dùng cho việc đã hoàn tất.</p>
+  <%~ include('/components/toast.eta', { tone: 'default', text: 'Đã lưu nháp.' }) %>
+  <%~ include('/components/toast.eta', { tone: 'success', text: 'Đã ban hành thành công.' }) %>
+  <%~ include('/components/toast.eta', { tone: 'error', text: 'Không gửi được thông báo tới người nhận.' }) %>
+</section>
+
+<!-- ========================================================== 14. Trang trống -->
+<section class="design-section">
+  <h2>14. Trang trống (empty-state)</h2>
+  <h3>Chỉ lý do</h3>
+  <%~ include('/components/empty-state.eta', { reason: 'Bạn chưa có tài liệu nào chờ xác nhận.' }) %>
+  <h3>Lý do + hành động</h3>
+  <%~ include('/components/empty-state.eta', {
+    reason: 'Chưa có tài liệu nào trong phạm vi của bạn.',
+    actionLabel: 'Đăng ký tài liệu mới',
+    actionHref: '/register'
+  }) %>
+</section>

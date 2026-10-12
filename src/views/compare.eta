@@ -1,0 +1,47 @@
+<% layout('layout.eta', { title: 'So sánh phiên bản — DCS', user: it.user }) %>
+
+<h1>So sánh phiên bản</h1>
+
+<!-- Dòng cảnh báo bắt buộc, không cho ẩn (DCS-7 §4.2) -->
+<div class="warn-banner">
+  So sánh cho biết <b>cái gì</b> đã đổi, không cho biết đổi đó <b>lớn hay nhỏ</b>.
+  Sửa một lỗi chính tả và đổi một ngưỡng nhiệt độ đều hiện ra là "nội dung mục đã đổi".
+  Việc phán xét mức độ vẫn là của bạn.
+</div>
+
+<% if (it.reliability !== 'dang_tin') { %>
+  <!-- Ba trường hợp không so sánh được (T-060): KHÔNG hiện kết quả trống trơn -->
+  <div class="danger-banner">
+    <% if (it.reliability === 'la_phien_ban_dau_tien') { %>
+      Đây là phiên bản đầu tiên — không có bản trước để so sánh.
+    <% } else if (it.reliability === 'khong_co_muc_de_so') { %>
+      Tài liệu không có mục để so sánh (ví dụ biểu mẫu). Đối chiếu thủ công.
+    <% } else { %>
+      Bóc tách kém tin cậy ở một trong hai bản — kết quả so sánh KHÔNG đáng tin.
+      Đề nghị mở tệp gốc để đối chiếu.
+    <% } %>
+  </div>
+<% } else { %>
+  <div class="compare-grid">
+    <div class="compare-head">Bản cũ</div>
+    <div class="compare-head">Bản mới</div>
+    <% it.rows.forEach(function(r){ %>
+      <% if (r.change_type === 'them') { %>
+        <div class="compare-cell empty"></div>
+        <div class="compare-cell added"><b><%= r.section_code %> <%= r.new_title %></b><p><%= r.new_text || '' %></p></div>
+      <% } else if (r.change_type === 'xoa') { %>
+        <div class="compare-cell removed"><b><%= r.section_code %> <%= r.old_title %></b><p><%= r.old_text || '' %></p></div>
+        <div class="compare-cell empty"></div>
+      <% } else if (r.change_type === 'doi_tieu_de') { %>
+        <div class="compare-cell changed"><b><%= r.section_code %> <%= r.old_title %></b></div>
+        <div class="compare-cell changed"><b><%= r.section_code %> <%= r.new_title %></b> <span class="tag">đổi tiêu đề</span></div>
+      <% } else { %>
+        <div class="compare-cell changed"><b><%= r.section_code %> <%= r.old_title %></b><p><%= r.old_text || '' %></p></div>
+        <div class="compare-cell changed"><b><%= r.section_code %> <%= r.new_title %></b><p><%= r.new_text || '' %></p></div>
+      <% } %>
+    <% }) %>
+    <% if (it.rows.length === 0) { %>
+      <div class="compare-cell" style="grid-column: 1 / -1">Không có mục nào khác biệt.</div>
+    <% } %>
+  </div>
+<% } %>

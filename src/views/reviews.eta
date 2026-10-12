@@ -1,0 +1,42 @@
+<% layout('layout.eta', { title: 'Rà soát định kỳ — DCS', user: it.user }) %>
+
+<h1>Rà soát định kỳ</h1>
+
+<h2>Đang rà soát (<%= it.active.length %>)</h2>
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>Tiêu đề</th><th>Hạn</th><th>Quá hạn</th><th>Kết luận</th></tr></thead>
+  <tbody>
+    <% it.active.forEach(function(r){ %>
+    <tr>
+      <td><%= r.doc_id %> v<%= r.version_no %></td>
+      <td><%= r.title %></td>
+      <td><%= r.due_date %></td>
+      <td><%= r.so_ngay_qua_han > 0 ? r.so_ngay_qua_han + ' ngày' : '' %></td>
+      <td>
+        <form method="post" action="/reviews/<%= r.review_id %>/verdict" class="verdict-form">
+          <select name="verdict" required>
+            <option value="giu_nguyen">Giữ nguyên</option>
+            <option value="can_sua">Cần sửa</option>
+            <option value="huy_bo">Huỷ bỏ</option>
+          </select>
+          <input name="note" placeholder="Giải trình (bắt buộc nếu không giữ nguyên)">
+          <button type="submit">Ghi kết luận</button>
+        </form>
+      </td>
+    </tr>
+    <% }) %>
+    <% if (it.active.length === 0) { %><tr><td colspan="5">Không có rà soát đang mở.</td></tr><% } %>
+  </tbody>
+</table>
+
+<!-- Khối treo chờ bản mới PHẢI hiện, nếu ẩn thì các rà soát treo bị quên (DCS-7 §7.1) -->
+<h2>Treo chờ bản mới (<%= it.pending.length %>)</h2>
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>Tiêu đề</th><th>Kết luận</th><th>Giải trình</th></tr></thead>
+  <tbody>
+    <% it.pending.forEach(function(r){ %>
+    <tr><td><%= r.doc_id %> v<%= r.version_no %></td><td><%= r.title %></td><td>cần sửa</td><td><%= r.verdict_note %></td></tr>
+    <% }) %>
+    <% if (it.pending.length === 0) { %><tr><td colspan="4">Không có rà soát nào đang treo.</td></tr><% } %>
+  </tbody>
+</table>

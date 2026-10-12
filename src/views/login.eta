@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng nhập — DCS</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <h1>DCS</h1>
+    <p class="login-sub">Hệ Quản lý &amp; Phân phối Tài liệu Điện tử</p>
+
+    <% if (it.error) { %>
+      <div class="login-error"><%= it.error %></div>
+    <% } %>
+
+    <form method="post" action="/login">
+      <label>
+        Email
+        <input type="email" name="email" required autocomplete="username" autofocus>
+      </label>
+      <label>
+        Mật khẩu
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button type="submit">Đăng nhập</button>
+    </form>
+
+    <p class="phase-note">Giai đoạn 1 — đăng nhập nội bộ. Khi L1 vận hành sẽ chuyển sang đăng nhập một lần (SSO).</p>
+  </main>
+</body>
+</html>

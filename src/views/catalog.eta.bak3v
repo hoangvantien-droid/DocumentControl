@@ -1,0 +1,104 @@
+<% layout('layout.eta', { title: 'Danh mục tài liệu — DCS', user: it.user }) %>
+
+<h1>Danh mục tài liệu</h1>
+
+<% var ff = it.filters || {}; %>
+<div style="margin-bottom:8px">
+  <a href="/documents?preset=hieu_luc">Đang hiệu lực</a> ·
+  <a href="/documents?preset=new30">Mới ban hành 30 ngày</a> ·
+  <a href="/documents?preset=expiring30">Sắp hết hạn 30 ngày</a> ·
+  <a href="/documents?preset=overdue">Quá hạn rà soát</a> ·
+  <a href="/documents">Xóa lọc</a>
+</div>
+<form method="get" action="/documents" class="inline-form" style="margin-bottom:12px">
+  <label>Tìm: <input name="q" value="<%= ff.q || '' %>" placeholder="số hiệu / tiêu đề"></label>
+  <label>Preset:
+    <select name="preset">
+      <option value="">--</option>
+      <option value="hieu_luc" <%= ff.preset==='hieu_luc'?'selected':'' %>>Đang hiệu lực</option>
+      <option value="new30" <%= ff.preset==='new30'?'selected':'' %>>Mới 30 ngày</option>
+      <option value="expiring30" <%= ff.preset==='expiring30'?'selected':'' %>>Sắp hết hạn</option>
+      <option value="overdue" <%= ff.preset==='overdue'?'selected':'' %>>Quá hạn rà soát</option>
+    </select>
+  </label>
+  <label>Trạng thái:
+    <select name="status">
+      <option value="">-- Tất cả --</option>
+      <option value="hieu_luc" <%= it.statusFilter==='hieu_luc'?'selected':'' %>>Hiện hành</option>
+      <option value="het_hieu_luc" <%= it.statusFilter==='het_hieu_luc'?'selected':'' %>>Hết hiệu lực</option>
+      <option value="cho_xac_nhan" <%= it.statusFilter==='cho_xac_nhan'?'selected':'' %>>Chờ duyệt</option>
+      <option value="cho_hoan_thien" <%= it.statusFilter==='cho_hoan_thien'?'selected':'' %>>Nháp</option>
+      <option value="da_dang_ky" <%= it.statusFilter==='da_dang_ky'?'selected':'' %>>Đã đăng ký</option>
+      <option value="tu_choi" <%= it.statusFilter==='tu_choi'?'selected':'' %>>Từ chối</option>
+      <option value="thu_hoi" <%= it.statusFilter==='thu_hoi'?'selected':'' %>>Thu hồi</option>
+    </select>
+  </label>
+  <label>Loại:
+    <select name="doc_type">
+      <option value="">--</option>
+      <option value="SOP" <%= ff.doc_type==='SOP'?'selected':'' %>>SOP</option>
+      <option value="WI" <%= ff.doc_type==='WI'?'selected':'' %>>WI</option>
+      <option value="Form" <%= ff.doc_type==='Form'?'selected':'' %>>Form</option>
+      <option value="Policy" <%= ff.doc_type==='Policy'?'selected':'' %>>Policy</option>
+      <option value="External" <%= ff.doc_type==='External'?'selected':'' %>>External</option>
+    </select>
+  </label>
+  <label>Nguồn:
+    <select name="origin">
+      <option value="">--</option>
+      <option value="noi_bo" <%= ff.origin==='noi_bo'?'selected':'' %>>Nội bộ</option>
+      <option value="ngoai_bo" <%= ff.origin==='ngoai_bo'?'selected':'' %>>Ngoại bộ</option>
+    </select>
+  </label>
+  <label>Hiệu lực từ: <input type="date" name="eff_from" value="<%= ff.eff_from || '' %>"></label>
+  <label>đến: <input type="date" name="eff_to" value="<%= ff.eff_to || '' %>"></label>
+  <label>Site áp dụng:
+    <select name="site_id">
+      <option value="">--</option>
+      <%~ it.siteOptions %>
+    </select>
+  </label>
+  <label>Trạng thái site:
+    <select name="rollout_status">
+      <option value="">--</option>
+      <option value="chua_ap_dung" <%= ff.rollout_status==='chua_ap_dung'?'selected':'' %>>Chưa áp dụng</option>
+      <option value="da_ap_dung" <%= ff.rollout_status==='da_ap_dung'?'selected':'' %>>Đã áp dụng</option>
+      <option value="tam_hoan" <%= ff.rollout_status==='tam_hoan'?'selected':'' %>>Tạm hoãn</option>
+    </select>
+  </label>
+  <label>Sắp xếp:
+    <select name="sort">
+      <option value="hieu_luc_moi" <%= ff.sort==='hieu_luc_moi'?'selected':'' %>>Hiệu lực mới nhất</option>
+      <option value="ban_hanh_moi" <%= ff.sort==='ban_hanh_moi'?'selected':'' %>>Ban hành mới nhất</option>
+      <option value="sap_het_han" <%= ff.sort==='sap_het_han'?'selected':'' %>>Sắp hết hạn</option>
+      <option value="so_hieu" <%= ff.sort==='so_hieu'?'selected':'' %>>Số hiệu A-Z</option>
+    </select>
+  </label>
+  <button type="submit">Lọc</button>
+</form>
+
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>PB</th><th>Tiêu đề</th><th>Loại</th><th>Phạm vi</th><th>Trạng thái</th><th>Hiệu lực</th><th>File PDF</th></tr></thead>
+  <tbody>
+    <% it.docs.forEach(function(d){ %>
+    <tr>
+      <td><a href="/documents/<%= d.version_id %>"><%= d.doc_id %></a></td>
+      <td><%= d.version_no %></td>
+      <td><%= d.title %></td>
+      <td><%= d.doc_type %></td>
+      <td><%= d.scope_level %></td>
+      <td><span class="status status-<%= d.status %>"><%= d.status %></span></td>
+      <td><%= d.effective_date || '' %></td>
+      <td>
+        <% if (d.status === 'da_dang_ky' || d.status === 'hieu_luc') { %>
+          <a href="/documents/<%= d.version_id %>/download">Tải PDF</a>
+          <% if (d.status === 'hieu_luc') { %>
+            · <a href="/documents/<%= d.version_id %>">In bản kiểm soát</a>
+          <% } %>
+        <% } else { %>—<% } %>
+      </td>
+    </tr>
+    <% }) %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="8">Chưa có tài liệu nào trong phạm vi của bạn.</td></tr><% } %>
+  </tbody>
+</table>

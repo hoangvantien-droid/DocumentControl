@@ -1,0 +1,26 @@
+<%
+/* components/button.eta — Nút, 5 kiểu + khoá kèm lý do (Yêu cầu 5).
+ *
+ * Năm kiểu qua biến thể .btn--<variant> (Req 5.1); nút Chính đổi nền đậm
+ * khi di chuột (Req 5.2, ở CSS). Nút không đặt chiều rộng cứng — giãn theo
+ * nội dung (Req 2.5/2.6). Khi nút bị khoá và có lý do, hiển thị chú thích
+ * ngay cạnh nút để người dùng biết vì sao (Req 5.3).
+ * An toàn với prop thiếu: mặc định variant='primary', label='', type='button'.
+ *
+ * Props:
+ *   - variant: 'primary' (mặc định) | 'secondary' | 'danger' | 'success' | 'small'
+ *   - label: chữ trên nút
+ *   - type: 'button' (mặc định) | 'submit' | 'reset'
+ *   - disabled: khoá nút (boolean)
+ *   - reason: lý do khoá, hiển thị cạnh nút khi disabled (Req 5.3)
+ */
+const variant = it.variant || 'primary';
+const label = it.label || '';
+const type = it.type || 'button';
+const disabled = !!it.disabled;
+const reason = it.reason || '';
+%>
+<span class="btn-group">
+  <button class="btn btn--<%= variant %>" type="<%= type %>"<%= disabled ? ' disabled' : '' %>><%= label %></button>
+  <% if (disabled && reason) { %><small class="btn-reason"><%= reason %></small><% } %>
+</span>

@@ -1,0 +1,23 @@
+<% layout('layout.eta', { title: 'Mức độ sử dụng — DCS', user: it.user }) %>
+<% var s = it.summary; %>
+
+<h1>Chỉ số mức độ sử dụng</h1>
+<p class="muted">Đo thứ quan trọng nhất: hệ thống có thực sự được dùng không. Nếu thấp, các chỉ số kiểm soát khác vô nghĩa.</p>
+
+<div class="metric-grid">
+  <div class="metric-card"><div class="metric-num"><%= s.effective_docs %></div><div class="metric-label">Tài liệu hiệu lực</div></div>
+  <div class="metric-card"><div class="metric-num"><%= s.total_users %></div><div class="metric-label">Người dùng hoạt động</div></div>
+  <div class="metric-card"><div class="metric-num"><%= s.searches_last_7d %></div><div class="metric-label">Lượt tìm 7 ngày</div></div>
+  <div class="metric-card"><div class="metric-num"><%= s.acks_last_7d %></div><div class="metric-label">Xác nhận đọc 7 ngày</div></div>
+</div>
+
+<h2>Theo ngày (30 ngày gần nhất)</h2>
+<table class="data-table">
+  <thead><tr><th>Ngày</th><th>Tìm</th><th>Xem</th><th>Hỏi AI</th><th>Xác nhận đọc</th></tr></thead>
+  <tbody>
+    <% it.days.forEach(function(d){ %>
+      <tr><td><%= d.ngay %></td><td><%= d.luot_tim %></td><td><%= d.luot_xem %></td><td><%= d.luot_hoi_ai %></td><td><%= d.luot_xac_nhan_doc %></td></tr>
+    <% }) %>
+    <% if (it.days.length === 0) { %><tr><td colspan="5">Chưa có dữ liệu sử dụng.</td></tr><% } %>
+  </tbody>
+</table>

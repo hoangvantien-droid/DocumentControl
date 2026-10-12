@@ -1,0 +1,173 @@
+<% layout('layout.eta', { title: 'Đăng ký tài liệu — DCS', user: it.user }) %>
+<% var val = it.values || {}; %>
+<style>.reg-form label .req { color: var(--danger, #c0392b); font-weight: 700; }</style>
+
+<h1><% if (it.editVersionId) { %>Sửa nháp đăng ký<% } else { %>Đăng ký tài liệu ban hành<% } %></h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<%~ include('/components/progress-steps.eta', { steps: [
+  { label: '① Tài liệu', state: 'current' },
+  { label: '② Hiệu lực', state: 'todo' },
+  { label: '③ Phân loại', state: 'todo' }
+] }) %>
+
+<div class="reg-layout">
+<div class="reg-main">
+<form method="post" action="<%= it.editVersionId ? '/my-documents/' + it.editVersionId + '/edit' : '/register' %>" class="reg-form" enctype="multipart/form-data">
+<% if (it.editVersionId) { %><input type="hidden" name="edit_version_id" value="<%= it.editVersionId %>"><% } %>
+  <fieldset id="field-doc_id">
+    <legend>Định danh &amp; phạm vi</legend>
+    <label>Số hiệu tài liệu <span class="req">*</span>
+      <input name="doc_id" required value="<%= val.doc_id || '' %>" placeholder="MML/QA/HD-005">
+    </label>
+    <label>Loại
+      <select name="doc_type">
+        <% var docTypes = ['SOP','WI','Form','Policy','External']; docTypes.forEach(function(t){ %>
+          <option value="<%= t %>" <%= val.doc_type===t?'selected':'' %>><%= t %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Nguồn
+      <select name="origin">
+        <option value="noi_bo" <%= val.origin==='noi_bo'?'selected':'' %>>Nội bộ</option>
+        <option value="ngoai_bo" <%= val.origin==='ngoai_bo'?'selected':'' %>>Ngoại bộ</option>
+      </select>
+    </label>
+    <label>Cấp phạm vi
+      <select name="scope_level">
+        <% var scopeLevels = ['group','bu','site','dept']; scopeLevels.forEach(function(s){ %>
+          <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>BU (nếu cấp bu)
+      <select name="scope_bu_id"><option value="">--</option>
+        <% it.bus.forEach(function(x){ %><option value="<%= x.bu_id %>"><%= x.bu_code %></option><% }) %>
+      </select>
+    </label>
+    <label>Site (nếu cấp site)
+      <select name="scope_site_id"><option value="">--</option>
+        <% it.sites.forEach(function(x){ %><option value="<%= x.site_id %>"><%= x.site_code %></option><% }) %>
+      </select>
+    </label>
+    <label>Department (nếu cấp dept)
+      <select name="scope_dept_id"><option value="">--</option>
+        <% it.depts.forEach(function(x){ %><option value="<%= x.dept_id %>"><%= x.dept_code %></option><% }) %>
+      </select>
+    </label>
+    <label id="field-file">Tệp PDF của tài liệu <span class="req">*</span>
+      <input type="file" name="file" accept="application/pdf" required>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Hồ sơ phê duyệt &amp; hiệu lực</legend>
+    <label>Phiên bản <span class="req">*</span> <input name="version_no" required value="<%= val.version_no || '' %>" placeholder="1.0"></label>
+    <label>Tiêu đề <span class="req">*</span> <input name="title" required value="<%= val.title || '' %>"></label>
+    <label>Ngày ban hành <span class="req">*</span> <input type="date" name="issued_date" required value="<%= val.issued_date || '' %>"></label>
+    <label>Ngày hiệu lực pháp lý (ngoại bộ) <input type="date" name="external_effective_date" value="<%= val.external_effective_date || '' %>"></label>
+    <label>Ngày hiệu lực (DCS) <span class="req">*</span> <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
+    <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" value="<%= val.review_cycle_months || '12' %>" min="1"></label>
+    <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= val.expiry_date || '' %>"></label>
+    <label>Bộ phận sở hữu <span class="req">*</span>
+      <select name="owner_department_id" required
+              hx-get="/register/recipient-count" hx-trigger="change"
+              hx-target="#recip-count" hx-swap="innerHTML"
+              hx-params="owner_department_id">
+        <option value="">--</option>
+        <% it.depts.forEach(function(x){ %><option value="<%= x.dept_id %>"><%= x.dept_code %></option><% }) %>
+      </select>
+    </label>
+    <div id="recip-count" class="recip-count muted"></div>
+  </fieldset>
+
+  <fieldset id="field-change_significance">
+    <legend>Phiên bản mới (nếu thay thế bản cũ)</legend>
+    <label>Thao tác <span class="req">*</span>
+      <select name="reg_mode" id="reg_mode">
+        <option value="new" <%= val.reg_mode!=='update'?'selected':'' %>>Tạo mới</option>
+        <option value="update" <%= val.reg_mode==='update'?'selected':'' %>>Update bản cũ</option>
+      </select>
+    </label>
+    <div id="update_block" style="display:<%= val.reg_mode==='update'?'block':'none' %>">
+      <label>Chọn bản cũ đang hiệu lực / đã đăng ký <span class="req">*</span>
+        <select name="supersedes_version_id" id="supersedes_version_id">
+          <option value="">-- chọn bản cũ --</option>
+          <%~ it.supersedeOptions %>
+        </select>
+      </label>
+      <label>Mức độ thay đổi <span class="req">*</span>
+        <select name="change_significance" id="change_significance"><option value="">--</option>
+          <option value="lon">Lớn</option><option value="nho">Nhỏ</option>
+        </select>
+      </label>
+    </div>
+    <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Thay đổi nhỏ nghĩa là cả xưởng KHÔNG phải xác nhận đọc lại.' }) %>
+    <label>Tóm tắt thay đổi (bắt buộc nếu lớn) <span class="req">*</span> <input name="change_summary" id="change_summary" value="<%= val.change_summary || '' %>"></label>
+    <div id="change_summary_error" class="field__hint field__hint--error" style="display:none">Thay đổi lớn bắt buộc nhập tóm tắt lý do.</div>
+  </fieldset>
+
+  <fieldset id="field-link_code">
+    <legend>Nhãn liên kết (bắt buộc ít nhất một)</legend>
+    <label>Loại nhãn
+      <select name="link_type">
+        <option value="dieu_khoan">Điều khoản</option>
+        <option value="cong_doan">Công đoạn</option>
+        <option value="diem_kiem_soat">Điểm kiểm soát</option>
+        <option value="moi_nguy">Mối nguy</option>
+        <option value="tai_lieu">Tài liệu</option>
+      </select>
+    </label>
+    <label>Mã liên kết <input name="link_code" placeholder="BRC-9-5.6.2"></label>
+  </fieldset>
+
+  <button type="submit" class="primary">Nộp đăng ký</button>
+  <button type="submit" class="btn-diff" formaction="/register/draft">Lưu nháp</button>
+</form>
+<script>
+// Lỗi #2: chặn submit + hiện inline error đỏ khi chọn "Lớn" mà thiếu tóm tắt.
+// Lỗi #4: toggle khối "Chọn bản cũ" theo reg_mode.
+(function(){
+  var form = document.querySelector('form.reg-form');
+  var sel = document.getElementById('change_significance');
+  var sum = document.getElementById('change_summary');
+  var err = document.getElementById('change_summary_error');
+  var mode = document.getElementById('reg_mode');
+  var upd = document.getElementById('update_block');
+  var sup = document.getElementById('supersedes_version_id');
+  if(!form) return;
+  function check(){
+    if(!sel||!sum||!err) return true;
+    var bad = sel.value === 'lon' && !sum.value.trim();
+    err.style.display = bad ? 'block' : 'none';
+    sum.style.borderColor = bad ? 'var(--danger, #c0392b)' : '';
+    return !bad;
+  }
+  if(sel) sel.addEventListener('change', check);
+  if(sum) sum.addEventListener('input', check);
+  if(mode&&upd) mode.addEventListener('change', function(){
+    upd.style.display = mode.value === 'update' ? 'block' : 'none';
+  });
+  form.addEventListener('submit', function(e){
+    if(mode && mode.value === 'update' && sup && !sup.value){
+      e.preventDefault();
+      sup.focus();
+      if(err){ err.textContent = 'Update bản cũ: phải chọn bản cũ đang hiệu lực / đã đăng ký.'; err.style.display='block'; }
+      return;
+    }
+    if(!check()){ e.preventDefault(); if(sum) sum.focus(); }
+  });
+})();
+</script>
+</div>
+
+<aside class="reg-checklist">
+  <h2 class="reg-checklist__title">Cần hoàn tất</h2>
+  <ul class="check-list">
+    <a href="#field-doc_id" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đủ trường bắt buộc' }) %></a>
+    <a href="#field-file" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã chọn tệp PDF' }) %></a>
+    <a href="#field-change_significance" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Khai mức độ thay đổi nếu thay thế' }) %></a>
+    <a href="#field-link_code" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã có nhãn liên kết' }) %></a>
+  </ul>
+</aside>
+</div>

@@ -1,0 +1,57 @@
+<% layout('layout.eta', { title: 'Gói ban hành — DCS', user: it.user }) %>
+
+<h1>Gói ban hành</h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<% it.packages.forEach(function(p){ %>
+  <div class="pkg-card">
+    <div class="pkg-head">
+      <b><%= p.package_code %></b> — <%= p.title %>
+      <span class="status status-<%= p.status %>"><%= p.status %></span>
+      <span class="pkg-prog"><%= p.confirmed_count %>/<%= p.member_count %> đã xác nhận · hiệu lực <%= p.effective_date %></span>
+    </div>
+    <ul class="matrix-list">
+      <% var mm = (it.membersByPkg[p.package_id] || []); mm.forEach(function(m){ %>
+        <li>
+          <%= m.doc_id %> v<%= m.version_no %> — <%= m.title %> <span class="status status-<%= m.status %>"><%= m.status %></span>
+          <% if (p.status === 'dang_mo') { %>
+            <form method="post" action="/packages/detach" class="inline-form" style="display:inline">
+              <input type="hidden" name="version_id" value="<%= m.version_id %>">
+              <input name="reason" placeholder="lý do tháo" required>
+              <button type="submit" class="chip-x" title="Tháo — chính là tạo ra vấn đề gói dùng để ngăn">Tháo</button>
+            </form>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+    <% if (p.status === 'dang_mo') { %>
+      <form method="post" action="/packages/move-date" class="inline-form">
+        <input type="hidden" name="package_id" value="<%= p.package_id %>">
+        <input type="date" name="effective_date" required>
+        <button type="submit">Dời ngày (chỉ ra xa được nếu đã có thành viên xác nhận)</button>
+      </form>
+    <% } %>
+  </div>
+<% }) %>
+
+<h2>Tạo gói ban hành</h2>
+<p class="muted">Chỉ dùng cho ban hành phối hợp quy mô nhỏ (2-5 tài liệu phụ thuộc nhau). Tối đa 10 thành viên.</p>
+<form method="post" action="/packages" class="inline-form">
+  <input name="code" placeholder="Mã gói" required>
+  <input name="title" placeholder="Vì sao đi cùng nhau" required>
+  <input type="date" name="effective_date" required>
+  <button type="submit">Tạo gói</button>
+</form>
+
+<h2>Gắn đăng ký của tôi vào gói</h2>
+<form method="post" action="/packages/attach" class="inline-form">
+  <select name="version_id" required>
+    <option value="">-- đăng ký --</option>
+    <% it.attachable.forEach(function(a){ %><option value="<%= a.version_id %>"><%= a.doc_id %> v<%= a.version_no %></option><% }) %>
+  </select>
+  <select name="package_id" required>
+    <option value="">-- gói --</option>
+    <% it.packages.forEach(function(p){ %><% if (p.status==='dang_mo') { %><option value="<%= p.package_id %>"><%= p.package_code %></option><% } %><% }) %>
+  </select>
+  <button type="submit">Gắn vào gói</button>
+</form>

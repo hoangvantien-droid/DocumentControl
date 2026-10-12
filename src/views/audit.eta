@@ -1,0 +1,33 @@
+<% layout('layout.eta', { title: 'Ghi vết — DCS', user: it.user }) %>
+
+<h1>Ghi vết (append-only)</h1>
+<p class="muted">Bản ghi vết không sửa, không xoá — kể cả Super Admin. Trả lời "ai đã làm gì, khi nào".</p>
+
+<form method="get" action="/audit" class="inline-form">
+  <input name="object_id" placeholder="Mã đối tượng (version_id, doc_id…)" value="<%= it.filter.object_id || '' %>">
+  <select name="event_type">
+    <option value="">-- mọi loại sự kiện --</option>
+    <% it.eventTypes.forEach(function(e){ %>
+      <option value="<%= e %>" <%= it.filter.event_type === e ? 'selected' : '' %>><%= e %></option>
+    <% }) %>
+  </select>
+  <input type="date" name="from" value="<%= it.filter.from || '' %>">
+  <input type="date" name="to" value="<%= it.filter.to || '' %>">
+  <button type="submit">Lọc</button>
+</form>
+
+<table class="data-table">
+  <thead><tr><th>Thời điểm</th><th>Tác nhân</th><th>Sự kiện</th><th>Đối tượng</th><th>Mã</th></tr></thead>
+  <tbody>
+    <% it.rows.forEach(function(r){ %>
+    <tr>
+      <td><%= r.occurred_at %></td>
+      <td><%= r.actor_name || (r.actor_type === 'he_thong' ? 'Hệ thống' : r.actor_type) %></td>
+      <td><span class="chip"><%= r.event_type %></span></td>
+      <td><%= r.object_type %></td>
+      <td><code><%= r.object_id %></code></td>
+    </tr>
+    <% }) %>
+    <% if (it.rows.length === 0) { %><tr><td colspan="5">Không có bản ghi vết khớp bộ lọc.</td></tr><% } %>
+  </tbody>
+</table>

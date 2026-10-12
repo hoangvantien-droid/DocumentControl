@@ -1,0 +1,31 @@
+<% layout('layout.eta', { title: 'Bản in — DCS', user: it.user }) %>
+<% var rec = it.rec; %>
+
+<h1>Đã tạo bản in kiểm soát</h1>
+<div class="pkg-card">
+  <p><b><%= rec.doc_id %></b> phiên bản <%= rec.version_no %></p>
+  <p>Mã bản in: <code><%= rec.print_id %></code></p>
+  <p>Thời điểm: <%= rec.printed_at %></p>
+  <p>Mã tra cứu QR (đường dẫn đầy đủ): <code><%= rec.verifyUrl %></code></p>
+  <p class="muted">
+    Lớp phủ đóng dấu (số hiệu, phiên bản, mã bản in, ngày in, QR, cảnh báo giá
+    trị tại thời điểm in) được đóng khi kết xuất — tệp gốc không đổi. Quét QR ra
+    trang tra cứu không cần đăng nhập, chỉ hiện tình trạng còn dùng được hay không.
+  </p>
+</div>
+
+<div class="print-overlay">
+  <div class="print-overlay__qr">
+    <p class="muted">QR tra cứu</p>
+    <%~ rec.qrSvg %>
+    <code><%= rec.verifyUrl %></code>
+  </div>
+  <div class="print-overlay__meta">
+    <p>Số hiệu: <b><%= rec.doc_id %></b></p>
+    <p>Phiên bản: <%= rec.version_no %></p>
+    <p>Mã bản in: <code><%= rec.print_id %></code></p>
+    <p>Ngày in: <%= rec.printed_at %></p>
+    <p>Đường dẫn tra cứu: <code><%= rec.verifyUrl %></code></p>
+  </div>
+  <p class="print-overlay__warn">Bản in chỉ có giá trị tại thời điểm in — quét QR để kiểm tra</p>
+</div>
