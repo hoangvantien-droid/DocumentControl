@@ -1,0 +1,143 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. **Gate D1 — Confirm Department uniqueness policy**": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180135842
+      },
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180148745
+      }
+    ],
+    "2. **Gate D2 — Confirm QA Site B role/capability matrix**": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180135998
+      }
+    ],
+    "3. **Gate D3 — Confirm duplicate-user safety policy**": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136082
+      }
+    ],
+    "4. **Gate D4 — Confirm QR policy for expired and public access**": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136183
+      }
+    ],
+    "5. **Gate D5 — Confirm controlled-document action matrix**": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136261
+      }
+    ],
+    "6. **Gate D6 — Confirm document-version intent and lineage policy**": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136341
+      }
+    ],
+    "7. Write and run the bug-condition exploration suite on the unfixed baseline": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136468
+      }
+    ],
+    "8. Write and run observation-first preservation property suite on the unfixed baseline": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136588
+      }
+    ],
+    "9.1 Enforce approval capability and D2 navigation without conflating UI and authorization": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136668
+      }
+    ],
+    "9.2 Implement D1 department validation and forward-only uniqueness migration": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136750
+      }
+    ],
+    "9.3 Add owned Draft load/edit/save round trip": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136828
+      }
+    ],
+    "9.4 Implement D6 version intent, lineage validation and field-specific major-reason error": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180136909
+      }
+    ],
+    "9.5 Expose precise department-association removal and implement D3 duplicate policy safely": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180137004
+      }
+    ],
+    "9.6 Render D4-compliant QR status without expanding content exposure": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180137090
+      }
+    ],
+    "9.7 Centralize D5 controlled-document action authorization and implement only approved workflows": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180137180
+      }
+    ],
+    "10.1 Verify the original bug-condition suite now passes": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180137261
+      }
+    ],
+    "10.2 Verify the original preservation suite still passes": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180137343
+      }
+    ],
+    "10.3 Run full integration, migration and regression suite on isolated infrastructure": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180140475
+      }
+    ],
+    "11. Checkpoint — release readiness": [
+      {
+        "executionId": "9c3f043f-d1a0-4160-8398-ecb2ec2be37d",
+        "chatSessionId": "sess_a41d41e1-5791-4aeb-bad6-11372213185f",
+        "timestamp": 1791180140839
+      }
+    ]
+  }
+}
