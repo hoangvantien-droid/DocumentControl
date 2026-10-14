@@ -14,6 +14,7 @@
     "migrate": "tsx src/db/migrate.ts",
     "test": "node --import tsx --test test/**/*.test.ts",
     "test:unit": "node --import tsx --test test/domain/**/*.test.ts",
+    "test:uat": "node --import tsx --test test/domain/permission-matrix.uat.test.ts test/uat/**/*.test.ts",
     "test:constraints": "node --import tsx --test test/constraints.test.ts"
   },
   "dependencies": {
