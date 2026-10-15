@@ -73,7 +73,10 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   app.get<{ Params: { id: string } }>('/documents/:id', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const detail = await loadDetail(sql, req.params.id);
+    let detail;
+    try {
+      detail = await loadDetail(sql, req.params.id);
+    } catch { detail = null; }
     if (!detail) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
     // Người chỉ-xem (Reader): nếu mở trực tiếp bản KHÔNG hiện hành (lỗi thời/thu
     // hồi/nháp...), chuyển hướng về bản đang áp dụng của cùng doc_id; không có

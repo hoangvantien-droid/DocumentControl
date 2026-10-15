@@ -41,7 +41,8 @@ function runHttpUat(): void {
     h.app.inject({ method: 'GET', url, headers: cookie ? { cookie } : {} });
   const postForm = (url: string, payload: Record<string, string>, cookie?: string) =>
     h.app.inject({
-      method: 'POST', url, payload,
+      method: 'POST', url,
+      payload: new URLSearchParams(payload).toString(),
       headers: { 'content-type': 'application/x-www-form-urlencoded', ...(cookie ? { cookie } : {}) },
     });
 
@@ -117,6 +118,8 @@ function runHttpUat(): void {
         user_id: h.ids.users.u_reader!, role_code: 'DC_DEPT_HEAD', scope_level: 'group',
       }, cookie);
       assert.equal(res.statusCode, 302);
+      // Revoke ngay để không làm bẩn seed: u_reader phải giữ thuần Reader cho các nhóm F/P.5 sau.
+      await h.sql`UPDATE user_roles SET is_active = FALSE WHERE user_id = ${h.ids.users.u_reader!} AND role_code = 'DC_DEPT_HEAD'`;
     });
     test('B.12 [BẢO MẬT] gán DC_AUTHOR sai cấp (≠ group) → chặn role.scope', async () => {
       const cookie = await h.login('u_admin');

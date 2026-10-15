@@ -282,7 +282,7 @@ export async function startHarness(): Promise<Harness> {
     const email = emailOf(userKey);
     const res = await app.inject({
       method: 'POST', url: '/login',
-      payload: { email, password: PASSWORD },
+      payload: new URLSearchParams({ email, password: PASSWORD }).toString(),
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
     });
     const setCookie = res.headers['set-cookie'];
