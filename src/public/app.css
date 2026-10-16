@@ -1,29 +1,51 @@
 /* DCS — CSS nền. Tối giản, ưu tiên rõ ràng hơn trang trí (DCS-7 §0). */
 :root {
   /* ================================================================
+   * Masan Corporate Blue Palette — bảng màu thương hiệu Masan.
+   * Các token --color-* / alias DCS-12 bên dưới trỏ sang các token này,
+   * nên toàn bộ view tự chuyển sang tông xanh Masan mà KHÔNG đổi markup.
+   * ================================================================ */
+  --masan-950: #001F3F;  /* Navy sâu nhất — chân sidebar */
+  --masan-900: #002B54;  /* Nền sidebar / chữ tiêu đề */
+  --masan-800: #003B73;  /* Hover sidebar / chữ đầu bảng */
+  --masan-700: #004B8D;  /* MÀU THƯƠNG HIỆU CHÍNH (nút, trạng thái active) */
+  --masan-600: #0062B8;  /* Hover primary / liên kết & icon tương tác */
+  --masan-500: #0077E6;  /* Vòng focus / chỉ báo active */
+  --masan-100: #DCEBFA;  /* Màu viền chuẩn (thẻ, ô nhập, bảng) */
+  --masan-50:  #EBF4FC;  /* Mặt xanh nhạt (nhãn bộ phận, banner info, nền TH) */
+  --masan-25:  #F4F8FC;  /* Nền ứng dụng chính / hover dòng bảng */
+
+  --masan-sky:            #38BDF8;  /* vạch chỉ báo active bên trái sidebar */
+  --masan-text-main:      #0F172A;  /* chữ chính */
+  --masan-text-secondary: #475569;  /* chữ phụ */
+  --masan-text-muted:     #94A3B8;  /* chữ mờ */
+  --masan-light-text:     #CBD5E1;  /* chữ trên nền sidebar navy */
+  --masan-group-head:     #64748B;  /* tiêu đề nhóm trong sidebar */
+
+  /* ================================================================
    * Bộ token thiết kế DCS-12 (Ver2) — nguồn giá trị tập trung.
    * ================================================================ */
 
-  /* --- Màu chủ đạo (Yêu cầu 1.1) --- */
-  --color-primary:        #0F4C75;  /* nút chính, thanh điều hướng, tiêu đề */
-  --color-primary-dark:   #0A3558;  /* di chuột, thanh trên cùng */
+  /* --- Màu chủ đạo (Yêu cầu 1.1) — trỏ sang bảng màu Masan --- */
+  --color-primary:        var(--masan-700);  /* nút chính, thanh điều hướng, tiêu đề */
+  --color-primary-dark:   var(--masan-900);  /* di chuột, thanh trên cùng */
 
-  /* --- Nền & mặt & chữ & viền (Yêu cầu 1.2) --- */
-  --color-bg:             #E8EDF2;  /* nền trang */
-  --color-surface:        #FFFFFF;  /* thẻ, bảng, biểu mẫu */
-  --color-surface-alt:    #F1F5F9;  /* đầu bảng, nút phụ */
-  --color-text:           #1D2733;  /* chữ chính */
-  --color-text-muted:     #5B6B7C;  /* chú thích, nhãn */
-  --color-border:         #D7DEE6;  /* đường kẻ, viền ô nhập */
+  /* --- Nền & mặt & chữ & viền (Yêu cầu 1.2) — trỏ sang bảng màu Masan --- */
+  --color-bg:             var(--masan-25);         /* nền trang */
+  --color-surface:        #FFFFFF;                 /* thẻ, bảng, biểu mẫu */
+  --color-surface-alt:    var(--masan-50);         /* đầu bảng, nút phụ */
+  --color-text:           var(--masan-text-main);  /* chữ chính */
+  --color-text-muted:     var(--masan-text-secondary);  /* chú thích, nhãn */
+  --color-border:         var(--masan-100);        /* đường kẻ, viền ô nhập */
 
   /* --- Bốn cặp màu trạng thái: chữ + nền nhạt (Yêu cầu 1.3) --- */
   --status-error-fg:      #E63946;  --status-error-bg:   #FDECEE;
   --status-success-fg:    #2DC653;  --status-success-bg: #E9F9EE;
   --status-warning-fg:    #F4A261;  --status-warning-bg: #FEF3E7;
-  --status-info-fg:       #0F4C75;  --status-info-bg:    #E6F1FB;
+  --status-info-fg:       var(--masan-700);  --status-info-bg:    var(--masan-50);
 
-  /* --- Phông (Yêu cầu 1.4) --- */
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  /* --- Phông (Yêu cầu 1.4) — ưu tiên Inter, dự phòng hệ thống --- */
+  --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
 
   /* --- Thang cỡ chữ + đậm (Yêu cầu 1.5, 1.6) --- */
   --fs-page:    19px;   --fw-page:    600;   /* tiêu đề trang */
@@ -44,9 +66,13 @@
   /* --- Bo góc (Yêu cầu 1.9) --- */
   --radius: 7px;        /* thẻ, ô nhập, nút (khoảng 6–8px) */
   --radius-pill: 12px;  /* nhãn trạng thái */
+  /* Thang bo góc Masan — dùng cho thẻ/bảng mới; giữ --radius cũ dùng rộng rãi */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
-  /* --- Đổ bóng duy nhất (Yêu cầu 1.10) --- */
-  --shadow-card: 0 1px 3px rgba(0,0,0,.10);
+  /* --- Đổ bóng duy nhất (Yêu cầu 1.10) — bóng thẻ Masan --- */
+  --shadow-card: 0 1px 3px 0 rgba(0,43,84,.06), 0 1px 2px -1px rgba(0,43,84,.04);
 
   /* ================================================================
    * ALIAS TƯƠNG THÍCH NGƯỢC — token cũ trỏ sang token DCS-12 mới.
@@ -93,23 +119,74 @@ a:hover { text-decoration: underline; }
   justify-content: space-between;
   padding: 0 16px;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--masan-100);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 .topbar-left { display: flex; align-items: center; gap: 16px; flex: 1; }
-.brand { font-weight: 700; font-size: 18px; color: var(--brand-dark); }
+/* Logo DCS dạng badge vuông bo góc, nền gradient Masan, chữ trắng đậm */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--masan-700), var(--masan-900));
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .02em;
+}
+.brand:hover { text-decoration: none; }
+.brand-wrap { display: flex; align-items: center; gap: 8px; }
+.brand-sub { font-size: 12px; color: var(--masan-text-secondary); white-space: nowrap; }
 .search { flex: 1; max-width: 520px; }
+/* Ô tìm kiếm: icon kính lúp bên trái, nền --masan-25, focus đổi trắng + vòng focus */
 .search input {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
+  padding: 8px 12px 8px 34px;
+  border: 1px solid var(--masan-100);
   border-radius: 8px;
   font-size: 14px;
+  background-color: var(--masan-25);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+}
+.search input:focus {
+  background-color: #fff;
+  border-color: var(--masan-600);
+  box-shadow: 0 0 0 3px rgba(0,119,230,.15);
+  outline: none;
 }
 .topbar-right { display: flex; align-items: center; gap: 12px; font-size: 14px; }
 .user-role { color: var(--muted); font-size: 12px; }
+/* Avatar tròn chữ cái đầu */
+.topbar .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--masan-700);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* Nút Đăng xuất dạng pill nhẹ; hover đảo sang nền --masan-700 chữ trắng */
+.logout {
+  background: var(--masan-50);
+  color: var(--masan-700);
+  border: 1px solid var(--masan-100);
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.logout:hover { background: var(--masan-700); color: #fff; text-decoration: none; }
 
 /* ---- Bố cục ứng dụng ---- */
 .app-shell { display: flex; min-height: calc(100vh - var(--topbar-h)); }
@@ -117,8 +194,8 @@ a:hover { text-decoration: underline; }
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--masan-900);
+  border-right: none;
   padding: 12px 0;
   display: flex;
   flex-direction: column;
@@ -127,19 +204,41 @@ a:hover { text-decoration: underline; }
 .sidebar li a {
   display: block;
   padding: 9px 20px;
-  color: var(--text);
+  color: var(--masan-light-text);
   font-size: 14px;
+  border-left: 4px solid transparent;
 }
-.sidebar li a:hover { background: var(--bg); text-decoration: none; }
+.sidebar li a:hover { background: var(--masan-800); color: #fff; text-decoration: none; }
+/* Trạng thái đang chọn: nền --masan-700, chữ trắng đậm, vạch chỉ báo sky bên trái */
+.sidebar li a.active,
+.sidebar li a[aria-current="page"] {
+  background: var(--masan-700);
+  color: #fff;
+  font-weight: 600;
+  border-left: 4px solid var(--masan-sky);
+}
+/* Tiêu đề nhóm nhỏ, in hoa, chữ mờ — gom nhóm trực quan các mục hiện có */
+.sidebar-group {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--masan-group-head);
+  letter-spacing: .05em;
+  padding: 12px 20px 4px;
+}
+/* Mục không có quyền (chú thích) trên nền navy */
+.sidebar li.muted { color: var(--masan-text-muted); padding: 9px 20px; font-size: 13px; }
 .phase-note {
   margin-top: auto;
   padding: 12px 20px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--masan-light-text);
+  opacity: .75;
 }
 
 /* ---- Nội dung ---- */
 .content { flex: 1; padding: 28px 32px; }
+/* Tiêu đề trang (Page Header) — khoảng cách dưới nhất quán, màu navy Masan */
+.content h1 { margin: 0 0 16px; color: var(--masan-900); }
 .home h1 { font-size: 24px; margin: 0 0 8px; }
 .lead { color: var(--muted); margin: 0 0 24px; }
 .quick-search { max-width: 520px; display: flex; }
@@ -198,10 +297,15 @@ a:hover { text-decoration: underline; }
 }
 
 /* ---- Dải cảnh báo cố định (DCS-7 §7.4) ---- */
-/* Giữ tên lớp cũ, restyle theo thân .alert-banner--warning (tương thích ngược). */
+/* Giữ tên lớp cũ, nhưng restyle thành Banner Xanh Masan (không còn tông cam cũ):
+ * nền --masan-50, viền --masan-100, viền trái 4px --masan-700, chữ --masan-900. */
 .warn-banner {
-  border-left: 3px solid var(--status-warning-fg);
-  background: var(--status-warning-bg);
+  border-left: 4px solid var(--masan-700);
+  border-top: 1px solid var(--masan-100);
+  border-right: 1px solid var(--masan-100);
+  border-bottom: 1px solid var(--masan-100);
+  background: var(--masan-50);
+  color: var(--masan-900);
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--radius);
   margin: var(--sp-3) 0 var(--sp-5);
@@ -211,25 +315,35 @@ a:hover { text-decoration: underline; }
 /* ---- Bảng dữ liệu (Yêu cầu 8) ---- */
 /* Quy ước: cột hành động luôn ở cuối bảng (Yêu cầu 8.4) — không cần CSS,
    chỉ giữ bố cục cột hiện tại. Không dùng sọc nền xen kẽ (Yêu cầu 8.6). */
-.data-table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; background: var(--surface); }
+/* Bọc bảng trong khung thẻ trắng Masan: viền --masan-100, bo --radius-lg, bóng thẻ */
+.data-table {
+  width: 100%; border-collapse: collapse; margin: 12px 0 24px;
+  background: var(--surface);
+  border: 1px solid var(--masan-100);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
 .data-table th, .data-table td {
-  text-align: left; padding: 8px 12px; font-size: 14px;
+  text-align: left; padding: 12px 16px; font-size: 14px;
 }
 /* Mỗi dòng kẻ dưới mảnh (Yêu cầu 8.2) */
-.data-table td { border-bottom: 1px solid var(--color-border); }
-/* Đầu bảng nền xám nhạt, chữ nhỏ màu nhạt (Yêu cầu 8.1) */
+.data-table td { border-bottom: 1px solid var(--masan-100); }
+/* Đầu bảng nền xanh nhạt, chữ in hoa nhỏ đậm màu --masan-800 (Yêu cầu 8.1) */
 .data-table th {
-  background: var(--color-surface-alt); color: var(--color-text-muted);
-  font-size: var(--fs-btn-sm); font-weight: 600;
-  border-bottom: 1px solid var(--color-border);
+  background: var(--masan-50); color: var(--masan-800);
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  border-bottom: 1px solid var(--masan-100);
 }
 /* Đổi nền dòng khi di chuột (Yêu cầu 8.3) */
-.data-table tbody tr:hover { background: var(--color-surface-alt); }
+.data-table tbody tr:hover { background: var(--masan-25); }
 /* Dòng rỗng: chữ nhạt nêu vì sao bảng rỗng (Yêu cầu 8.5) */
 .data-table .empty-row td { color: var(--color-text-muted); }
+/* Nhãn bộ phận (QA, PROD...): nền --masan-50, chữ --masan-800, viền --masan-100 */
 .chip {
-  display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 12px;
-  background: #eef2f7; font-size: 12px;
+  display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 6px;
+  background: var(--masan-50); color: var(--masan-800);
+  border: 1px solid var(--masan-100); font-weight: 600; font-size: 12px;
 }
 
 /* ---- Form nội dòng ---- */
@@ -237,9 +351,48 @@ a:hover { text-decoration: underline; }
 .inline-form input, .inline-form select {
   padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
 }
+/* Nút chính (Tạo / Gán): nền --masan-700, chữ trắng đậm, hover --masan-600 */
 .inline-form button {
-  padding: 6px 12px; border: none; border-radius: 6px; background: var(--brand); color: #fff; cursor: pointer; font-size: 13px;
+  padding: 6px 12px; border: none; border-radius: var(--radius-md); background: var(--masan-700); color: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
 }
+.inline-form button:hover { background: var(--masan-600); }
+/* Nút Ngừng (phụ/nguy hiểm mềm) — PHẢI khác hẳn nút Gán: xám xanh nhạt, hover đỏ cảnh báo */
+.inline-form button.btn-deactivate,
+.btn-deactivate {
+  background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; font-weight: 600;
+}
+.inline-form button.btn-deactivate:hover,
+.btn-deactivate:hover {
+  background: #FEE2E2; color: #DC2626; border-color: #FECACA;
+}
+/* Nhãn trạng thái "Hoạt động" dạng pill, có chấm tròn xanh dẫn đầu */
+.status-pill--active {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 9999px; background: #F0F9FF; color: var(--masan-700);
+  border: 1px solid #BAE6FD; padding: 2px 10px; font-size: 11px; font-weight: 600;
+}
+.status-pill--active::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--masan-600);
+}
+/* Cụm thao tác trong bảng người dùng: select + nút Gán cao bằng nhau (34px) */
+.user-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.user-actions .inline-form { margin: 0; }
+.user-actions .inline-form select,
+.user-actions .inline-form input,
+.user-actions .inline-form button { height: 34px; box-sizing: border-box; }
+/* Khu "Thêm người dùng" đóng khung thành thẻ trắng riêng biệt */
+.add-user-card {
+  background: #fff; border: 1px solid var(--masan-100);
+  border-radius: 12px; padding: 20px; margin-top: 24px;
+}
+.add-user-card__title {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 12px; padding-left: 10px;
+  border-left: 4px solid var(--masan-700); color: var(--masan-900);
+}
+.add-user-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.add-user-form input, .add-user-form button { height: 38px; box-sizing: border-box; }
+
 .org-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .org-col { min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: var(--shadow-card); }
 .org-col h2 { font-size: 15px; margin: 0 0 10px; }
@@ -481,7 +634,8 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 }
 .alert-banner--error   { border-color: var(--status-error-fg);   background: var(--status-error-bg); }
 .alert-banner--warning { border-color: var(--status-warning-fg); background: var(--status-warning-bg); }
-.alert-banner--info    { border-color: var(--status-info-fg);    background: var(--status-info-bg); }
+/* Banner info = Banner Xanh Masan: viền trái 4px --masan-700, nền --masan-50, chữ --masan-900 */
+.alert-banner--info    { border-left-width: 4px; border-color: var(--masan-700); background: var(--masan-50); color: var(--masan-900); }
 .alert-banner--success { border-color: var(--status-success-fg); background: var(--status-success-bg); }
 
 /* ================================================================

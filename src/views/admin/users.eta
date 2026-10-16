@@ -14,7 +14,7 @@
     <tr>
       <td><%= u.full_name %></td>
       <td><%= u.email %></td>
-      <td><%= u.is_active ? 'Hoạt động' : 'Ngừng' %></td>
+      <td><% if (u.is_active) { %><span class="status-pill--active">Hoạt động</span><% } else { %>Ngừng<% } %></td>
       <td>
         <% var ds = (it.deptsByUser[u.user_id] || []); ds.forEach(function(did){
              var d = it.depts.find(function(x){return x.dept_id===did}); %>
@@ -28,6 +28,7 @@
         <% }) %>
       </td>
       <td>
+        <div class="user-actions">
         <form method="post" action="/admin/users/assign-dept" class="inline-form">
           <input type="hidden" name="user_id" value="<%= u.user_id %>">
           <select name="dept_id" required>
@@ -39,7 +40,7 @@
         <form method="post" action="/admin/users/active" class="inline-form">
           <input type="hidden" name="user_id" value="<%= u.user_id %>">
           <input type="hidden" name="active" value="<%= u.is_active ? 'false' : 'true' %>">
-          <button type="submit"><%= u.is_active ? 'Ngừng' : 'Bật lại' %></button>
+          <button type="submit" class="btn-deactivate"><%= u.is_active ? 'Ngừng' : 'Bật lại' %></button>
         </form>
         <% if (u.is_active) { %>
         <form method="post" action="/admin/users/delete" class="inline-form">
@@ -47,16 +48,19 @@
           <button type="submit" class="btn--danger" onclick="return confirm('Xoá mềm user này? Họ sẽ không đăng nhập được nhưng dữ liệu giữ nguyên.')">Xoá</button>
         </form>
         <% } %>
+        </div>
       </td>
     </tr>
     <% }) %>
   </tbody>
 </table>
 
-<h2>Thêm người dùng</h2>
-<form method="post" action="/admin/users" class="inline-form">
+<div class="add-user-card">
+<h2 class="add-user-card__title">Thêm người dùng</h2>
+<form method="post" action="/admin/users" class="inline-form add-user-form">
   <input name="full_name" placeholder="Họ tên" required>
   <input name="email" type="email" placeholder="Email" required>
   <input name="password" type="password" placeholder="Mật khẩu (≥8)" required>
   <button type="submit">Tạo</button>
 </form>
+</div>
