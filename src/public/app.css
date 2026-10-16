@@ -1148,9 +1148,10 @@ button.danger { background: var(--status-error-fg); }
   .detail-actions { flex-direction: column; align-items: stretch; }
   .detail-actions .btn-diff,
   .detail-actions button { width: 100%; min-height: 44px; }
-  /* Nút "Xác nhận đã đọc" full-width dễ chạm. */
-  .detail-header + form button.primary,
-  .detail-main button.primary { width: 100%; min-height: 44px; }
+  /* Nút "Xác nhận đã đọc" full-width dễ chạm. Form xác nhận là anh em
+     cấp cao, có thể bị banner trạng thái chèn giữa nên không dùng bộ chọn
+     anh em kề; nhắm thẳng vào form theo action để luôn khớp. */
+  form[action$="/acknowledge"] button.primary { width: 100%; min-height: 44px; }
   /* Ma trận / form nội dòng không tràn ngang. */
   .matrix-list .inline-form,
   .detail-side .inline-form { flex-direction: column; align-items: stretch; }
