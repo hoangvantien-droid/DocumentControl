@@ -162,6 +162,12 @@ a:hover { text-decoration: underline; }
   outline: none;
 }
 .topbar-right { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+/* Điều khiển drawer mobile — ADD-only, chỉ ảnh hưởng markup MỚI.
+ * Trên desktop (>768px) công tắc + hamburger + lớp phủ luôn ẩn; chúng chỉ
+ * được bật trong @media (max-width:768px) ở cuối file. */
+.nav-toggle { display: none; }
+.nav-hamburger { display: none; }
+.nav-overlay { display: none; }
 .user-role { color: var(--muted); font-size: 12px; }
 /* Avatar tròn chữ cái đầu */
 .topbar .avatar {
@@ -863,6 +869,10 @@ button.danger { background: var(--status-error-fg); }
  * ================================================================ */
 .search-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--sp-5); align-items: start; }
 .search-filters { }
+/* Công tắc gập bộ lọc — ADD-only, chỉ ảnh hưởng markup MỚI. Trên desktop công
+ * tắc + nhãn tóm tắt luôn ẩn và fieldset luôn hiện; chỉ đổi trong @media. */
+.filters-toggle { display: none; }
+.filters-summary { display: none; }
 .search-filters h2 { font-size: var(--fs-h3, 13.5px); margin: 0 0 var(--sp-3); }
 .search-filters fieldset { border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--sp-2) var(--sp-3); margin: 0 0 var(--sp-3); }
 .search-filters legend { font-size: var(--fs-aux); color: var(--color-text-muted); padding: 0 var(--sp-1); }
@@ -967,4 +977,210 @@ button.danger { background: var(--status-error-fg); }
   /* Trạng thái phân biệt được khi in đen trắng (2.2, 23.3):
    * thêm viền để không chỉ dựa vào màu; chữ nhãn vẫn hiển thị. */
   .status-label, .status { border: 1px solid #333; }
+}
+
+/* ================================================================
+ * LỚP MOBILE (responsive) — @media (max-width: 768px)
+ * ----------------------------------------------------------------
+ * TẤT CẢ quy tắc mobile nằm TRONG media query này (và khối ≤480px bên
+ * dưới). KHÔNG sửa bất kỳ quy tắc nền nào ở trên — desktop (>768px) giữ
+ * nguyên 100%. Chỉ BỔ SUNG, không đổi tên lớp.
+ *
+ * Phạm vi: layout chung (drawer + topbar thu gọn), home, search-results,
+ * catalog (bảng -> card dọc), detail, confirm. verify.eta KHÔNG đụng tới.
+ * Token tái dùng: --sidebar-w (240px), --topbar-h (56px).
+ * ================================================================ */
+@media (max-width: 768px) {
+  /* ---- Drawer điều hướng off-canvas (thuần CSS) ---- */
+  /* Công tắc ẩn nhưng vẫn truy cập được bằng bàn phím. */
+  .nav-toggle {
+    position: absolute;
+    width: 1px; height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    margin: 0;
+  }
+  /* Hamburger 44×44 chạm dễ, ba vạch ngang. */
+  .nav-hamburger {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 44px;
+    height: 44px;
+    padding: 0 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .nav-hamburger span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--masan-800);
+    border-radius: 2px;
+  }
+
+  /* Sidebar 240px -> drawer trượt từ trái, ẩn mặc định. */
+  .app-shell { display: block; }
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    max-width: 80vw;
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    z-index: 30;
+    overflow-y: auto;
+  }
+  #nav-toggle:checked ~ .app-shell .sidebar { transform: translateX(0); }
+
+  /* Lớp phủ mờ khi mở drawer; bấm (label) để đóng. */
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    inset: var(--topbar-h) 0 0 0;
+    background: rgba(0, 0, 0, .4);
+    z-index: 20;
+  }
+  #nav-toggle:checked ~ .app-shell .nav-overlay { display: block; }
+
+  /* Nội dung chiếm trọn bề ngang khi sidebar rời khỏi dòng chảy. */
+  .content { padding: 20px 16px; }
+
+  /* ---- Topbar thu gọn: logo + hamburger + avatar; search xuống hàng riêng ---- */
+  .topbar { height: auto; padding: 8px 12px; }
+  .topbar-left { flex-wrap: wrap; gap: 10px; }
+  .brand-sub { display: none; }
+  /* Ô tìm kiếm trên topbar xuống hàng riêng, full-width. */
+  .topbar-left .search {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .topbar-right { gap: 8px; }
+  .topbar-right .user-name { display: none; }
+
+  /* ---- Trang chủ: tìm nhanh + khối việc full-width, dễ chạm ---- */
+  .quick-search { max-width: none; }
+  .quick-search form { flex-wrap: wrap; }
+  .quick-search input,
+  .quick-search button { width: 100%; min-height: 44px; }
+  .home-list li a { display: block; padding: 10px 0; }
+
+  /* ---- Tìm kiếm: hai cột -> một cột; bộ lọc gập mặc định đóng ---- */
+  .search-layout { display: block; }
+  .search-filters { margin-bottom: var(--sp-4); }
+  /* Nhãn tóm tắt bấm được, có mũi chỉ báo ▸/▾. */
+  .filters-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+  .filters-summary h2 { margin: 0; }
+  .filters-summary::after { content: "▸"; color: var(--color-text-muted); }
+  #filters-toggle:checked ~ .filters-summary::after { content: "▾"; }
+  /* Mặc định đóng: ẩn fieldset; mở khi công tắc được tích. */
+  .search-filters fieldset { display: none; }
+  #filters-toggle:checked ~ fieldset { display: block; margin-top: var(--sp-3); }
+  /* Thanh tìm xếp dọc, control full-width dễ chạm. */
+  .search-bar-full { flex-wrap: wrap; }
+  .search-bar-full input[type=search],
+  .search-bar-full button { width: 100%; min-height: 44px; }
+  .search-bar-full .hist-toggle { white-space: normal; }
+
+  /* ---- Danh mục: form lọc xếp dọc + bảng -> card dọc ---- */
+  /* Form lọc dài xếp dọc, mỗi control full-width (chỉ trang catalog). */
+  .catalog-filters { display: flex; flex-direction: column; align-items: stretch; }
+  .catalog-filters label { display: block; }
+  .catalog-filters label input,
+  .catalog-filters label select,
+  .catalog-filters > input,
+  .catalog-filters > select,
+  .catalog-filters button {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  /* Bảng catalog -> card dọc (chỉ .catalog-table, không áp dụng bảng khác). */
+  .catalog-table { border: 0; box-shadow: none; background: transparent; }
+  .catalog-table thead { display: none; }
+  .catalog-table tr {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--masan-100);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 12px;
+    padding: 4px 0;
+  }
+  .catalog-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--masan-50);
+  }
+  .catalog-table tr td:last-child { border-bottom: 0; }
+  /* Nhãn cột lấy từ data-label, in đậm nhạt bên trái. */
+  .catalog-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--masan-text-secondary);
+    flex-shrink: 0;
+  }
+  /* Giá trị canh phải, xuống dòng khi dài. */
+  .catalog-table td { text-align: right; }
+  /* Hàng rỗng (colspan, data-label="") hiển thị thành dòng thường, không nhãn. */
+  .catalog-table td[data-label=""] { display: block; text-align: left; }
+  .catalog-table td[data-label=""]::before { content: none; }
+
+  /* ---- Chi tiết: lưới -> một cột (main trước), nút full-width ---- */
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-footer { grid-template-columns: 1fr; }
+  .detail-actions { flex-direction: column; align-items: stretch; }
+  .detail-actions .btn-diff,
+  .detail-actions button { width: 100%; min-height: 44px; }
+  /* Nút "Xác nhận đã đọc" full-width dễ chạm. */
+  .detail-header + form button.primary,
+  .detail-main button.primary { width: 100%; min-height: 44px; }
+  /* Ma trận / form nội dòng không tràn ngang. */
+  .matrix-list .inline-form,
+  .detail-side .inline-form { flex-direction: column; align-items: stretch; }
+  .matrix-list .inline-form select,
+  .matrix-list .inline-form input,
+  .matrix-list .inline-form button,
+  .detail-side .inline-form select,
+  .detail-side .inline-form input,
+  .detail-side .inline-form button { width: 100%; min-height: 40px; }
+
+  /* ---- Xác nhận: hai cột -> một cột; panel bỏ sticky; nút xếp dọc ---- */
+  .confirm-layout { grid-template-columns: 1fr; }
+  .confirm-panel,
+  .reg-checklist { position: static; }
+  .confirm-file__embed { height: 60vh; }
+  /* Nút Xác nhận + form Từ chối xếp dọc, full-width dễ chạm. */
+  .confirm-panel > form > button.primary { width: 100%; min-height: 44px; }
+  .reject-form { flex-direction: column; }
+  .reject-form input,
+  .reject-form button.danger { width: 100%; min-height: 44px; }
+}
+
+/* ================================================================
+ * LỚP MOBILE hẹp — @media (max-width: 480px)
+ * Tinh chỉnh chống tràn ngang ở ~360px. Chỉ BỔ SUNG, tuỳ chọn.
+ * ================================================================ */
+@media (max-width: 480px) {
+  .content { padding: 16px 12px; }
+  .topbar { padding: 8px 10px; }
+  /* data-label dài: cho phép xuống dòng để không tràn ở 360px. */
+  .catalog-table td { flex-wrap: wrap; gap: 2px 12px; }
+  .result-card { padding: var(--sp-2); }
 }

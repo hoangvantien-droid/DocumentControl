@@ -10,7 +10,7 @@
   <a href="/documents?preset=overdue">Quá hạn rà soát</a> ·
   <a href="/documents">Xóa lọc</a>
 </div>
-<form method="get" action="/documents" class="inline-form" style="margin-bottom:12px">
+<form method="get" action="/documents" class="inline-form catalog-filters" style="margin-bottom:12px">
   <label>Tìm: <input name="q" value="<%= ff.q || '' %>" placeholder="số hiệu / tiêu đề"></label>
   <label>Preset:
     <select name="preset">
@@ -77,19 +77,19 @@
   <button type="submit">Lọc</button>
 </form>
 
-<table class="data-table">
+<table class="data-table catalog-table">
   <thead><tr><th>Số hiệu</th><th>PB</th><th>Tiêu đề</th><th>Loại</th><th>Phạm vi</th><th>Trạng thái</th><th>Hiệu lực</th><th>File PDF</th></tr></thead>
   <tbody>
     <% it.docs.forEach(function(d){ %>
     <tr>
-      <td><a href="/documents/<%= d.version_id %>"><%= d.doc_id %></a></td>
-      <td><%= d.version_no %></td>
-      <td><%= d.title %></td>
-      <td><%= d.doc_type %></td>
-      <td><%= d.scope_level %></td>
-      <td><span class="status status-<%= d.status %>"><%= d.status %></span></td>
-      <td><%= d.effective_date || '' %></td>
-      <td>
+      <td data-label="Số hiệu"><a href="/documents/<%= d.version_id %>"><%= d.doc_id %></a></td>
+      <td data-label="PB"><%= d.version_no %></td>
+      <td data-label="Tiêu đề"><%= d.title %></td>
+      <td data-label="Loại"><%= d.doc_type %></td>
+      <td data-label="Phạm vi"><%= d.scope_level %></td>
+      <td data-label="Trạng thái"><span class="status status-<%= d.status %>"><%= d.status %></span></td>
+      <td data-label="Hiệu lực"><%= d.effective_date || '' %></td>
+      <td data-label="File PDF">
         <% if (d.status === 'da_dang_ky' || d.status === 'hieu_luc') { %>
           <a href="/documents/<%= d.version_id %>/download">Tải PDF</a>
           <% if (d.status === 'hieu_luc') { %>
@@ -99,6 +99,6 @@
       </td>
     </tr>
     <% }) %>
-    <% if (it.docs.length === 0) { %><tr><td colspan="8">Chưa có tài liệu nào trong phạm vi của bạn.</td></tr><% } %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="8" data-label="">Chưa có tài liệu nào trong phạm vi của bạn.</td></tr><% } %>
   </tbody>
 </table>

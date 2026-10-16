@@ -8,9 +8,13 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
+  <!-- Công tắc drawer điều hướng mobile (thuần CSS, không JS). Ẩn trên desktop;
+       chỉ hiện/điều khiển trong @media (max-width:768px). -->
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
   <!-- Thanh điều hướng (DCS-7 §1.1) -->
   <header class="topbar">
     <div class="topbar-left">
+      <label for="nav-toggle" class="nav-hamburger" aria-label="Mở menu"><span></span><span></span><span></span></label>
       <span class="brand-wrap">
         <a class="brand" href="/">DCS</a>
         <span class="brand-sub">Document Control System</span>
@@ -34,6 +38,8 @@
   </header>
 
   <div class="app-shell">
+    <!-- Lớp phủ mờ khi mở drawer trên mobile; bấm để đóng (thuần CSS qua label). -->
+    <label for="nav-toggle" class="nav-overlay" aria-hidden="true"></label>
     <!-- Thực đơn theo vai trò (DCS-7 §1.2): ẩn hẳn mục không có quyền. -->
     <% var nav = it.nav || {}; %>
     <nav class="sidebar" aria-label="Điều hướng chính">

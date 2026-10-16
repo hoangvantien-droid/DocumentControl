@@ -19,7 +19,9 @@ const docTypes = ['SOP', 'WI', 'Form', 'Policy', 'External'];
 
 <div class="search-layout">
   <aside class="search-filters">
-    <h2>Bộ lọc</h2>
+    <!-- Công tắc gập bộ lọc trên mobile (thuần CSS). Ẩn trên desktop. -->
+    <input type="checkbox" id="filters-toggle" class="filters-toggle" aria-hidden="true">
+    <label for="filters-toggle" class="filters-summary"><h2>Bộ lọc</h2></label>
     <fieldset>
       <legend>Loại tài liệu</legend>
       <% docTypes.forEach(function(t){ %>
