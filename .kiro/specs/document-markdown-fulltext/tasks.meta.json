@@ -1,0 +1,213 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Migration 016 — cột toàn văn, GIN index, mở rộng v_search_index": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251758584
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251773746
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251982014
+      }
+    ],
+    "2.1 Tạo `src/domain/fulltext-markdown.ts` với interface và hàm thuần": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251760079
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251775182
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251983161
+      }
+    ],
+    "3.1 Thêm cấu hình OCR_ENGINE vào `src/config.ts`": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251761935
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251776067
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251984094
+      }
+    ],
+    "3.2 Tạo `src/domain/ocr-engine.ts` với interface, TesseractEngine, factory": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251762729
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251993662
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252061319
+      }
+    ],
+    "4.1 Mở rộng truy vấn meta cho frontmatter": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763075
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252078726
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252184513
+      }
+    ],
+    "4.2 Dùng OcrEngine thay gọi trực tiếp runTesseract": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763201
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252189583
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252272754
+      }
+    ],
+    "4.3 Sinh và lưu markdown_content/fulltext_tsv trong cùng transaction": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763402
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252277227
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252391108
+      }
+    ],
+    "5. Cập nhật worker truyền ocrEngine — `src/jobs/ocr-worker.ts`": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763553
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252407220
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252476085
+      }
+    ],
+    "6. Checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763723
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252522380
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252527446
+      }
+    ],
+    "8. Cập nhật `.env.example` thêm OCR_ENGINE": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763835
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252408020
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252476980
+      }
+    ],
+    "9. Final checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251763929
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252528186
+      },
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252533299
+      }
+    ],
+    "2. Bộ_Sinh_Markdown thuần — buildFulltextMarkdown": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792251983286
+      }
+    ],
+    "3. OcrEngine adapter thay thế được qua cấu hình": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252061417
+      }
+    ],
+    "4. Tích hợp vào processVersionContent — `src/domain/content.ts`": [
+      {
+        "executionId": "d406a554-d277-435b-806b-7c3613d61411",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792252391234
+      }
+    ]
+  }
+}

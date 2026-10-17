@@ -10,6 +10,7 @@
 import { loadConfig } from '../config.js';
 import { getSql, closeSql } from '../db/client.js';
 import { processVersionContent } from '../domain/content.js';
+import { createOcrEngine } from '../domain/ocr-engine.js';
 
 const BATCH_LIMIT = 1; // mỗi lần một tệp trên máy 1 GB
 
@@ -23,9 +24,17 @@ export async function runOcrBatch(): Promise<{ processed: string[] }> {
      ORDER BY submitted_at NULLS LAST
      LIMIT ${BATCH_LIMIT}`;
 
+  // Tạo engine OCR một lần ngoài vòng lặp theo cấu hình (mặc định Tesseract,
+  // chạy cục bộ như tiến trình con). Tính chất tiến trình rời giữ nguyên:
+  // worker vẫn xử lý mỗi lần một tệp rồi thoát (BATCH_LIMIT=1).
+  const ocrEngine = createOcrEngine({
+    engine: config.ocrEngine,
+    tesseractPath: config.tesseractPath,
+  });
+
   const processed: string[] = [];
   for (const p of pending) {
-    await processVersionContent(sql, p.version_id, { tesseractPath: config.tesseractPath });
+    await processVersionContent(sql, p.version_id, { ocrEngine });
     processed.push(p.version_id);
   }
   return { processed };

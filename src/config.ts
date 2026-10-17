@@ -23,6 +23,8 @@ export interface Config {
   embeddingApiUrl: string | null;
   embeddingApiKey: string | null;
   tesseractPath: string;
+  /** Tên engine OCR dùng để nhận dạng ký tự; mặc định 'tesseract'. */
+  ocrEngine: string;
 }
 
 /** Nạp .env đơn giản, không phụ thuộc thư viện. Biến đã có trong process.env thắng. */
@@ -121,5 +123,6 @@ export function loadConfig(): Config {
     embeddingApiUrl: env.EMBEDDING_API_URL ?? null,
     embeddingApiKey: env.EMBEDDING_API_KEY ?? null,
     tesseractPath: env.TESSERACT_PATH ?? '/usr/bin/tesseract',
+    ocrEngine: env.OCR_ENGINE ?? 'tesseract',
   };
 }

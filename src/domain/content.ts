@@ -9,7 +9,8 @@ import { randomUUID } from 'node:crypto';
 import type { Sql, TransactionSql } from 'postgres';
 import { extractPdf, splitSections, type ExtractResult } from './extract.js';
 import { chunkSection } from './chunking.js';
-import { runTesseract } from './ocr.js';
+import { type OcrEngine, TesseractEngine } from './ocr-engine.js';
+import { buildFulltextMarkdown, type FulltextMeta } from './fulltext-markdown.js';
 import { writeAudit } from '../lib/audit.js';
 
 export interface ProcessResult {
@@ -25,10 +26,24 @@ export interface ProcessResult {
 export async function processVersionContent(
   sql: Sql,
   versionId: string,
-  opts: { tesseractPath?: string } = {},
+  opts: { tesseractPath?: string; ocrEngine?: OcrEngine } = {},
 ): Promise<ProcessResult> {
-  const meta = (await sql<{ file_path: string; doc_type: string }[]>`
-    SELECT v.file_path, d.doc_type
+  // Lấy thêm các trường ngữ cảnh phục vụ Frontmatter_Ngữ_Cảnh (task 4.3 sẽ dùng):
+  // title, version_no, scope, status, effective_date, doc_id từ document_versions
+  // và doc_type từ documents. effective_date là DATE có thể NULL, postgres.js trả
+  // về dạng chuỗi ISO (string) hoặc NULL, nên khai string | null.
+  const meta = (await sql<{
+    file_path: string;
+    title: string;
+    version_no: string;
+    scope: string | null;
+    status: string;
+    effective_date: string | null;
+    doc_id: string;
+    doc_type: string;
+  }[]>`
+    SELECT v.file_path, v.title, v.version_no, v.scope, v.status, v.effective_date,
+           v.doc_id, d.doc_type
       FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
      WHERE v.version_id = ${versionId}`)[0];
   if (!meta) throw new Error('Không tìm thấy phiên bản để xử lý nội dung');
@@ -36,10 +51,16 @@ export async function processVersionContent(
   let result = await extractPdf(meta.file_path);
   const isForm = meta.doc_type === 'Form';
 
-  // Nối OCR trọn luồng: tệp quét (bóc tách kém) -> tesseract -> bóc tách lại từ
-  // văn bản OCR. Chạy tiến trình rời (DCS-8 §1.2). Chỉ khi có tesseractPath.
-  if (result.parseStatus === 'kem_tin_cay' && !isForm && opts.tesseractPath) {
-    const ocr = await runTesseract(opts.tesseractPath, meta.file_path);
+  // Chọn engine OCR: ưu tiên engine truyền vào (worker tạo từ cấu hình), nếu
+  // không có thì giữ tương thích ngược bằng cách tự dựng TesseractEngine từ
+  // tesseractPath. Không có cả hai thì engine = null -> bỏ qua Nhánh_OCR.
+  const engine: OcrEngine | null =
+    opts.ocrEngine ?? (opts.tesseractPath ? new TesseractEngine(opts.tesseractPath) : null);
+
+  // Nối OCR trọn luồng: tệp quét (bóc tách kém) -> engine OCR -> bóc tách lại từ
+  // văn bản OCR. Chạy tiến trình rời (DCS-8 §1.2). Chỉ khi có engine.
+  if (result.parseStatus === 'kem_tin_cay' && !isForm && engine) {
+    const ocr = await engine.run(meta.file_path);
     if (ocr.ok && ocr.text.trim().length > 0) {
       const sections = splitSections(ocr.text);
       const ocrResult: ExtractResult = {
@@ -79,10 +100,33 @@ export async function processVersionContent(
       }
     }
 
+    // Sinh Markdown_Toàn_Văn + nguồn chỉ mục từ dữ liệu ĐÃ bóc tách (result.sections
+    // + result.fullText) — KHÔNG parse lại PDF. Hàm thuần, tất định nên chạy lại cho
+    // cùng kết quả (idempotent). Map meta đã truy vấn đầu hàm sang FulltextMeta.
+    const fmMeta: FulltextMeta = {
+      docId: meta.doc_id,
+      title: meta.title,
+      versionNo: meta.version_no,
+      scope: meta.scope,
+      status: meta.status,
+      effectiveDate: meta.effective_date,
+      docType: meta.doc_type,
+    };
+    const fm = buildFulltextMarkdown(fmMeta, result.sections, result.fullText, isForm);
+
+    // GỘP vào chính câu UPDATE hiện có để chỉ một UPDATE trong transaction. Ghi đè
+    // markdown_content + fulltext_tsv nên chạy lại là thay thế (idempotent); nằm trong
+    // transaction nên rollback thì không lưu gì. fulltextSource NULL (Form) -> tsv NULL;
+    // CASE WHEN phân biệt null qua ${fm.fulltextSource}::text IS NULL rồi dùng vn_tsv.
     await tx`
       UPDATE document_versions
          SET parse_status = ${result.parseStatus}, parse_note = ${result.parseNote},
-             file_page_count = ${result.pageCount}
+             file_page_count = ${result.pageCount},
+             markdown_content = ${fm.markdown},
+             fulltext_tsv = CASE
+               WHEN ${fm.fulltextSource}::text IS NULL THEN NULL
+               ELSE vn_tsv(${fm.fulltextSource})
+             END
        WHERE version_id = ${versionId}`;
 
     await writeAudit(tx as TransactionSql, {
