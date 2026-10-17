@@ -66,8 +66,8 @@ cd "$SRC_DIR"
 npm ci
 npm run build
 # Copy tài nguyên runtime (không phải .ts) vào dist.
-cp -r src/views dist/views
-cp -r src/public dist/public
+rm -rf dist/views && cp -r src/views/. dist/views/
+rm -rf dist/public && cp -r src/public/. dist/public/
 mkdir -p dist/db/migrations dist/db/sql
 cp -r src/db/migrations/* dist/db/migrations/ 2>/dev/null || true
 cp -r src/db/sql/* dist/db/sql/ 2>/dev/null || true
