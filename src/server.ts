@@ -29,6 +29,7 @@ import { registerReviewRoutes } from './routes/reviews.js';
 import { registerPackageRoutes } from './routes/packages.js';
 import { registerPrintingRoutes } from './routes/printing.js';
 import { registerAuditRoutes } from './routes/audit.js';
+import { registerMcpRoutes } from './routes/mcp.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -100,6 +101,7 @@ async function main() {
   registerPackageRoutes(app, sql);
   registerPrintingRoutes(app, sql, config);
   registerAuditRoutes(app, sql);
+  registerMcpRoutes(app, sql, config);
 
   const address = await app.listen({ port: config.port, host: '0.0.0.0' });
   app.log.info(`DCS đang lắng nghe tại ${address}`);

@@ -1,0 +1,300 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Thêm dependency MCP SDK, Zod và peer dep json-schema": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255196555
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255211039
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255384151
+      }
+    ],
+    "2.1 Tạo khung `src/routes/mcp.ts` với hằng số và hàm thuần": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255196693
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255211943
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255384886
+      }
+    ],
+    "3.1 Hiện thực `resolveIdentity` trong `src/routes/mcp.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255196792
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255391294
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255512426
+      }
+    ],
+    "4.1 Hiện thực `buildMcpServer(sql, userId)` trong `src/routes/mcp.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255196877
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255519429
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255796598
+      }
+    ],
+    "4.2 Hiện thực `registerMcpRoutes(app, sql, config)` và route `POST /mcp`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197004
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255526636
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255797987
+      }
+    ],
+    "5.1 Hiện thực `registerSearchTool` và nối vào `buildMcpServer`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197157
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255528006
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255799438
+      }
+    ],
+    "6.1 Hiện thực `readMarkdownIfAllowed(sql, userId, docId)` và `registerGetMarkdownTool`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197257
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255529388
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255800340
+      }
+    ],
+    "7.1 Hiện thực `registerDocumentResource` và nối vào `buildMcpServer`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197327
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255530236
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255801441
+      }
+    ],
+    "8. Đăng ký route vào `src/server.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197411
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255807743
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255915745
+      }
+    ],
+    "9. Cập nhật cấu hình nginx": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197536
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255808600
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255914863
+      }
+    ],
+    "10. Checkpoint - Đảm bảo build và test thuần pass": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197604
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255923073
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256000534
+      }
+    ],
+    "12. Final checkpoint - Đảm bảo toàn bộ test pass": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255197685
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256058195
+      },
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256077287
+      }
+    ],
+    "2. Hàm thuần và hằng số giới hạn trong `src/routes/mcp.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255384972
+      }
+    ],
+    "3. Phân giải danh tính `resolveIdentity`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255512506
+      }
+    ],
+    "4. Dựng MCP server và route `/mcp`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255798112
+      }
+    ],
+    "5. Tool `search_documents`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255799513
+      }
+    ],
+    "6. Hàm dùng chung `readMarkdownIfAllowed` và tool `get_document_markdown`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255800438
+      }
+    ],
+    "7. Resource `dcs://document/{id}`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792255801577
+      }
+    ],
+    "2.2 Viết unit test thuần cho `clampLimit` tại `test/domain/mcp.test.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256001808
+      }
+    ],
+    "2.3 Viết unit test thuần cho `capSnippet` tại `test/domain/mcp.test.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256002703
+      }
+    ],
+    "3.2 Viết unit test thuần cho `resolveIdentity` tại `test/domain/mcp.test.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256004151
+      }
+    ],
+    "5.2 Viết unit test tầng ánh xạ cho `search_documents` tại `test/domain/mcp.test.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256005572
+      }
+    ],
+    "6.2 Viết unit test logic không-tìm-thấy cho `get_document_markdown` tại `test/domain/mcp.test.ts`": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256006632
+      }
+    ],
+    "11.1 Viết integration test tại `test/domain/mcp-permission.test.ts` (CẦN DATABASE)": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256076280
+      }
+    ],
+    "11. Integration test lọc quyền cần DB": [
+      {
+        "executionId": "1ff0f96c-1749-4a91-885b-d9ff5ca061ff",
+        "chatSessionId": "sess_9b1cef47-9366-47ef-9364-e40a843fdb15",
+        "timestamp": 1792256076413
+      }
+    ]
+  }
+}
