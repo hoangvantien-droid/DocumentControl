@@ -6,6 +6,7 @@ import type { Sql } from 'postgres';
 import { requireDocFlow } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
 import { reviewBacklogForOwner, recordVerdict, type Verdict } from '../domain/review.js';
+import { canRegisterDocuments } from '../domain/permissions.js';
 
 export function registerReviewRoutes(app: FastifyInstance, sql: Sql): void {
   app.get('/reviews', async (req, reply) => {

@@ -19,6 +19,7 @@ import {
   editVersionMetadata, deleteUnacceptedVersion, recallByAuthor,
 } from '../domain/receipt.js';
 import { aggregateStatusOf } from '../domain/lifecycle-status.js';
+import { canRegisterDocuments } from '../domain/permissions.js';
 import type { ScopeLevel } from '../domain/roles.js';
 import { listBu, listSites, listDepartments } from '../domain/org.js';
 import { storeFile } from '../domain/file-store.js';
@@ -215,6 +216,9 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.get('/my-documents', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    if (!await canRegisterDocuments(sql, user.user_id)) {
+      reply.code(403); return reply.send('Chỉ người biên soạn có mục Tài liệu của tôi');
+    }
     // Kèm số liệu receipt theo site để hiển thị trạng thái tổng hợp (Task 5).
     const rows = await sql<{
       version_id: string; doc_id: string; version_no: string; title: string;

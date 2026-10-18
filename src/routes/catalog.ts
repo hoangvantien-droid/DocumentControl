@@ -160,7 +160,8 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     const canManageRollout = await isDraftingDept(sql, user.user_id, req.params.id);
     const escD = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const siteOptions = sites.map((s) => `<option value="${escD(s.site_id)}">${escD(s.site_code)} — ${escD(s.name)}</option>`).join('');
-    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, rollout, sites, siteOptions, canManageRollout });
+    const isRegistrant = detail.registrant_user_id === user.user_id;
+    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, rollout, sites, siteOptions, canManageRollout, isRegistrant });
   });
 
   // Rollout theo site: thêm site + ngày áp dụng dự kiến (bộ phận soạn thảo).
