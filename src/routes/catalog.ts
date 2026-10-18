@@ -15,6 +15,7 @@ import { listRollout, addSiteRollout, setSiteRolloutStatus, isDraftingDept } fro
 import { listSites } from '../domain/org.js';
 import { canViewVersion as canViewDoc } from '../domain/catalog.js';
 import { processVersionContent } from '../domain/content.js';
+import { listPrintedCopies } from '../domain/printing.js';
 import { acknowledge, mustAcknowledge, hasAcknowledged } from '../domain/acknowledgement.js';
 import { listDepartments } from '../domain/org.js';
 import { listGroups } from '../domain/functional-groups.js';

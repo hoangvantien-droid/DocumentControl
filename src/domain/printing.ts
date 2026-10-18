@@ -147,3 +147,48 @@ export async function auditQrLookup(sql: Sql, token: string): Promise<void> {
     });
   });
 }
+
+export interface PrintedCopyRow {
+  print_id: string;
+  verify_token: string;
+  printed_at: string;
+  printed_by_name: string | null;
+  intended_location: string | null;
+  recall_status: string;
+}
+
+/** Danh sách bản sao có kiểm soát đã in của một phiên bản (truy xuất nguồn gốc). */
+export async function listPrintedCopies(sql: Sql, versionId: string): Promise<PrintedCopyRow[]> {
+  return sql<PrintedCopyRow[]>`
+    SELECT p.print_id, p.verify_token, p.printed_at::text AS printed_at,
+           u.full_name AS printed_by_name, p.intended_location, p.recall_status
+      FROM printed_copies p
+      LEFT JOIN users u ON u.user_id = p.printed_by
+     WHERE p.version_id = ${versionId}
+     ORDER BY p.printed_at DESC`;
+}
+
+/**
+ * Thu hồi một bản sao in cụ thể tại hiện trường (đánh dấu da_thu_hoi). Chỉ
+ * người có quyền xem/kiểm soát phiên bản mới được thu hồi; ghi vết.
+ */
+export async function recallPrintedCopy(
+  sql: Sql,
+  input: { printId: string; userId: string },
+): Promise<void> {
+  await sql.begin(async (tx) => {
+    const row = (await tx<{ version_id: string; recall_status: string }[]>`
+      SELECT version_id, recall_status FROM printed_copies WHERE print_id = ${input.printId} FOR UPDATE`)[0];
+    if (!row) throw new BusinessError('printrecall.not_found', 'Không tìm thấy bản in');
+    const allowed = await canViewVersion(tx as unknown as Sql, input.userId, row.version_id);
+    if (!allowed) throw new BusinessError('printrecall.no_permission', 'Không đủ thẩm quyền thu hồi bản in này', { httpStatus: 403 });
+    if (row.recall_status === 'da_thu_hoi') return; // idempotent
+    await tx`
+      UPDATE printed_copies SET recall_status = 'da_thu_hoi' WHERE print_id = ${input.printId}`;
+    await writeAudit(tx as TransactionSql, {
+      eventType: 'thu_hoi_ban_in', actorUserId: input.userId,
+      objectType: 'printed_copies', objectId: input.printId,
+      afterState: { recall_status: 'da_thu_hoi' },
+    });
+  });
+}
