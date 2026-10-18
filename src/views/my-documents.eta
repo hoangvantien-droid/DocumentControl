@@ -4,11 +4,17 @@
 <% if (it.nav && it.nav.canRegister) { %><p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p><% } %>
 
 <table class="data-table">
-  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Site chấp nhận</th><th>Tình trạng ban hành</th><th></th></tr></thead>
+  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Site chấp nhận</th><th>Tình trạng ban hành</th><th>Thao tác</th></tr></thead>
   <tbody>
     <% it.docs.forEach(function(d){ %>
     <tr>
-      <td><%= d.doc_id %></td>
+      <td>
+        <% if (d.status === 'cho_hoan_thien') { %>
+          <%= d.doc_id %>
+        <% } else { %>
+          <a href="/documents/<%= d.version_id %>"><%= d.doc_id %></a>
+        <% } %>
+      </td>
       <td><%= d.version_no %></td>
       <td><%= d.title %></td>
       <td><span class="status status-<%= d.status %>"><%= it.docStatusLabel(d.status) %></span>
@@ -25,9 +31,15 @@
           <span class="status <%= cls %>"><%= it.aggregateStatusLabel(d.aggregate) %></span>
         <% } else { %><span class="muted">Chưa phát hành</span><% } %>
       </td>
-      <td>
-        <% if (d.status === 'cho_hoan_thien') { %><a href="/my-documents/<%= d.version_id %>/edit">Sửa</a><% } %>
-        <% if (d.total > 0) { %><a href="/my-documents/<%= d.version_id %>/issuance">Chi tiết</a><% } %>
+      <td class="row-actions">
+        <% if (d.status === 'da_ban_hanh') { %>
+          <a href="/documents/<%= d.version_id %>/view" target="_blank" rel="noopener">Xem PDF</a>
+          <a href="/my-documents/<%= d.version_id %>/issuance">Tình trạng</a>
+        <% } else if (d.status === 'cho_hoan_thien') { %>
+          <a href="/my-documents/<%= d.version_id %>/edit">Sửa nháp</a>
+        <% } else if (d.total > 0) { %>
+          <a href="/my-documents/<%= d.version_id %>/issuance">Tình trạng</a>
+        <% } %>
       </td>
     </tr>
     <% }) %>
