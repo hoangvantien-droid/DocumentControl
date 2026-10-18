@@ -21,7 +21,7 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: {
       // không phải form hay multipart). Đọc req.body.location trực tiếp khi đó
       // ném "Cannot read properties of undefined" -> 500 trước cả khi vào
       // registerPrint. Đọc phòng thủ để mọi lần in đều đi đúng luồng nghiệp vụ.
-      const body = (req.body ?? {}) as { location?: string };
+      const body = (req.body ?? {}) as { location?: string; site_id?: string };
       try {
         const rec = await registerPrint(sql, {
           versionId: req.params.id, printedBy: user.user_id, intendedLocation: body.location || null,
