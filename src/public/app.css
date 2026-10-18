@@ -1203,3 +1203,8 @@ button.danger { background: var(--status-error-fg); }
 .detail-panel[open] > summary::before { transform: rotate(90deg); }
 .detail-panel > *:not(summary) { padding: 0 16px 14px; }
 @media (max-width: 768px) { .pdf-frame { height: 60vh; } }
+
+
+/* Cột thao tác trong bảng: giãn cách các link hành động */
+.row-actions a { margin-right: 12px; white-space: nowrap; }
+.row-actions a:last-child { margin-right: 0; }
