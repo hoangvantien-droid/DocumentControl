@@ -10,7 +10,7 @@ import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError, BusinessError } from '../lib/errors.js';
 import {
-  submitRegistration, addLink, saveDraft,
+  submitRegistration, saveDraft,
   type DocType, type Origin, type ChangeSignificance,
 } from '../domain/registration.js';
 import { processVersionContent } from '../domain/content.js';
@@ -32,7 +32,6 @@ interface RegBody {
   external_effective_date?: string; effective_date?: string; review_cycle_months?: string; expiry_date?: string;
   file_path?: string; file_hash?: string; owner_department_id?: string;
   supersedes_version_id?: string; change_significance?: string; change_summary?: string;
-  link_type?: string; link_code?: string;
   /** Site nhận (ban hành thẳng). Multipart gửi nhiều cùng tên -> string[]. */
   site_ids?: string | string[];
   /** Nội dung tệp PDF (Buffer) khi upload multipart. */
@@ -111,18 +110,11 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
         },
         { m14Enabled: false, siteIds: normalizeSiteIds(b.site_ids) },
       );
-      // Nhãn liên kết tối thiểu (REQ số 9 = Chặn khi rời cho_xac_nhan).
-      if (b.link_type && b.link_code) {
-        await addLink(sql, {
-          versionId,
-          linkType: b.link_type as 'dieu_khoan' | 'cong_doan' | 'diem_kiem_soat' | 'moi_nguy' | 'tai_lieu',
-          linkCode: b.link_code.trim(),
-          createdBy: user.user_id,
-        });
-      }
-      // Tự động bóc tách ngay khi đăng ký để dept head duyệt được luôn.
+      // Mô hình mới ban hành thẳng: không ép nhãn liên kết lúc đăng ký (đã bỏ
+      // mục này khỏi form). Nhãn liên kết quản lý riêng ở màn chi tiết nếu cần.
+      // Tự động bóc tách ngay khi đăng ký.
       // Chạy best-effort: lỗi bóc tách không chặn nộp, parse_status giữ nguyên
-      // để checklist mục 5 báo rõ, author thấy ở /my-documents.
+      // để author thấy ở /my-documents.
       try {
         await processVersionContent(sql, versionId, { tesseractPath: config.tesseractPath });
       } catch (e) {
