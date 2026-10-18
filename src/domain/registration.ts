@@ -150,9 +150,9 @@ export async function validateForSubmit(
 }
 
 /**
- * Nộp đăng ký: tạo document (nếu cần) + document_versions ở cho_xac_nhan.
- * Nhãn liên kết phải được thêm để trigger cho rời cho_xac_nhan sau này (khi
- * xác nhận) — ở đây chỉ tạo bản ghi phiên bản; nhãn thêm qua addLink.
+ * Nộp đăng ký: tạo document (nếu cần) + document_versions ở da_ban_hanh, rồi
+ * sinh receipt cho các site nhận (ban hành thẳng). Mô hình mới không dùng nhãn
+ * liên kết lúc đăng ký.
  */
 export async function submitRegistration(
   sql: Sql,
@@ -209,30 +209,6 @@ export async function submitRegistration(
     });
     return versionId;
   }) as Promise<string>;
-}
-
-/** Thêm một nhãn liên kết (REQ-D04: created_by luôn là người thật). */
-export async function addLink(
-  sql: Sql,
-  input: {
-    versionId: string; sectionId?: string | null;
-    linkType: 'dieu_khoan' | 'cong_doan' | 'diem_kiem_soat' | 'moi_nguy' | 'tai_lieu';
-    linkCode: string; createdBy: string;
-  },
-): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`
-      INSERT INTO document_links (version_id, section_id, link_type, link_code, created_by)
-      VALUES (${input.versionId}, ${input.sectionId ?? null}, ${input.linkType}, ${input.linkCode}, ${input.createdBy})
-      ON CONFLICT (version_id, section_id, link_type, link_code) DO NOTHING`;
-    await writeAudit(tx as TransactionSql, {
-      eventType: 'khai_nhan',
-      objectType: 'document_versions',
-      objectId: input.versionId,
-      actorUserId: input.createdBy,
-      afterState: { link_type: input.linkType, link_code: input.linkCode },
-    });
-  });
 }
 
 /**
