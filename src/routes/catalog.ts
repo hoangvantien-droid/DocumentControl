@@ -13,12 +13,9 @@ import {
 } from '../domain/catalog.js';
 import { listRollout, addSiteRollout, setSiteRolloutStatus, isDraftingDept } from '../domain/rollout.js';
 import { listSites } from '../domain/org.js';
-import { recallVersion, recallImpact } from '../domain/lifecycle.js';
 import { canViewVersion as canViewDoc } from '../domain/catalog.js';
-import { canRelease } from '../domain/permissions.js';
 import { processVersionContent } from '../domain/content.js';
 import { acknowledge, mustAcknowledge, hasAcknowledged } from '../domain/acknowledgement.js';
-import { listMatrix, addMatrix, removeMatrix } from '../domain/distribution.js';
 import { listDepartments } from '../domain/org.js';
 import { listGroups } from '../domain/functional-groups.js';
 import type { Config } from '../config.js';
@@ -60,14 +57,11 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
         FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
        WHERE v.version_id = ${req.params.id}`)[0];
     if (!row) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
-    const isPending = row.status === 'cho_xac_nhan';
+    const isPending = row.status === 'cho_xac_nhan' || row.status === 'cho_hoan_thien';
     let ok = false;
     if (isPending) {
-      // Người nộp được xem bài của mình; người có quyền release được xem để duyệt.
-      ok = row.registrant_user_id === user.user_id || await canRelease(sql, user.user_id, {
-        scope_level: row.scope_level as never,
-        scope_bu_id: row.scope_bu_id, scope_site_id: row.scope_site_id, scope_dept_id: row.scope_dept_id,
-      });
+      // Mô hình mới: chỉ người đăng ký xem bản nháp/chưa phát hành của mình.
+      ok = row.registrant_user_id === user.user_id;
     } else {
       ok = await canViewDoc(sql, user.user_id, req.params.id);
     }
@@ -150,10 +144,6 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     ]);
     // Nếu đang xem bản hết hiệu lực, trỏ tới bản đang áp dụng.
     const current = detail.status !== 'hieu_luc' ? await currentVersionOf(sql, detail.doc_id) : null;
-    const canRecall = await canRelease(sql, user.user_id, {
-      scope_level: detail.scope_level as never,
-      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
-    });
     // Xác nhận đọc: chỉ hiện nút khi tài liệu hiệu lực + người xem thuộc diện phải đọc + chưa xác nhận.
     let ackState: { show: boolean; done: boolean; inherited: boolean } = { show: false, done: false, inherited: false };
     if (detail.status === 'hieu_luc') {
@@ -163,7 +153,6 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
         ackState = { show: !h.acknowledged, done: h.acknowledged, inherited: h.inherited };
       }
     }
-    const matrix = await listMatrix(sql, detail.doc_id);
     const [rollout, sites] = await Promise.all([
       listRollout(sql, req.params.id),
       listSites(sql),
@@ -171,7 +160,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     const canManageRollout = await isDraftingDept(sql, user.user_id, req.params.id);
     const escD = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const siteOptions = sites.map((s) => `<option value="${escD(s.site_id)}">${escD(s.site_code)} — ${escD(s.name)}</option>`).join('');
-    return reply.view('detail.eta', { d: detail, sections, links, current, canRecall, ackState, matrix, canRecallMatrix: canRecall, rollout, sites, siteOptions, canManageRollout });
+    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, rollout, sites, siteOptions, canManageRollout });
   });
 
   // Rollout theo site: thêm site + ngày áp dụng dự kiến (bộ phận soạn thảo).
@@ -213,21 +202,6 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   });
 
   // Thu hồi: hiện tác động trước, rồi xác nhận.
-  app.get<{ Params: { id: string } }>('/documents/:id/recall', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    const detail = await loadDetail(sql, req.params.id);
-    if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
-    const allowed = await canRelease(sql, user.user_id, {
-      scope_level: detail.scope_level as never,
-      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
-    });
-    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền thu hồi tài liệu này'); }
-    const impact = await recallImpact(sql, detail.doc_id, req.params.id);
-    return reply.view('recall.eta', { d: detail, impact, error: null });
-  });
-
-  // Xác nhận đọc (T-069).
   app.post<{ Params: { id: string } }>('/documents/:id/acknowledge', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
@@ -241,89 +215,17 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   });
 
   // Ma trận phân phối (T-065). Thêm/xoá dòng — người release quản lý.
-  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/matrix/add', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    const detail = await loadDetail(sql, req.params.id);
-    if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
-    const allowed = await canRelease(sql, user.user_id, {
-      scope_level: detail.scope_level as never,
-      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
-    });
-    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
-    await addMatrix(sql, {
-      docId: detail.doc_id,
-      departmentId: (req.body ?? {}).department_id ?? '',
-      functionalGroupId: (req.body ?? {}).functional_group_id || null,
-      createdBy: user.user_id,
-    });
-    return reply.redirect(`/documents/${req.params.id}`);
-  });
-
-  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/matrix/remove', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    const matrixId = (req.body ?? {}).matrix_id ?? '';
-    const row = (await sql<{ doc_id: string }[]>`
-      SELECT doc_id FROM distribution_matrix WHERE matrix_id = ${matrixId}`)[0];
-    const detail = row ? await loadDetail(sql, req.params.id) : null;
-    const allowed = detail && row?.doc_id === detail.doc_id && await canRelease(sql, user.user_id, {
-      scope_level: detail.scope_level as never,
-      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
-    });
-    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
-    await removeMatrix(sql, matrixId, user.user_id);
-    return reply.redirect(`/documents/${req.params.id}`);
-  });
-
-  // Danh sách bộ phận + nhóm cho form thêm ma trận (dùng trên detail).
-  app.get<{ Params: { id: string } }>('/documents/:id/matrix-options', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    const detail = await loadDetail(sql, req.params.id);
-    if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
-    const allowed = await canRelease(sql, user.user_id, {
-      scope_level: detail.scope_level as never,
-      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
-    });
-    if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
-    const [depts, groups] = await Promise.all([listDepartments(sql), listGroups(sql)]);
-    return reply.view('matrix-options.eta', { id: req.params.id, depts, groups });
-  });
-
-  // Xử lý nội dung (bóc tách + phân đoạn) — chạy nền, không chặn. Người nộp
-  // hoặc người release kích hoạt. Với tệp thật OCR chạy qua jobs/ocr-worker.
   app.post<{ Params: { id: string } }>('/documents/:id/process', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
     const detail = await loadDetail(sql, req.params.id);
     if (!detail) { reply.code(404); return reply.send('Không tìm thấy'); }
-    const isReleaseAuthority = await canRelease(sql, user.user_id, {
-      scope_level: detail.scope_level as never,
-      scope_bu_id: detail.scope_bu_id, scope_site_id: detail.scope_site_id, scope_dept_id: detail.scope_dept_id,
-    });
-    if (detail.registrant_user_id !== user.user_id && !isReleaseAuthority) {
+    if (detail.registrant_user_id !== user.user_id) {
       reply.code(403);
-      return reply.send('Chỉ người nộp hoặc người có thẩm quyền release được xử lý nội dung');
+      return reply.send('Chỉ người đăng ký được xử lý nội dung tài liệu này');
     }
     await processVersionContent(sql, req.params.id, { tesseractPath: config.tesseractPath });
     return reply.redirect(`/documents/${req.params.id}`);
   });
 
-  app.post<{ Params: { id: string }; Body: { reason?: string } }>(
-    '/documents/:id/recall',
-    async (req, reply) => {
-      const user = requireUser(req, reply);
-      if (!user) return reply;
-      try {
-        await recallVersion(sql, {
-          versionId: req.params.id, adminUserId: user.user_id, reason: (req.body ?? {}).reason ?? '',
-        });
-        return reply.redirect(`/documents/${req.params.id}`);
-      } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
-        throw err;
-      }
-    },
-  );
 }

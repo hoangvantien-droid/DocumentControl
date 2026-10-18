@@ -90,12 +90,11 @@ export async function listVisibleDocuments(
                    WHERE sb.site_id = st.site_id AND sb.bu_id = d.scope_bu_id))
                OR (d.scope_level='site' AND st.site_id = d.scope_site_id)
                OR (d.scope_level='dept' AND dp.dept_id = d.scope_dept_id)))
-       -- Hoặc mình có cờ Phê duyệt (DC_DEPT_HEAD group) / Admin — thấy để duyệt, scope chặt ở canRelease
+       -- Hoặc là Admin (quản trị) — thấy để tra cứu.
        OR EXISTS (
          SELECT 1 FROM user_roles r
           WHERE r.user_id = ${userId} AND r.is_active
-            AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
-              OR r.role_code = 'DC_ADMIN'))
+            AND r.role_code = 'DC_ADMIN'
        )
        -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (hieu_luc / da_dang_ky).
        AND (${!readOnlyViewer} OR v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky'))
@@ -195,8 +194,7 @@ export async function canViewVersion(
              SELECT 1
                FROM user_roles r
               WHERE r.user_id = ${userId} AND r.is_active
-                AND ((r.role_code = 'DC_DEPT_HEAD' AND r.scope_level = 'group')
-                  OR r.role_code = 'DC_ADMIN')
+                AND r.role_code = 'DC_ADMIN'
            )
          )
     ) AS ok`;

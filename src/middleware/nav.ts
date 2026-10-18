@@ -6,7 +6,7 @@
  */
 import type { Sql } from 'postgres';
 import {
-  roleCodesOf, hasAnyReleaseRole, isReadOnlyUser,
+  roleCodesOf, isReadOnlyUser,
   isSiteDocControl, canReportIssue,
 } from '../domain/permissions.js';
 import type { SessionUser } from '../domain/session.js';
@@ -25,8 +25,6 @@ export interface NavFlags {
   /** Tham gia luồng tài liệu (Author / DC Site / Reader). Admin-thuần = false:
    *  Admin đứng NGOÀI luồng, chỉ quản trị + master data. */
   inDocFlow: boolean;
-  /** (LEGACY) cờ vai duyệt-trước cũ — route cũ còn đọc; Task 9 gỡ. */
-  canRelease: boolean;
 }
 
 export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavFlags> {
@@ -34,7 +32,7 @@ export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavF
     return {
       canRegister: false, isSiteDocControl: false, canReport: false,
       isAdmin: false, canSeeMyDocuments: false, isReadOnly: true,
-      inDocFlow: false, canRelease: false,
+      inDocFlow: false,
     };
   }
   const roles = await roleCodesOf(sql, user.user_id);
@@ -52,6 +50,5 @@ export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavF
     canSeeMyDocuments: canRegister,
     isReadOnly: isReadOnlyUser(roles),
     inDocFlow,
-    canRelease: hasAnyReleaseRole(roles),
   };
 }
