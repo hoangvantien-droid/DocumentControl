@@ -10,8 +10,8 @@ export function registerAuditRoutes(app: FastifyInstance, sql: Sql): void {
   app.get<{ Querystring: Record<string, string> }>('/audit', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    // Chỉ người có quyền release được xem ghi vết (menu đã ẩn, chặn thêm ở đây).
-    if (!req.nav.canRelease) {
+    // Chỉ Admin xem ghi vết (menu đã ẩn theo isAdmin, chặn thêm ở đây).
+    if (!req.nav.isAdmin) {
       reply.code(403);
       return reply.send('Không đủ thẩm quyền xem ghi vết');
     }
