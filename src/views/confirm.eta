@@ -15,13 +15,14 @@
 
 <!-- Bố cục hai cột (Yêu cầu 19.1): vùng xem tệp trái, checklist + nút quyết định cột phải. -->
 <div class="confirm-layout">
-  <!-- Cột trái: vùng xem tệp. Không phát minh route phục vụ tệp; nếu có
-       it.v.file_path thì nhúng/liên kết, ngược lại chỉ là ô placeholder. -->
+  <!-- Cột trái: vùng xem tệp. Dùng route /documents/:id/preview để dept head đọc PDF
+       trước khi duyệt (kể cả bản cho_xac_nhan). Không dùng đường dẫn đĩa vì
+       browser không mở được /var/... -->
   <div class="confirm-file">
     <div class="confirm-file__title">Xem tệp PDF</div>
     <% if (v.file_path) { %>
-      <embed class="confirm-file__embed" src="<%= v.file_path %>" type="application/pdf">
-      <p class="confirm-file__link"><a href="<%= v.file_path %>">Mở tệp trong tab mới</a></p>
+      <embed class="confirm-file__embed" src="/documents/<%= v.version_id %>/preview" type="application/pdf">
+      <p class="confirm-file__link"><a href="/documents/<%= v.version_id %>/preview" target="_blank">Mở tệp trong tab mới</a></p>
     <% } else { %>
       <div class="confirm-file__placeholder">Chưa có tệp để hiển thị. Đối chiếu nội dung theo checklist bên phải.</div>
     <% } %>

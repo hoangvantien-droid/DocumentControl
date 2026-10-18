@@ -29,6 +29,7 @@ export interface VersionForConfirm {
   doc_type: string;
   status: string;
   effective_date: string | null;
+  file_path: string | null;
   file_hash: string;
   registrant_user_id: string;
   supersedes_version_id: string | null;
@@ -43,7 +44,7 @@ export interface VersionForConfirm {
 export async function loadForConfirm(sql: Sql, versionId: string): Promise<VersionForConfirm | null> {
   const rows = await sql<VersionForConfirm[]>`
     SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
-           v.effective_date::text AS effective_date, v.file_hash,
+           v.effective_date::text AS effective_date, v.file_path, v.file_hash,
            v.registrant_user_id, v.supersedes_version_id, v.parse_status,
            d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
       FROM document_versions v

@@ -48,6 +48,37 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     return reply.view('catalog.eta', { docs, statusFilter: f.status ?? '', filters: f, sites, siteOptions });
   });
 
+  // Xem trước PDF (inline) — cho người duyệt đọc trước khi duyệt.
+  // Cho phép bản cho_xac_nhan nếu là người nộp hoặc có quyền release;
+  // bản đã duyệt thì theo canViewVersion thông thường.
+  app.get<{ Params: { id: string } }>('/documents/:id/preview', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const row = (await sql<{ file_path: string; doc_id: string; version_no: string; status: string; registrant_user_id: string; scope_level: string; scope_bu_id: string | null; scope_site_id: string | null; scope_dept_id: string | null }[]>`
+      SELECT v.file_path, v.doc_id, v.version_no, v.status, v.registrant_user_id,
+             d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+        FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
+       WHERE v.version_id = ${req.params.id}`)[0];
+    if (!row) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    const isPending = row.status === 'cho_xac_nhan';
+    let ok = false;
+    if (isPending) {
+      // Người nộp được xem bài của mình; người có quyền release được xem để duyệt.
+      ok = row.registrant_user_id === user.user_id || await canRelease(sql, user.user_id, {
+        scope_level: row.scope_level as never,
+        scope_bu_id: row.scope_bu_id, scope_site_id: row.scope_site_id, scope_dept_id: row.scope_dept_id,
+      });
+    } else {
+      ok = await canViewDoc(sql, user.user_id, req.params.id);
+    }
+    if (!ok) { reply.code(403); return reply.send('Không có quyền xem tài liệu này'); }
+    const absPath = row.file_path;
+    if (!absPath || !existsSync(absPath)) { reply.code(404); return reply.send('Tệp không còn tồn tại'); }
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `inline; filename="${row.doc_id}_v${row.version_no}.pdf"`);
+    return reply.send(readFileSync(absPath));
+  });
+
   // Lỗi #7: tải tệp PDF gốc của phiên bản đã được duyệt (da_dang_ky / hieu_luc).
   // QAKSTL (và mọi người có quyền xem) được tải — không yêu cầu release.
   app.get<{ Params: { id: string } }>('/documents/:id/download', async (req, reply) => {
