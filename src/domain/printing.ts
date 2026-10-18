@@ -10,6 +10,7 @@ import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import { canViewVersion } from './catalog.js';
+import { isCurrentlyEffective } from './lifecycle-status.js';
 import QRCode from 'qrcode';
 
 export interface PrintRecord {
@@ -27,7 +28,7 @@ export interface PrintRecord {
 /** Ghi nhận một lần in — sinh verify_token ngẫu nhiên (DB default). */
 export async function registerPrint(
   sql: Sql,
-  input: { versionId: string; printedBy: string; intendedLocation?: string | null; basePath: string; publicUrl: string },
+  input: { versionId: string; printedBy: string; intendedLocation?: string | null; siteId?: string | null; basePath: string; publicUrl: string },
 ): Promise<PrintRecord> {
   return sql.begin(async (tx) => {
     const allowed = await canViewVersion(tx as unknown as Sql, input.printedBy, input.versionId);
@@ -49,7 +50,8 @@ export async function registerPrint(
       objectType: 'document_versions', objectId: input.versionId,
       afterState: { print_id: row.print_id },
     });
-    const verifyUrl = `${input.publicUrl}${input.basePath}/verify/${row.verify_token}`;
+    const siteQs = input.siteId ? `?site_id=${encodeURIComponent(input.siteId)}` : '';
+    const verifyUrl = `${input.publicUrl}${input.basePath}/verify/${row.verify_token}${siteQs}`;
     const qrSvg = await QRCode.toString(verifyUrl, { type: 'svg', width: 120, margin: 1 });
     return {
       print_id: row.print_id, verify_token: row.verify_token,
@@ -61,15 +63,20 @@ export async function registerPrint(
 
 export interface VerifyResult {
   found: boolean;
-  /** con_hieu_luc | het_hieu_luc | thu_hoi | ban_in_thu_hoi | khong_ro | chua_ap_dung | tam_hoan */
+  /** con_hieu_luc | het_hieu_luc | thu_hoi | ban_in_thu_hoi | khong_ro
+   *  | chua_tiep_nhan | tu_choi_tiep_nhan (trạng thái theo site nhận) */
   status: string;
   doc_id?: string;
   version_no?: string;
+  /** Phiên bản hiện hành mới nhất của số hiệu (nếu bản in đã lỗi thời). */
   currentVersionNo?: string | null;
+  /** Thông tin tiếp nhận tại site (khi quét kèm ?site_id=). */
   site_code?: string | null;
   site_name?: string | null;
-  rollout_status?: string | null;
-  applied_date?: string | null;
+  /** cho_phan_hoi | chap_nhan | tu_choi — trạng thái tiếp nhận của site. */
+  receipt_status?: string | null;
+  apply_date?: string | null;
+  reject_type?: string | null;
 }
 
 /**
@@ -86,40 +93,40 @@ export async function verifyToken(sql: Sql, token: string, siteId?: string | nul
   const row = rows[0];
   if (!row) return { found: false, status: 'khong_ro' };
 
-  // Bản in bị thu hồi
+  // Bản sao in đã bị thu hồi tại hiện trường.
   if (row.recall_status === 'da_thu_hoi') {
     return { found: true, status: 'ban_in_thu_hoi', doc_id: row.doc_id, version_no: row.version_no };
   }
 
-  // Phiên bản còn hiệu lực?
+  // Phiên bản hiện hành mới nhất của số hiệu (mô hình mới: da_ban_hanh/hieu_luc).
   const current = (await sql<{ version_no: string }[]>`
-    SELECT version_no FROM document_versions WHERE doc_id = ${row.doc_id} AND status = 'hieu_luc' LIMIT 1`)[0];
+    SELECT version_no FROM document_versions
+     WHERE doc_id = ${row.doc_id} AND status IN ('da_ban_hanh', 'hieu_luc')
+     ORDER BY version_no DESC LIMIT 1`)[0];
 
   let status = 'khong_ro';
-  if (row.ver_status === 'hieu_luc') status = 'con_hieu_luc';
+  if (isCurrentlyEffective(row.ver_status)) status = 'con_hieu_luc';
   else if (row.ver_status === 'thu_hoi') status = 'thu_hoi';
   else if (row.ver_status === 'het_hieu_luc') status = 'het_hieu_luc';
 
-  // Rollout theo site: nếu có siteId, ghi đè trạng thái theo site đó.
-  let site_code: string | null = null;
-  let site_name: string | null = null;
-  let rollout_status: string | null = null;
-  let applied_date: string | null = null;
+  // Thông tin tiếp nhận theo site (mô hình receipt) khi quét kèm ?site_id=.
+  let site_code: string | null = null, site_name: string | null = null;
+  let receipt_status: string | null = null, apply_date: string | null = null, reject_type: string | null = null;
   if (siteId) {
-    const rr = (await sql<{ site_code: string; site_name: string; status: string; applied_date: string | null }[]>`
+    const rr = (await sql<{
+      site_code: string; site_name: string; status: string; apply_date: string | null; response_type: string | null;
+    }[]>`
       SELECT s.site_code, s.name AS site_name, r.status,
-             r.applied_date::text AS applied_date
-        FROM document_site_rollout r
-        JOIN org_site s ON s.site_id = r.site_id
+             r.apply_date::text AS apply_date, r.response_type
+        FROM document_receipt r JOIN org_site s ON s.site_id = r.site_id
        WHERE r.version_id = ${row.version_id} AND r.site_id = ${siteId}`)[0];
     if (rr) {
-      site_code = rr.site_code;
-      site_name = rr.site_name;
-      rollout_status = rr.status;
-      applied_date = rr.applied_date;
+      site_code = rr.site_code; site_name = rr.site_name;
+      receipt_status = rr.status; apply_date = rr.apply_date; reject_type = rr.response_type;
+      // Ghi đè trạng thái theo tình trạng tiếp nhận của site.
       if (status === 'con_hieu_luc') {
-        if (rr.status === 'chua_ap_dung') status = 'chua_ap_dung';
-        else if (rr.status === 'tam_hoan') status = 'tam_hoan';
+        if (rr.status === 'cho_phan_hoi') status = 'chua_tiep_nhan';
+        else if (rr.status === 'tu_choi') status = 'tu_choi_tiep_nhan';
       }
     }
   }
@@ -127,7 +134,7 @@ export async function verifyToken(sql: Sql, token: string, siteId?: string | nul
   return {
     found: true, status, doc_id: row.doc_id, version_no: row.version_no,
     currentVersionNo: current?.version_no ?? null,
-    site_code, site_name, rollout_status, applied_date,
+    site_code, site_name, receipt_status, apply_date, reject_type,
   };
 }
 

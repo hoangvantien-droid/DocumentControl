@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tra cứu bản in — DCS</title>
+  <title>Tra cứu bản sao có kiểm soát — DCS</title>
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body class="verify-page">
   <% var r = it.result; %>
-  <!-- Trang tra cứu QR (DCS-7 §7.5): kết quả chiếm trọn màn hình, đọc cách 1m,
-       tối đa một câu. KHÔNG hiện nội dung tài liệu, nhãn, người nhận. -->
+  <!-- Trang tra cứu QR (công khai, không đăng nhập): kết quả chiếm trọn màn,
+       đọc cách 1m, tối đa một câu chính. KHÔNG hiện nội dung tài liệu. -->
   <% if (!r.found) { %>
     <main class="verify-card verify-unknown">
       <div class="verify-big">?</div>
@@ -18,31 +18,40 @@
   <% } else if (r.status === 'con_hieu_luc') { %>
     <main class="verify-card verify-ok">
       <div class="verify-big">✓</div>
-      <p>Bản này CÒN HIỆU LỰC.<% if (r.site_code) { %> · Site <%= r.site_code %><% if (r.applied_date) { %> từ <%= r.applied_date %><% } %><% } %></p>
+      <p>Bản này CÒN HIỆU LỰC.</p>
+      <% if (r.site_code) { %>
+        <p class="verify-sub">Site <%= r.site_code %><% if (r.receipt_status === 'chap_nhan') { %> — đã xác nhận tiếp nhận<% if (r.apply_date) { %> từ <%= r.apply_date %><% } %><% } %></p>
+      <% } %>
     </main>
-  <% } else if (r.status === 'chua_ap_dung') { %>
+  <% } else if (r.status === 'chua_tiep_nhan') { %>
     <main class="verify-card verify-bad">
       <div class="verify-big">…</div>
-      <p>Site <%= r.site_code || '' %> CHƯA ÁP DỤNG bản này.</p>
+      <p>Site <%= r.site_code || '' %> CHƯA XÁC NHẬN TIẾP NHẬN bản này.</p>
     </main>
-  <% } else if (r.status === 'tam_hoan') { %>
+  <% } else if (r.status === 'tu_choi_tiep_nhan') { %>
     <main class="verify-card verify-bad">
       <div class="verify-big">‖</div>
-      <p>Site <%= r.site_code || '' %> TẠM HOÃN áp dụng.</p>
+      <p>Site <%= r.site_code || '' %> ĐÃ TỪ CHỐI TIẾP NHẬN<% if (r.reject_type === 'sai_noi_dung') { %> (báo sai nội dung)<% } else if (r.reject_type === 'sai_dang_ky') { %> (báo sai thông tin đăng ký)<% } %>.</p>
     </main>
   <% } else { %>
     <main class="verify-card verify-bad">
       <div class="verify-big">✕</div>
       <% if (r.status === 'het_hieu_luc') { %>
-        <p>Bản này ĐÃ HẾT HIỆU LỰC<% if (r.currentVersionNo) { %> — bản mới nhất là phiên bản <%= r.currentVersionNo %><% } %>.</p>
+        <p>Bản này ĐÃ LỖI THỜI<% if (r.currentVersionNo) { %> — bản hiện hành là phiên bản <%= r.currentVersionNo %><% } %>.</p>
       <% } else if (r.status === 'thu_hoi') { %>
         <p>Tài liệu này ĐÃ THU HỒI.</p>
       <% } else if (r.status === 'ban_in_thu_hoi') { %>
         <p>Bản in này ĐÃ ĐƯỢC THU HỒI.</p>
       <% } else { %>
-        <p>Không xác định được tình trạng — hỏi người phụ trách tài liệu.</p>
+        <p>Không xác định được tình trạng — hỏi người kiểm soát tài liệu.</p>
       <% } %>
     </main>
+  <% } %>
+
+  <% if (r.found && r.doc_id) { %>
+    <footer class="verify-foot">
+      <span><%= r.doc_id %><% if (r.version_no) { %> · phiên bản <%= r.version_no %><% } %></span>
+    </footer>
   <% } %>
 </body>
 </html>

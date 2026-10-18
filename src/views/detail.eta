@@ -13,10 +13,21 @@
     <a href="/documents/<%= d.version_id %>/view" target="_blank" rel="noopener" class="btn-link">Mở PDF toàn màn hình</a>
     <a href="/documents/<%= d.version_id %>/download" class="btn-link">Tải PDF</a>
     <% if (d.status === 'hieu_luc' || d.status === 'da_ban_hanh') { %>
-      <form method="post" action="/documents/<%= d.version_id %>/print" style="display:inline">
-        <input type="hidden" name="location" value="">
-        <button type="submit" class="btn-diff">In bản sao có kiểm soát</button>
-      </form>
+      <details class="print-box">
+        <summary class="btn-diff">In bản sao có kiểm soát</summary>
+        <form method="post" action="/documents/<%= d.version_id %>/print" class="inline-form">
+          <label>Site áp dụng (gắn vào mã QR để tra cứu theo site)
+            <select name="site_id">
+              <option value="">— Không gắn site (tra cứu chung) —</option>
+              <% (it.sites || []).forEach(function(st){ %><option value="<%= st.site_id %>"><%= st.site_code %> — <%= st.name %></option><% }) %>
+            </select>
+          </label>
+          <label>Vị trí đặt bản in (tuỳ chọn)
+            <input name="location" placeholder="VD: Chuyền 1, phòng QA…">
+          </label>
+          <button type="submit" class="primary">Tạo bản sao có kiểm soát</button>
+        </form>
+      </details>
     <% } %>
     <% if (it.nav && it.nav.canReport) { %>
       <button type="button" class="btn-link" onclick="var b=document.getElementById('report-box');b.hidden=!b.hidden">Báo bất thường</button>
