@@ -98,7 +98,7 @@ export async function listVisibleDocuments(
               OR r.role_code = 'DC_ADMIN'))
        )
        -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (hieu_luc / da_dang_ky).
-       AND (${!readOnlyViewer} OR v.status IN ('hieu_luc', 'da_dang_ky'))
+       AND (${!readOnlyViewer} OR v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky'))
        -- Lọc theo trạng thái
        AND (${effStatus}::varchar IS NULL OR v.status = ${effStatus})
        AND (${docType}::varchar IS NULL OR d.doc_type = ${docType})
@@ -119,13 +119,12 @@ export async function listVisibleDocuments(
        v.effective_date DESC NULLS LAST, v.doc_id`;
 }
 
-/** Trạng thái tài liệu được coi là "hiện hành" (người chỉ-xem được phép xem). */
-export const CURRENT_DOC_STATUSES = ['hieu_luc', 'da_dang_ky'] as const;
+/** Trạng thái tài liệu được coi là "hiện hành" (người chỉ-xem được phép xem).
+ * Dùng chung nguồn duy nhất lifecycle-status (điểm 9). */
+export { CURRENT_VIEW_STATUSES as CURRENT_DOC_STATUSES } from './lifecycle-status.js';
 
 /** Người chỉ-xem có bị chặn/điều hướng khỏi version này không (vì không hiện hành). */
-export function isCurrentStatus(status: string): boolean {
-  return (CURRENT_DOC_STATUSES as readonly string[]).includes(status);
-}
+export { isCurrentlyEffective as isCurrentStatus } from './lifecycle-status.js';
 
 export interface DocumentDetail extends CatalogRow {
   registrant_user_id: string;
@@ -173,7 +172,7 @@ export async function canViewVersion(
         JOIN documents d ON d.doc_id = v.doc_id
        WHERE v.version_id = ${versionId}
          -- Người chỉ-xem (Reader): chỉ bản hiện hành (hieu_luc / da_dang_ky).
-         AND (${!readOnlyViewer} OR v.status IN ('hieu_luc', 'da_dang_ky'))
+         AND (${!readOnlyViewer} OR v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky'))
          AND (
            v.registrant_user_id = ${userId}
            OR d.scope_level = 'group'

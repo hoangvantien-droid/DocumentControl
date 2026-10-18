@@ -13,13 +13,25 @@
 
   <div class="detail-actions">
     <!-- In bản kiểm soát (T-085): chỉ khi hiệu lực -->
-    <% if (d.status === 'hieu_luc') { %>
+    <% if (d.status === 'hieu_luc' || d.status === 'da_ban_hanh') { %>
       <form method="post" action="/documents/<%= d.version_id %>/print" style="display:inline">
         <input type="hidden" name="location" value="">
         <button type="submit" class="btn-diff">In bản kiểm soát</button>
       </form>
     <% } %>
+    <!-- Báo bất thường (Reader + các vai đọc): gửi report tới DC Site -->
+    <% if (it.nav && it.nav.canReport) { %>
+      <button type="button" class="btn-link" onclick="document.getElementById('report-box').hidden = !document.getElementById('report-box').hidden">Báo bất thường</button>
+    <% } %>
   </div>
+  <% if (it.nav && it.nav.canReport) { %>
+  <form id="report-box" method="post" action="/documents/<%= d.version_id %>/report" class="report-inline" hidden>
+    <label>Mô tả bất thường bạn phát hiện <span class="req">*</span>
+      <textarea name="note" rows="2" required placeholder="Ví dụ: sai ngày ban hành, nội dung không khớp thực tế…"></textarea>
+    </label>
+    <button type="submit" class="btn-diff">Gửi báo cáo tới kiểm soát tài liệu site</button>
+  </form>
+  <% } %>
 </div>
 
 <!-- Điều phải hiện nổi bật ngay dưới đầu trang (DCS-7 §3.2, Yêu cầu 17.3) -->

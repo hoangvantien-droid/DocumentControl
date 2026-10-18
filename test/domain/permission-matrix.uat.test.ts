@@ -241,10 +241,12 @@ describe('Nhóm P.1/P.9 — isReadOnlyUser khi nhiều vai cùng lúc', () => {
 // P.9 — Reader chỉ xem bản hiện hành: allowedStatusesForViewer.
 // ==========================================================================
 describe('Nhóm P.9 — allowedStatusesForViewer (Reader chỉ bản hiện hành)', () => {
-  test('P.9.1 — Reader thuần: chỉ hieu_luc + da_dang_ky', () => {
+  test('P.9.1 — Reader thuần: chỉ trạng thái hiện hành (mô hình mới)', () => {
     const s = allowedStatusesForViewer(roles('DC_READER'));
     assert.deepEqual(s, CURRENT_VIEW_STATUSES);
-    assert.deepEqual([...(s ?? [])], ['hieu_luc', 'da_dang_ky']);
+    // Mô hình receipt mới: da_ban_hanh là hiện hành chính; giữ mã cũ cho
+    // giai đoạn chuyển đổi (Task 9 dọn).
+    assert.deepEqual([...(s ?? [])], ['da_ban_hanh', 'hieu_luc', 'da_dang_ky']);
   });
   test('P.9.1 — không vai nào cũng là Reader: giới hạn trạng thái', () => {
     assert.deepEqual(allowedStatusesForViewer(roles()), CURRENT_VIEW_STATUSES);

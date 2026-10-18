@@ -1,0 +1,40 @@
+<% layout('layout.eta', { title: 'Báo bất thường — DCS', user: it.user }) %>
+
+<h1>Báo bất thường (site)</h1>
+<% if (it.notControl) { %>
+<div class="alert-banner alert-banner--info"><strong>Thông tin:</strong> Bạn chưa được gán vai Kiểm soát tài liệu cho site nào.</div>
+<% } else { %>
+<p class="muted">Report do người đọc trong site gửi lên. Thẩm định trước khi chuyển thành phản hồi tới người đăng ký.</p>
+
+<% if (it.reports.length === 0) { %>
+  <%~ include('/components/empty-state.eta', { text: 'Không có report nào chờ thẩm định.' }) %>
+<% } %>
+
+<% it.reports.forEach(function(r){ %>
+<article class="report-card">
+  <header>
+    <strong><%= r.doc_id %> v<%= r.version_no %></strong> — <%= r.title %>
+    <span class="muted">· site <%= r.site_code %> · báo bởi <%= r.reporter_name || r.reported_by %> · <%= (r.created_at || '').slice(0,10) %></span>
+  </header>
+  <p class="report-note"><%= r.note %></p>
+
+  <div class="report-actions">
+    <form method="post" action="/issue-reports/<%= r.report_id %>/convert" class="reject-form">
+      <label>Chuyển thành từ chối — loại
+        <select name="reject_type" required>
+          <option value="sai_dang_ky">Sai thông tin đăng ký</option>
+          <option value="sai_noi_dung">Sai nội dung tài liệu</option>
+        </select>
+      </label>
+      <label>Ghi chú (tuỳ chọn) <input name="note" placeholder="Bổ sung cho người đăng ký"></label>
+      <button type="submit" class="btn-diff">Chuyển thành phản hồi từ chối</button>
+    </form>
+
+    <form method="post" action="/issue-reports/<%= r.report_id %>/dismiss" class="dismiss-form">
+      <label>Lý do bác bỏ <span class="req">*</span> <input name="review_note" required placeholder="Vì sao không chuyển"></label>
+      <button type="submit">Bác bỏ report</button>
+    </form>
+  </div>
+</article>
+<% }) %>
+<% } %>

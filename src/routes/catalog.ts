@@ -88,8 +88,8 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       SELECT file_path, doc_id, version_no, status FROM document_versions
        WHERE version_id = ${req.params.id}`)[0];
     if (!row) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
-    if (!['da_dang_ky', 'hieu_luc'].includes(row.status)) {
-      reply.code(403); return reply.send('Chỉ tải được tệp của tài liệu đã được duyệt');
+    if (!isCurrentStatus(row.status)) {
+      reply.code(403); return reply.send('Chỉ tải được tệp của tài liệu hiện hành');
     }
     if (!(await canViewDoc(sql, user.user_id, req.params.id))) {
       reply.code(403); return reply.send('Không có quyền tải tài liệu này');

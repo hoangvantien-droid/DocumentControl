@@ -21,6 +21,8 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerConfirmationRoutes } from './routes/confirmation.js';
+import { registerReceiptRoutes } from './routes/receipts.js';
+import { registerIssueReportRoutes } from './routes/issue-reports.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerDiffRoutes } from './routes/diff.js';
@@ -93,6 +95,8 @@ async function main() {
   registerAdminRoutes(app, sql);
   registerDocumentRoutes(app, sql, config);
   registerConfirmationRoutes(app, sql);
+  registerReceiptRoutes(app, sql);
+  registerIssueReportRoutes(app, sql);
   registerCatalogRoutes(app, sql, config);
   registerSearchRoutes(app, sql);
   registerDiffRoutes(app, sql);

@@ -1,0 +1,31 @@
+<% layout('layout.eta', { title: 'Chờ site phản hồi — DCS', user: it.user }) %>
+
+<h1>Chờ site phản hồi</h1>
+<% if (it.notControl) { %>
+<div class="alert-banner alert-banner--info"><strong>Thông tin:</strong> Bạn chưa được gán vai Kiểm soát tài liệu cho site nào. Liên hệ quản trị để được cấp quyền.</div>
+<% } else { %>
+<p class="muted">Tài liệu đã ban hành tới site bạn phụ trách. Xem thông tin đăng ký và nội dung, rồi chấp nhận nhận hoặc từ chối nếu phát hiện sai sót.</p>
+
+<table class="data-table">
+  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Site</th><th>Cảnh báo</th><th></th></tr></thead>
+  <tbody>
+    <% it.rows.forEach(function(r){ %>
+    <tr>
+      <td><%= r.doc_id %></td>
+      <td><%= r.version_no %></td>
+      <td><%= r.title %></td>
+      <td><%= r.site_code %></td>
+      <td>
+        <% if (r.other_reject_type === 'sai_noi_dung') { %>
+          <span class="status status-thu_hoi">Site khác báo sai nội dung</span>
+        <% } else if (r.other_reject_type === 'sai_dang_ky') { %>
+          <span class="muted">Site khác báo sai đăng ký</span>
+        <% } %>
+      </td>
+      <td><a href="/site-receipts/<%= r.receipt_id %>" class="btn-link">Mở phản hồi</a></td>
+    </tr>
+    <% }) %>
+    <% if (it.rows.length === 0) { %><tr><td colspan="6">Không có tài liệu nào chờ site bạn phản hồi.</td></tr><% } %>
+  </tbody>
+</table>
+<% } %>

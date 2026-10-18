@@ -10,11 +10,13 @@ import { BusinessError } from '../lib/errors.js';
 export type RoleCode =
   | 'DC_ADMIN'
   | 'DC_AUTHOR'
+  | 'DC_SITE_DOC_CONTROL'
+  | 'DC_READER'
+  // Mã cũ (gác cổng nguồn) — giữ cho dữ liệu lịch sử, không gán mới.
   | 'DC_DEPT_HEAD'
   | 'DC_SITE_QA_MANAGER'
   | 'DC_BU_OWNER'
-  | 'DC_GROUP_OWNER'
-  | 'DC_READER';
+  | 'DC_GROUP_OWNER';
 
 export type ScopeLevel = 'group' | 'bu' | 'site' | 'dept';
 
@@ -39,10 +41,10 @@ export interface ScopeRef {
 function normalizeScope(role: RoleCode, scope: ScopeRef): {
   level: ScopeLevel; bu: string | null; site: string | null; dept: string | null;
 } {
-  // Mô hình 3 vai: Admin / Biên soạn (DC_AUTHOR) / Phê duyệt (DC_DEPT_HEAD) đều
-  // gán ở cấp hệ thống (group). Phạm vi duyệt suy từ Dept chính của người dùng.
-  // DC_READER, DC_GROUP_OWNER giữ ở group cho tương thích dữ liệu lịch sử.
-  const groupRoles: RoleCode[] = ['DC_ADMIN', 'DC_AUTHOR', 'DC_DEPT_HEAD', 'DC_READER', 'DC_GROUP_OWNER'];
+  // Mô hình mới (4 vai): Admin / Biên soạn / Kiểm soát tài liệu site / Người đọc.
+  // - Admin / Author / Reader: vai hệ thống, gán ở cấp Group.
+  // - DC_SITE_DOC_CONTROL: gán theo SITE (đại diện nhận của một site cụ thể).
+  const groupRoles: RoleCode[] = ['DC_ADMIN', 'DC_AUTHOR', 'DC_READER'];
   if (groupRoles.includes(role)) {
     if (scope.level !== 'group') {
       throw new BusinessError('role.scope', `${role} chỉ được gán ở cấp Group`);
@@ -50,11 +52,19 @@ function normalizeScope(role: RoleCode, scope: ScopeRef): {
     return { level: 'group', bu: null, site: null, dept: null };
   }
 
-  // Các vai cũ theo phạm vi (DC_BU_OWNER, DC_SITE_QA_MANAGER) đã bị migration 013
-  // gộp về DC_DEPT_HEAD@group và không còn gán mới qua UI 3 vai. Chặn tường minh.
+  if (role === 'DC_SITE_DOC_CONTROL') {
+    const site = (scope.siteId ?? '').trim();
+    if (scope.level !== 'site' || !site) {
+      throw new BusinessError('role.scope', 'Kiểm soát tài liệu site phải gán ở cấp Site (chọn Site)');
+    }
+    return { level: 'site', bu: null, site, dept: null };
+  }
+
+  // Các vai cũ gác cổng nguồn (DC_DEPT_HEAD, DC_BU_OWNER, DC_SITE_QA_MANAGER,
+  // DC_GROUP_OWNER) không còn gán mới trong mô hình receipt. Chặn tường minh.
   throw new BusinessError(
     'role.scope',
-    `Vai trò ${role} không còn được gán trong mô hình 3 vai (đã gộp về Phê duyệt ở cấp Group)`,
+    `Vai trò ${role} không còn được gán trong mô hình mới (đã thay bằng Kiểm soát tài liệu site)`,
   );
 }
 

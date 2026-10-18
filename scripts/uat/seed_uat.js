@@ -32,6 +32,18 @@ try {
   if (existingDeptPROD.length > 0) DEPT_PROD = existingDeptPROD[0].dept_id;
   else { DEPT_PROD = randomUUID(); await sql`INSERT INTO org_department (dept_id, dept_code, name, site_id) VALUES (${DEPT_PROD}, 'PROD', 'Production', ${SITE})`; }
 
+  // Site thứ hai (mô hình receipt: cần ≥2 site để kiểm "sai khác giữa site").
+  let SITE2 = '';
+  let existingSite2 = await sql`SELECT site_id FROM org_site WHERE site_code='HCM'`;
+  if (existingSite2.length > 0) SITE2 = existingSite2[0].site_id;
+  else { SITE2 = randomUUID(); await sql`INSERT INTO org_site (site_id, site_code, name, legacy_primary_bu_id) VALUES (${SITE2}, 'HCM', 'HCM Site', ${BU})`; }
+  await sql`INSERT INTO org_site_bu (site_id, bu_id) VALUES (${SITE2}, ${BU}) ON CONFLICT DO NOTHING`;
+
+  let DEPT_QA2 = '';
+  let existingDeptQA2 = await sql`SELECT dept_id FROM org_department WHERE dept_code='QA2' AND site_id=${SITE2}`;
+  if (existingDeptQA2.length > 0) DEPT_QA2 = existingDeptQA2[0].dept_id;
+  else { DEPT_QA2 = randomUUID(); await sql`INSERT INTO org_department (dept_id, dept_code, name, site_id) VALUES (${DEPT_QA2}, 'QA2', 'QA HCM', ${SITE2})`; }
+
   // 2. Users — idempotent
   const adminHash = await argon2.hash('Admin#1234');
   const authorHash = await argon2.hash('Author#1234');
@@ -52,16 +64,39 @@ try {
   if (r.length > 0) USER_READER = r[0].user_id;
   else { USER_READER = randomUUID(); await sql`INSERT INTO users (user_id, email, full_name, password_hash, is_active, temp_record) VALUES (${USER_READER}, 'reader@mml.io', 'Reader User', ${readerHash}, true, false)`; }
 
+  // Kiểm soát tài liệu site (DC Site) — một người cho mỗi site.
+  const dcHash = await argon2.hash('DocCtl#1234');
+  let USER_DC1 = '';
+  r = await sql`SELECT user_id FROM users WHERE email='dc_mml@mml.io'`;
+  if (r.length > 0) USER_DC1 = r[0].user_id;
+  else { USER_DC1 = randomUUID(); await sql`INSERT INTO users (user_id, email, full_name, password_hash, is_active, temp_record) VALUES (${USER_DC1}, 'dc_mml@mml.io', 'DC Site MML', ${dcHash}, true, false)`; }
+
+  let USER_DC2 = '';
+  r = await sql`SELECT user_id FROM users WHERE email='dc_hcm@mml.io'`;
+  if (r.length > 0) USER_DC2 = r[0].user_id;
+  else { USER_DC2 = randomUUID(); await sql`INSERT INTO users (user_id, email, full_name, password_hash, is_active, temp_record) VALUES (${USER_DC2}, 'dc_hcm@mml.io', 'DC Site HCM', ${dcHash}, true, false)`; }
+
   // 3. User departments — idempotent
   await sql`INSERT INTO user_departments (user_id, dept_id) VALUES
     (${USER_ADMIN}, ${DEPT_QA}), (${USER_ADMIN}, ${DEPT_PROD}),
-    (${USER_AUTHOR}, ${DEPT_QA}), (${USER_READER}, ${DEPT_PROD}) ON CONFLICT DO NOTHING`;
+    (${USER_AUTHOR}, ${DEPT_QA}), (${USER_READER}, ${DEPT_PROD}),
+    (${USER_DC1}, ${DEPT_QA}), (${USER_DC2}, ${DEPT_QA2}) ON CONFLICT DO NOTHING`;
 
-  // 4. Roles (3-vai model — all group scope) — idempotent
+  // Dept chính (primary_dept_id) — luồng report suy site của người báo từ đây.
+  await sql`UPDATE users SET primary_dept_id = ${DEPT_QA}  WHERE user_id = ${USER_AUTHOR} AND primary_dept_id IS NULL`;
+  await sql`UPDATE users SET primary_dept_id = ${DEPT_PROD} WHERE user_id = ${USER_READER} AND primary_dept_id IS NULL`;
+  await sql`UPDATE users SET primary_dept_id = ${DEPT_QA}  WHERE user_id = ${USER_DC1} AND primary_dept_id IS NULL`;
+  await sql`UPDATE users SET primary_dept_id = ${DEPT_QA2} WHERE user_id = ${USER_DC2} AND primary_dept_id IS NULL`;
+
+  // 4. Roles (mô hình 4 vai) — idempotent.
+  //    Admin/Author/Reader ở cấp group; DC Site gán theo từng site.
   await sql`INSERT INTO user_roles (user_id, role_code, scope_level) VALUES
     (${USER_ADMIN}, 'DC_ADMIN', 'group'),
     (${USER_AUTHOR}, 'DC_AUTHOR', 'group'),
     (${USER_READER}, 'DC_READER', 'group') ON CONFLICT DO NOTHING`;
+  await sql`INSERT INTO user_roles (user_id, role_code, scope_level, scope_site_id) VALUES
+    (${USER_DC1}, 'DC_SITE_DOC_CONTROL', 'site', ${SITE}),
+    (${USER_DC2}, 'DC_SITE_DOC_CONTROL', 'site', ${SITE2}) ON CONFLICT DO NOTHING`;
 
   // 5. Document + version + link
   const DOC_ID = 'MML/QA/HD-001';
@@ -92,12 +127,12 @@ try {
 
   console.log('UAT seed data ready:');
   console.log('  BU: MEAT (' + BU + ')');
-  console.log('  Site: MML (' + SITE + ')');
-  console.log('  Depts: QA (' + DEPT_QA + '), PROD (' + DEPT_PROD + ')');
-  console.log('  Users: admin@mml.io (' + USER_ADMIN + '), author@mml.io (' + USER_AUTHOR + '), reader@mml.io (' + USER_READER + ')');
-  console.log('  Roles: DC_ADMIN, DC_AUTHOR, DC_READER');
+  console.log('  Sites: MML (' + SITE + '), HCM (' + SITE2 + ')');
+  console.log('  Depts: QA (' + DEPT_QA + '), PROD (' + DEPT_PROD + '), QA2@HCM (' + DEPT_QA2 + ')');
+  console.log('  Users: admin@mml.io, author@mml.io, reader@mml.io, dc_mml@mml.io, dc_hcm@mml.io');
+  console.log('  Roles: DC_ADMIN, DC_AUTHOR, DC_READER, DC_SITE_DOC_CONTROL(MML), DC_SITE_DOC_CONTROL(HCM)');
   console.log('  Doc: ' + DOC_ID + ' v1.0 (hieu_luc, version_id=' + VERSION_ID + ')');
-  console.log('Passwords: Admin#1234 / Author#1234 / Reader#1234');
+  console.log('Passwords: Admin#1234 / Author#1234 / Reader#1234 / DocCtl#1234 (cả hai DC Site)');
 } catch (e) {
   console.error('Seed failed:', e.message);
   process.exit(1);

@@ -5,33 +5,44 @@
  * active của người dùng. isAdmin theo Ver2: role DC_ADMIN.
  */
 import type { Sql } from 'postgres';
-import { roleCodesOf, hasAnyReleaseRole, isReadOnlyUser } from '../domain/permissions.js';
+import {
+  roleCodesOf, hasAnyReleaseRole, isReadOnlyUser,
+  isSiteDocControl, canReportIssue,
+} from '../domain/permissions.js';
 import type { SessionUser } from '../domain/session.js';
 
 export interface NavFlags {
   canRegister: boolean;
-  canRelease: boolean;
+  /** MỚI: vai Kiểm soát tài liệu site — hiện hàng chờ phản hồi + hộp report. */
+  isSiteDocControl: boolean;
+  /** MỚI: được gửi report bất thường (Reader + các vai đọc, trừ Admin-thuần). */
+  canReport: boolean;
   isAdmin: boolean;
-  /** Lỗi #13: user chỉ là Author (không có vai trò release) — ẩn "Chờ tôi xác nhận". */
-  isAuthorOnly: boolean;
-  /** Lỗi #13: hiện "Tài liệu của tôi" cho mọi user đã đăng nhập (không chỉ DC_AUTHOR). */
+  /** Hiện "Tài liệu của tôi" cho người có vai Biên soạn. */
   canSeeMyDocuments: boolean;
-  /** Người chỉ-xem (Reader): không đăng ký, không xác nhận, không quản trị. */
+  /** Người chỉ-xem (Reader): không đăng ký, không nhận-phản hồi, không quản trị. */
   isReadOnly: boolean;
+  /** (LEGACY) cờ vai duyệt-trước cũ — route cũ còn đọc; Task 9 gỡ. */
+  canRelease: boolean;
 }
 
 export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavFlags> {
-  if (!user) return { canRegister: false, canRelease: false, isAdmin: false, isAuthorOnly: false, canSeeMyDocuments: false, isReadOnly: true };
+  if (!user) {
+    return {
+      canRegister: false, isSiteDocControl: false, canReport: false,
+      isAdmin: false, canSeeMyDocuments: false, isReadOnly: true, canRelease: false,
+    };
+  }
   const roles = await roleCodesOf(sql, user.user_id);
-  const canRelease = hasAnyReleaseRole(roles);
   const canRegister = roles.has('DC_AUTHOR');
+  const isAdmin = roles.has('DC_ADMIN');
   return {
     canRegister,
-    canRelease,
-    isAdmin: roles.has('DC_ADMIN'),
-    isAuthorOnly: canRegister && !canRelease,
-    // 3 vai: Tài liệu của tôi chỉ khi có Biên soạn (có DC_AUTHOR).
+    isSiteDocControl: isSiteDocControl(roles),
+    canReport: canReportIssue(roles),
+    isAdmin,
     canSeeMyDocuments: canRegister,
     isReadOnly: isReadOnlyUser(roles),
+    canRelease: hasAnyReleaseRole(roles),
   };
 }

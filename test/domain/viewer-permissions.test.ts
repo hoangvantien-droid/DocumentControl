@@ -52,9 +52,11 @@ describe('isReadOnlyUser', () => {
 });
 
 describe('allowedStatusesForViewer', () => {
-  test('Reader -> chỉ hieu_luc + da_dang_ky', () => {
+  test('Reader -> chỉ trạng thái hiện hành (mô hình mới: da_ban_hanh + mã cũ)', () => {
     assert.deepEqual(allowedStatusesForViewer(roles()), CURRENT_VIEW_STATUSES);
-    assert.deepEqual([...CURRENT_VIEW_STATUSES], ['hieu_luc', 'da_dang_ky']);
+    // Mô hình receipt mới: da_ban_hanh là hiện hành chính; hieu_luc/da_dang_ky
+    // giữ lại cho giai đoạn chuyển đổi (Task 9 dọn).
+    assert.deepEqual([...CURRENT_VIEW_STATUSES], ['da_ban_hanh', 'hieu_luc', 'da_dang_ky']);
   });
   test('Author -> null (không giới hạn trạng thái)', () => {
     assert.equal(allowedStatusesForViewer(roles('DC_AUTHOR')), null);

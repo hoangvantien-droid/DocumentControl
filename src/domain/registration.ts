@@ -14,6 +14,7 @@ import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import type { ScopeLevel } from './roles.js';
 import { canRegisterDocuments } from './permissions.js';
+import { publishToSites } from './receipt.js';
 
 export type DocType = 'SOP' | 'WI' | 'Form' | 'Policy' | 'External';
 export type Origin = 'noi_bo' | 'ngoai_bo';
@@ -157,7 +158,7 @@ export async function submitRegistration(
   sql: Sql,
   doc: DocumentInput,
   v: VersionInput,
-  opts: { m14Enabled: boolean },
+  opts: { m14Enabled: boolean; siteIds?: string[] },
 ): Promise<string> {
   return sql.begin(async (tx) => {
     if (!await canRegisterDocuments(tx as unknown as Sql, v.registrantUserId)) {
@@ -165,6 +166,13 @@ export async function submitRegistration(
     }
     await ensureDocument(tx as TransactionSql, doc);
     await validateForSubmit(tx as TransactionSql, v, opts);
+
+    // Mô hình mới: Author đăng ký = BAN HÀNH THẲNG (không qua ai duyệt).
+    // Phải chọn ít nhất một site nhận để sinh receipt.
+    const siteIds = (opts.siteIds ?? []).filter((s) => s && s.trim());
+    if (siteIds.length === 0) {
+      throw new BusinessError('reg.no_site', 'Phải chọn ít nhất một site nhận tài liệu');
+    }
 
     const versionId = randomUUID();
     await tx`
@@ -181,7 +189,7 @@ export async function submitRegistration(
         ${v.issuedDate},
         ${v.externalEffectiveDate ?? null}, ${v.effectiveDate}, ${v.reviewCycleMonths}, ${v.expiryDate ?? null},
         ${v.sourceChannel}, ${v.filePath}, ${v.fileHash},
-        'cho_xac_nhan', ${v.registrantUserId}, ${v.ownerDepartmentId},
+        'da_ban_hanh', ${v.registrantUserId}, ${v.ownerDepartmentId},
         ${v.supersedesVersionId ?? null}, ${v.changeSignificance ?? null}, ${v.changeSummary ?? null},
         now()
       )`;
@@ -191,7 +199,13 @@ export async function submitRegistration(
       objectType: 'document_versions',
       objectId: versionId,
       actorUserId: v.registrantUserId,
-      afterState: { doc_id: v.docId, version_no: v.versionNo, status: 'cho_xac_nhan' },
+      afterState: { doc_id: v.docId, version_no: v.versionNo, status: 'da_ban_hanh' },
+    });
+
+    // Sinh receipt cho_phan_hoi cho mỗi site nhận (ban hành thẳng).
+    const targetDeptId = doc.scopeLevel === 'dept' ? (doc.scopeDeptId ?? null) : null;
+    await publishToSites(tx as TransactionSql, {
+      versionId, siteIds, targetDeptId, actorUserId: v.registrantUserId,
     });
     return versionId;
   }) as Promise<string>;

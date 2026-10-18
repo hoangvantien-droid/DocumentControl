@@ -60,6 +60,20 @@
     </label>
   </fieldset>
 
+  <fieldset id="field-sites">
+    <legend>Site nhận tài liệu (ban hành thẳng) <span class="req">*</span></legend>
+    <p class="muted" style="margin:.25rem 0 .5rem">Tài liệu được ban hành ngay tới các site chọn dưới đây. Mỗi site tự xác nhận nhận hoặc từ chối.</p>
+    <div class="site-pick" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem">
+      <% it.sites.forEach(function(x){ %>
+        <label style="display:flex;align-items:center;gap:.4rem;font-weight:400">
+          <input type="checkbox" name="site_ids" value="<%= x.site_id %>"
+                 <%= (it.selectedSiteIds && it.selectedSiteIds.indexOf(x.site_id) >= 0) ? 'checked' : '' %>>
+          <span><%= x.site_code %> — <%= x.name %></span>
+        </label>
+      <% }) %>
+    </div>
+  </fieldset>
+
   <fieldset>
     <legend>Hiệu lực &amp; bộ phận sở hữu</legend>
     <label>Phiên bản <span class="req">*</span> <input name="version_no" required value="<%= val.version_no || '' %>" placeholder="1.0"></label>
