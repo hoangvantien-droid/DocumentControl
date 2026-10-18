@@ -96,6 +96,7 @@ export async function listVisibleDocuments(
           WHERE r.user_id = ${userId} AND r.is_active
             AND r.role_code = 'DC_ADMIN'
        )
+     )
        -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (hieu_luc / da_dang_ky).
        AND (${!readOnlyViewer} OR v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky'))
        -- Lọc theo trạng thái
