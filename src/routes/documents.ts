@@ -13,6 +13,7 @@ import {
   submitRegistration, addLink, saveDraft,
   type DocType, type Origin, type ChangeSignificance,
 } from '../domain/registration.js';
+import { processVersionContent } from '../domain/content.js';
 import type { ScopeLevel } from '../domain/roles.js';
 import { listBu, listSites, listDepartments } from '../domain/org.js';
 import { storeFile } from '../domain/file-store.js';
@@ -112,6 +113,14 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
           createdBy: user.user_id,
         });
       }
+      // Tự động bóc tách ngay khi đăng ký để dept head duyệt được luôn.
+      // Chạy best-effort: lỗi bóc tách không chặn nộp, parse_status giữ nguyên
+      // để checklist mục 5 báo rõ, author thấy ở /my-documents.
+      try {
+        await processVersionContent(sql, versionId, { tesseractPath: config.tesseractPath });
+      } catch (e) {
+        req.log.error({ err: e, versionId }, 'auto-extract after register failed');
+      }
       return reply.redirect('/my-documents');
     } catch (err) {
       if (isBusinessError(err)) {
@@ -206,7 +215,8 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     if (!user) return reply;
     const docs = await sql`
       SELECT version_id, doc_id, version_no, title, status,
-             effective_date::text AS effective_date, rejection_reason
+             effective_date::text AS effective_date, rejection_reason,
+             parse_status, parse_note
         FROM document_versions
        WHERE registrant_user_id = ${user.user_id}
        ORDER BY submitted_at DESC NULLS LAST, updated_at DESC`;

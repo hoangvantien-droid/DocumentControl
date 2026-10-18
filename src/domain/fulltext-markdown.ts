@@ -39,11 +39,13 @@ export interface FulltextMarkdown {
   fulltextSource: string | null;
 }
 
-/** Thoát giá trị cho YAML: null -> chuỗi rỗng, còn lại bọc nháy kép an toàn. */
-function yamlValue(v: string | null): string {
-  if (v === null) return '""';
+/** Thoát giá trị cho YAML: null/undefined -> chuỗi rỗng, còn lại bọc nháy kép an toàn.
+ * DATE từ postgres.js về dạng Date object nên phải String(v) trước khi replace. */
+function yamlValue(v: unknown): string {
+  if (v === null || v === undefined) return '""';
+  const s = v instanceof Date ? v.toISOString().slice(0, 10) : String(v);
   // Thoát dấu gạch chéo ngược và nháy kép để YAML hợp lệ; giữ tất định.
-  return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /** Dựng khối frontmatter YAML đủ bảy trường ngữ cảnh (Requirement 9.1). */

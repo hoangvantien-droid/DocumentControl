@@ -27,28 +27,64 @@ export interface VersionForConfirm {
   version_no: string;
   title: string;
   doc_type: string;
+  origin: string;
   status: string;
+  issued_date: string | null;
   effective_date: string | null;
+  expiry_date: string | null;
+  review_cycle_months: number | null;
   file_path: string | null;
   file_hash: string;
+  file_page_count: number | null;
   registrant_user_id: string;
+  registrant_name: string | null;
+  registrant_email: string | null;
+  owner_department_id: string | null;
+  owner_dept_code: string | null;
+  owner_dept_name: string | null;
   supersedes_version_id: string | null;
+  change_significance: string | null;
+  change_summary: string | null;
   parse_status: string;
+  parse_note: string | null;
   scope_level: DocScope['scope_level'];
   scope_bu_id: string | null;
   scope_site_id: string | null;
   scope_dept_id: string | null;
+  scope_bu_code: string | null;
+  scope_bu_name: string | null;
+  scope_site_code: string | null;
+  scope_site_name: string | null;
+  scope_dept_code: string | null;
+  scope_dept_name: string | null;
 }
 
-/** Đọc phiên bản kèm phạm vi tài liệu để dựng checklist và kiểm quyền. */
+/** Đọc phiên bản kèm phạm vi tài liệu để dựng checklist và kiểm quyền.
+ * Mở rộng: đủ trường đăng ký (ngày, phạm vi tên, người nộp, bộ phận sở hữu,
+ * thay đổi, bóc tách) để dept head đối chiếu đúng/sai ngay trên màn duyệt. */
 export async function loadForConfirm(sql: Sql, versionId: string): Promise<VersionForConfirm | null> {
   const rows = await sql<VersionForConfirm[]>`
-    SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, v.status,
-           v.effective_date::text AS effective_date, v.file_path, v.file_hash,
-           v.registrant_user_id, v.supersedes_version_id, v.parse_status,
-           d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+    SELECT v.version_id, v.doc_id, v.version_no, v.title, d.doc_type, d.origin, v.status,
+           v.issued_date::text AS issued_date,
+           v.effective_date::text AS effective_date,
+           v.expiry_date::text AS expiry_date,
+           v.review_cycle_months,
+           v.file_path, v.file_hash, v.file_page_count,
+           v.registrant_user_id, u.full_name AS registrant_name, u.email AS registrant_email,
+           v.owner_department_id, od.dept_code AS owner_dept_code, od.name AS owner_dept_name,
+           v.supersedes_version_id, v.change_significance, v.change_summary,
+           v.parse_status, v.parse_note,
+           d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id,
+           b.bu_code AS scope_bu_code, b.name AS scope_bu_name,
+           s.site_code AS scope_site_code, s.name AS scope_site_name,
+           dp.dept_code AS scope_dept_code, dp.name AS scope_dept_name
       FROM document_versions v
       JOIN documents d ON d.doc_id = v.doc_id
+      LEFT JOIN users u ON u.user_id = v.registrant_user_id
+      LEFT JOIN org_department od ON od.dept_id = v.owner_department_id
+      LEFT JOIN org_bu b ON b.bu_id = d.scope_bu_id
+      LEFT JOIN org_site s ON s.site_id = d.scope_site_id
+      LEFT JOIN org_department dp ON dp.dept_id = d.scope_dept_id
      WHERE v.version_id = ${versionId}`;
   return rows[0] ?? null;
 }

@@ -9,6 +9,7 @@ import {
   loadForConfirm, buildChecklist, hasViewedDiff,
   confirmRegistration, rejectRegistration,
 } from '../domain/confirmation.js';
+import { loadDetail, loadLinks, loadSections } from '../domain/catalog.js';
 import { canRelease, roleCodesOf, hasAnyReleaseRole } from '../domain/permissions.js';
 
 export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void {
@@ -60,7 +61,11 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
     const checklist = await buildChecklist(sql, v, user.user_id);
     const viewedDiff = v.supersedes_version_id ? await hasViewedDiff(sql, user.user_id, v.version_id) : true;
     const effectivePassed = v.effective_date !== null && v.effective_date >= new Date().toISOString().slice(0, 10);
-    return reply.view('confirm.eta', { v, checklist, allowed, viewedDiff, effectivePassed, error: null });
+    // Nội dung đăng ký để dept head đối chiếu đúng/sai: chi tiết + mục bóc tách + nhãn.
+    const [detail, sections, links] = await Promise.all([
+      loadDetail(sql, req.params.id), loadSections(sql, req.params.id), loadLinks(sql, req.params.id),
+    ]);
+    return reply.view('confirm.eta', { v, checklist, allowed, viewedDiff, effectivePassed, error: null, detail, sections, links });
   });
 
   // So sánh chỉ được ghi nhận qua /compare sau khi người dùng thực sự mở kết quả.

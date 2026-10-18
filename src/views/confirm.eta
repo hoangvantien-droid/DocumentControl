@@ -4,6 +4,39 @@
 <h1>Xác nhận: <%= v.doc_id %> — phiên bản <%= v.version_no %></h1>
 <p class="doc-title"><%= v.title %></p>
 
+<!-- Thông tin đăng ký để dept head đối chiếu đúng/sai trước khi duyệt -->
+<div class="confirm-meta">
+  <dl>
+    <dt>Loại / Nguồn</dt><dd><%= v.doc_type %> / <%= v.origin %></dd>
+    <dt>Phạm vi</dt><dd><%= v.scope_level %><% if (v.scope_dept_code) { %> · <%= v.scope_dept_code %> — <%= v.scope_dept_name %><% } else if (v.scope_site_code) { %> · <%= v.scope_site_code %> — <%= v.scope_site_name %><% } else if (v.scope_bu_code) { %> · <%= v.scope_bu_code %> — <%= v.scope_bu_name %><% } %></dd>
+    <dt>Người nộp</dt><dd><%= v.registrant_name || '' %> (<%= v.registrant_email || '' %>)</dd>
+    <dt>Bộ phận sở hữu</dt><dd><% if (v.owner_dept_code) { %><%= v.owner_dept_code %> — <%= v.owner_dept_name %><% } else { %>—<% } %></dd>
+    <dt>Ngày ban hành / hiệu lực / hết hạn</dt><dd><%= v.issued_date || '' %> / <%= v.effective_date || '' %> / <%= v.expiry_date || '' %></dd>
+    <dt>Bóc tách</dt><dd><%= v.parse_status %><% if (v.parse_note) { %> — <%= v.parse_note %><% } %><% if (v.file_page_count) { %> · <%= v.file_page_count %> trang<% } %></dd>
+    <% if (v.supersedes_version_id) { %>
+    <dt>Thay đổi</dt><dd><%= v.change_significance || '' %><% if (v.change_summary) { %> — <%= v.change_summary %><% } %></dd>
+    <% } %>
+  </dl>
+</div>
+
+<% if (it.sections && it.sections.length > 0) { %>
+<div class="confirm-sections">
+  <h2>Nội dung bóc tách (<%= it.sections.length %> mục)</h2>
+  <% it.sections.forEach(function(s){ %>
+    <div class="section-block"><h3><%= s.section_code %> <%= s.section_title %></h3><p><%= s.raw_text || '' %></p></div>
+  <% }) %>
+</div>
+<% } else { %>
+<div class="confirm-sections"><h2>Nội dung bóc tách</h2><p class="muted">Chưa bóc tách được — kiểm tra mục 5 checklist.</p></div>
+<% } %>
+
+<% if (it.links && it.links.length > 0) { %>
+<div class="confirm-links">
+  <h2>Nhãn liên kết (<%= it.links.length %>)</h2>
+  <% it.links.forEach(function(l){ %><span class="chip"><%= l.link_type %>: <%= l.link_code %></span><% }) %>
+</div>
+<% } %>
+
 <% if (!it.allowed) { %>
   <div class="login-error">Bạn không đủ thẩm quyền xác nhận tài liệu này. Hãy tìm người có quyền xác nhận ở cấp phạm vi tương ứng.</div>
 <% } %>

@@ -80,8 +80,18 @@ export async function processVersionContent(
     // Bóc tách lại: xoá mục cũ của chính phiên bản này (nếu chạy lại).
     await tx`DELETE FROM document_sections WHERE version_id = ${versionId}`;
 
+    // Dedup section_code (constraint uq_section_per_version): PDF thực tế có
+    // mục trùng mã (vd ABC có 3 mục "2"). Giữ mục đầu nguyên mã, các mục sau
+    // thêm hậu tố -2, -3 để không dính 23505 mà vẫn giữ đủ nội dung duyệt.
+    const seen = new Map<string, number>();
+    const sections = result.sections.map((s) => {
+      const n = (seen.get(s.sectionCode) ?? 0) + 1;
+      seen.set(s.sectionCode, n);
+      return n > 1 ? { ...s, sectionCode: `${s.sectionCode}-${n}` } : s;
+    });
+
     let chunkCount = 0;
-    for (const s of result.sections) {
+    for (const s of sections) {
       const sectionId = randomUUID();
       await tx`
         INSERT INTO document_sections (section_id, version_id, section_code, section_title, order_no, raw_text)
@@ -112,7 +122,7 @@ export async function processVersionContent(
       effectiveDate: meta.effective_date,
       docType: meta.doc_type,
     };
-    const fm = buildFulltextMarkdown(fmMeta, result.sections, result.fullText, isForm);
+    const fm = buildFulltextMarkdown(fmMeta, sections, result.fullText, isForm);
 
     // GỘP vào chính câu UPDATE hiện có để chỉ một UPDATE trong transaction. Ghi đè
     // markdown_content + fulltext_tsv nên chạy lại là thay thế (idempotent); nằm trong
@@ -132,12 +142,12 @@ export async function processVersionContent(
     await writeAudit(tx as TransactionSql, {
       eventType: 'sua_nhan', actorType: 'he_thong',
       objectType: 'document_versions', objectId: versionId,
-      afterState: { parse_status: result.parseStatus, sections: result.sections.length, chunks: chunkCount },
+      afterState: { parse_status: result.parseStatus, sections: sections.length, chunks: chunkCount },
     });
 
     return {
       parseStatus: result.parseStatus,
-      sectionCount: result.sections.length,
+      sectionCount: sections.length,
       chunkCount,
     };
   }) as Promise<ProcessResult>;

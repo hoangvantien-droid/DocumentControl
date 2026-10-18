@@ -4,7 +4,7 @@
 <% if (it.nav && it.nav.canRegister) { %><p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p><% } %>
 
 <table class="data-table">
-  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Ngày hiệu lực</th><th></th></tr></thead>
+  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Bóc tách</th><th>Ngày hiệu lực</th><th></th></tr></thead>
   <tbody>
     <% it.docs.forEach(function(d){ %>
     <tr>
@@ -16,6 +16,7 @@
           <div class="reject-reason">Lý do: <%= d.rejection_reason %></div>
         <% } %>
       </td>
+      <td><%= d.parse_status || 'chua_chay' %><% if (d.parse_note) { %><br><small><%= d.parse_note %></small><% } %></td>
       <td><%= d.effective_date || '' %></td>
       <td>
         <% if (d.status === 'cho_hoan_thien') { %><a href="/my-documents/<%= d.version_id %>/edit">Sửa</a><% } %>
@@ -23,6 +24,6 @@
       </td>
     </tr>
     <% }) %>
-    <% if (it.docs.length === 0) { %><tr><td colspan="6">Chưa có tài liệu nào.</td></tr><% } %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="7">Chưa có tài liệu nào.</td></tr><% } %>
   </tbody>
 </table>
