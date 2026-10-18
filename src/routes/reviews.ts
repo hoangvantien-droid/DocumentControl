@@ -30,8 +30,8 @@ export function registerReviewRoutes(app: FastifyInstance, sql: Sql): void {
       try {
         await recordVerdict(sql, {
           reviewId: req.params.id,
-          verdict: (req.body.verdict ?? '') as Verdict,
-          note: req.body.note ?? '',
+          verdict: ((req.body ?? {}).verdict ?? '') as Verdict,
+          note: (req.body ?? {}).note ?? '',
           userId: user.user_id,
         });
         return reply.redirect('/reviews');

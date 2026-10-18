@@ -49,9 +49,9 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     try {
       await createPackage(sql, {
-        code: (req.body.code ?? '').trim(),
-        title: (req.body.title ?? '').trim(),
-        effectiveDate: req.body.effective_date ?? '',
+        code: ((req.body ?? {}).code ?? '').trim(),
+        title: ((req.body ?? {}).title ?? '').trim(),
+        effectiveDate: (req.body ?? {}).effective_date ?? '',
         createdBy: user.user_id,
       });
       return reply.redirect('/packages');
@@ -66,7 +66,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     try {
       await attachToPackage(sql, {
-        versionId: req.body.version_id ?? '', packageId: req.body.package_id ?? '', userId: user.user_id,
+        versionId: (req.body ?? {}).version_id ?? '', packageId: (req.body ?? {}).package_id ?? '', userId: user.user_id,
       });
       return reply.redirect('/packages');
     } catch (err) {
@@ -80,7 +80,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     try {
       await movePackageDate(sql, {
-        packageId: req.body.package_id ?? '', newDate: req.body.effective_date ?? '', userId: user.user_id,
+        packageId: (req.body ?? {}).package_id ?? '', newDate: (req.body ?? {}).effective_date ?? '', userId: user.user_id,
       });
       return reply.redirect('/packages');
     } catch (err) {
@@ -94,7 +94,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     try {
       await detachMember(sql, {
-        versionId: req.body.version_id ?? '', reason: req.body.reason ?? '', userId: user.user_id,
+        versionId: (req.body ?? {}).version_id ?? '', reason: (req.body ?? {}).reason ?? '', userId: user.user_id,
       });
       return reply.redirect('/packages');
     } catch (err) {

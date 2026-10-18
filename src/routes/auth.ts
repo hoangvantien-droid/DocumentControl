@@ -17,8 +17,8 @@ export function registerAuthRoutes(app: FastifyInstance, sql: Sql): void {
   app.post<{ Body: { email?: string; password?: string } }>(
     '/login',
     async (req, reply) => {
-      const email = (req.body.email ?? '').trim();
-      const password = req.body.password ?? '';
+      const email = ((req.body ?? {}).email ?? '').trim();
+      const password = (req.body ?? {}).password ?? '';
       try {
         const user = await authenticate(sql, email, password);
         const sessionId = await createSession(sql, user.user_id);

@@ -17,7 +17,7 @@ import { hasSystemAdminAccess } from '../domain/permissions.js';
 
 /** Lấy field bắt buộc từ body, ném lỗi nếu thiếu — thoả noUncheckedIndexedAccess. */
 function reqField(body: Record<string, string>, name: string): string {
-  const v = body[name];
+  const v = (body ?? {})[name];
   if (v === undefined || v === '') {
     throw new BusinessError('form.missing', `Thiếu trường bắt buộc: ${name}`);
   }
@@ -47,13 +47,13 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
 
   app.post<{ Body: Record<string, string> }>('/admin/org/bu', async (req, reply) => {
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
-    await createBu(sql, (req.body.code ?? '').trim(), (req.body.name ?? '').trim());
+    await createBu(sql, ((req.body ?? {}).code ?? '').trim(), ((req.body ?? {}).name ?? '').trim());
     return reply.redirect('/admin/org');
   });
 
   app.post<{ Body: Record<string, string> }>('/admin/org/site', async (req, reply) => {
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
-    await createSite(sql, (req.body.code ?? '').trim(), (req.body.name ?? '').trim(), reqField(req.body, 'bu_id'));
+    await createSite(sql, ((req.body ?? {}).code ?? '').trim(), ((req.body ?? {}).name ?? '').trim(), reqField(req.body, 'bu_id'));
     return reply.redirect('/admin/org');
   });
 
@@ -65,7 +65,7 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
 
   app.post<{ Body: Record<string, string> }>('/admin/org/dept', async (req, reply) => {
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
-    await createDepartment(sql, (req.body.code ?? '').trim(), (req.body.name ?? '').trim(), reqField(req.body, 'site_id'));
+    await createDepartment(sql, ((req.body ?? {}).code ?? '').trim(), ((req.body ?? {}).name ?? '').trim(), reqField(req.body, 'site_id'));
     return reply.redirect('/admin/org');
   });
 
@@ -84,9 +84,9 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
     try {
       await createUser(sql, {
-        email: (req.body.email ?? '').trim(),
-        fullName: (req.body.full_name ?? '').trim(),
-        password: req.body.password ?? '',
+        email: ((req.body ?? {}).email ?? '').trim(),
+        fullName: ((req.body ?? {}).full_name ?? '').trim(),
+        password: (req.body ?? {}).password ?? '',
       });
       return reply.redirect('/admin/users');
     } catch (err) {
@@ -116,7 +116,7 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
 
   app.post<{ Body: Record<string, string> }>('/admin/users/active', async (req, reply) => {
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
-    await setUserActive(sql, reqField(req.body, 'user_id'), req.body.active === 'true');
+    await setUserActive(sql, reqField(req.body, 'user_id'), (req.body ?? {}).active === 'true');
     return reply.redirect('/admin/users');
   });
 
@@ -153,10 +153,10 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
         userId: reqField(req.body, 'user_id'),
         role: reqField(req.body, 'role_code') as RoleCode,
         scope: {
-          level: (req.body.scope_level ?? 'group') as ScopeLevel,
-          buId: req.body.scope_bu_id || null,
-          siteId: req.body.scope_site_id || null,
-          deptId: req.body.scope_dept_id || null,
+          level: ((req.body ?? {}).scope_level ?? 'group') as ScopeLevel,
+          buId: (req.body ?? {}).scope_bu_id || null,
+          siteId: (req.body ?? {}).scope_site_id || null,
+          deptId: (req.body ?? {}).scope_dept_id || null,
         },
         grantedBy: req.currentUser?.user_id,
       });

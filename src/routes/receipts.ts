@@ -64,14 +64,14 @@ export function registerReceiptRoutes(app: FastifyInstance, sql: Sql): void {
     async (req, reply) => {
       const user = requireUser(req, reply);
       if (!user) return reply;
-      const rejectType = req.body.reject_type as RejectType;
+      const rejectType = (req.body ?? {}).reject_type as RejectType;
       if (rejectType !== 'sai_dang_ky' && rejectType !== 'sai_noi_dung') {
         reply.code(400); return reply.send('Loại từ chối không hợp lệ');
       }
       try {
         await rejectReceipt(sql, {
           receiptId: req.params.id, userId: user.user_id,
-          rejectType, note: req.body.note ?? '',
+          rejectType, note: (req.body ?? {}).note ?? '',
         });
         return reply.redirect('/site-receipts');
       } catch (err) {
