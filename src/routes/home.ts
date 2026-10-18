@@ -1,47 +1,44 @@
 /**
- * src/routes/home.ts — trang chủ và điểm kiểm tra sức khoẻ.
+ * src/routes/home.ts — trang chủ "hôm nay tôi cần làm gì" + healthz.
  *
- * Route MỎNG (DCS-8 §2.1): chỉ kết xuất, chưa gọi domain vì giai đoạn nền
- * móng chưa có nghiệp vụ. Các route nghiệp vụ thêm ở giai đoạn sau.
+ * Mô hình receipt mới:
+ *  - DC Site: các receipt đang chờ site mình phản hồi.
+ *  - Author: tài liệu mình ban hành bị site báo sai sót (receipt tu_choi).
+ * Bỏ khối "chờ xác nhận" (cho_xac_nhan) của mô hình dept-head cũ.
  */
 import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
-import { canRelease } from '../domain/permissions.js';
+import { siteIdsWithDocControl } from '../domain/permissions.js';
+import { pendingReceiptsForSites } from '../domain/receipt.js';
 
 export function registerHomeRoutes(app: FastifyInstance, sql: Sql): void {
-  // Trang chủ (DCS-7 §1.3): trả lời "hôm nay tôi cần làm gì". Khối không có việc
-  // thì ẩn hẳn, không hiện "không có mục nào".
   app.get('/', async (req, reply) => {
     const user = requireUser(req, reply);
-    if (!user) return reply; // đã chuyển hướng tới /login
+    if (!user) return reply;
 
-    // Việc chờ tôi xác nhận (lọc theo quyền release).
-    const pendingRows = await sql`
-      SELECT v.version_id, v.doc_id, v.version_no, v.title,
-             d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
-        FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
-       WHERE v.status = 'cho_xac_nhan'
-       ORDER BY v.submitted_at`;
-    const pendingMine = [];
-    for (const r of pendingRows) {
-      const ok = await canRelease(sql, user.user_id, {
-        scope_level: r.scope_level, scope_bu_id: r.scope_bu_id,
-        scope_site_id: r.scope_site_id, scope_dept_id: r.scope_dept_id,
-      });
-      if (ok) pendingMine.push(r);
-    }
+    // DC Site: receipt chờ site mình phản hồi.
+    const siteIds = [...await siteIdsWithDocControl(sql, user.user_id)];
+    const pendingReceipts = siteIds.length > 0
+      ? await pendingReceiptsForSites(sql, siteIds)
+      : [];
 
-    // Tài liệu của tôi bị từ chối (kèm lý do, để sửa và nộp lại).
-    const rejected = await sql`
-      SELECT version_id, doc_id, version_no, title, rejection_reason
-        FROM document_versions
-       WHERE registrant_user_id = ${user.user_id} AND status = 'tu_choi'
-       ORDER BY updated_at DESC`;
+    // Author: tài liệu mình ban hành bị site báo sai sót (có receipt tu_choi).
+    const rejectedMine = await sql`
+      SELECT DISTINCT v.version_id, v.doc_id, v.version_no, v.title
+        FROM document_versions v
+        JOIN document_receipt r ON r.version_id = v.version_id
+       WHERE v.registrant_user_id = ${user.user_id}
+         AND r.status = 'tu_choi'
+       ORDER BY v.version_id`;
 
-    return reply.view('home.eta', { user, pending: pendingMine, rejected });
+    return reply.view('home.eta', {
+      user,
+      pendingReceipts,
+      rejectedMine,
+      isSiteDocControl: siteIds.length > 0,
+    });
   });
 
-  // Kiểm tra sức khoẻ cho systemd / proxy ngược (DCS-5 §4.3).
-  app.get('/healthz', async () => ({ status: 'ok', phase: 'lifecycle' }));
+  app.get('/healthz', async () => ({ status: 'ok', phase: 'receipt' }));
 }
