@@ -8,7 +8,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
-import { registerPrint, verifyToken, auditQrLookup } from '../domain/printing.js';
+import { registerPrint, verifyToken, auditQrLookup, recallPrintedCopy } from '../domain/printing.js';
 
 export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: { basePath: string; publicUrl: string }): void {
   // In bản kiểm soát — cần đăng nhập.
@@ -28,6 +28,23 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: {
           basePath: config.basePath, publicUrl: config.publicUrl,
         });
         return reply.view('print-result.eta', { rec });
+      } catch (err) {
+        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        throw err;
+      }
+    },
+  );
+
+  // Thu hồi một bản sao in cụ thể tại hiện trường (cần đăng nhập + quyền xem bản).
+  app.post<{ Params: { id: string }; Body: { print_id?: string } }>(
+    '/documents/:id/print/recall',
+    async (req, reply) => {
+      const user = requireUser(req, reply);
+      if (!user) return reply;
+      const printId = ((req.body ?? {}) as { print_id?: string }).print_id ?? '';
+      try {
+        await recallPrintedCopy(sql, { printId, userId: user.user_id });
+        return reply.redirect(`/documents/${req.params.id}`);
       } catch (err) {
         if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
         throw err;

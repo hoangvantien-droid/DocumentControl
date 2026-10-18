@@ -19,7 +19,7 @@
           <label>Site áp dụng (gắn vào mã QR để tra cứu theo site)
             <select name="site_id">
               <option value="">— Không gắn site (tra cứu chung) —</option>
-              <% (it.sites || []).forEach(function(st){ %><option value="<%= st.site_id %>"><%= st.site_code %> — <%= st.name %></option><% }) %>
+              <% var _sites = it.sites || []; _sites.forEach(function(st){ %><option value="<%= st.site_id %>"><%= st.site_code %> — <%= st.name %></option><% }) %>
             </select>
           </label>
           <label>Vị trí đặt bản in (tuỳ chọn)
@@ -139,6 +139,41 @@
       <input type="date" name="planned_date">
       <button type="submit">Thêm site</button>
     </form>
+  <% } %>
+</details>
+
+<details class="detail-panel">
+  <summary>Bản sao có kiểm soát đã in (<%= (it.printedCopies || []).length %>)</summary>
+  <% if (!it.printedCopies || it.printedCopies.length === 0) { %>
+    <p class="muted">Chưa in bản sao có kiểm soát nào.</p>
+  <% } else { %>
+    <table class="data-table responsive-table">
+      <thead><tr><th>Ngày in</th><th>Người in</th><th>Vị trí</th><th>Tình trạng</th><th>Thao tác</th></tr></thead>
+      <tbody>
+        <% it.printedCopies.forEach(function(pc){ %>
+        <tr>
+          <td data-label="Ngày in"><%= (pc.printed_at || '').slice(0,16).replace('T',' ') %></td>
+          <td data-label="Người in"><%= pc.printed_by_name || '' %></td>
+          <td data-label="Vị trí"><%= pc.intended_location || '' %></td>
+          <td data-label="Tình trạng">
+            <% if (pc.recall_status === 'da_thu_hoi') { %>
+              <span class="status status-thu_hoi">Đã thu hồi</span>
+            <% } else { %>
+              <span class="status status-hieu_luc">Đang lưu hành</span>
+            <% } %>
+          </td>
+          <td data-label="Thao tác">
+            <% if (pc.recall_status !== 'da_thu_hoi') { %>
+            <form method="post" action="/documents/<%= d.version_id %>/print/recall" style="display:inline" onsubmit="return confirm('Thu hồi bản in này?')">
+              <input type="hidden" name="print_id" value="<%= pc.print_id %>">
+              <button type="submit" class="btn-diff">Thu hồi</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
   <% } %>
 </details>
 

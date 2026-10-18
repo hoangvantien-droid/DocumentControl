@@ -41,7 +41,8 @@ export type EventType =
   | 'xoa_ban_hanh'        // Author xóa bản ban hành khi chưa ai chấp nhận
   | 'bao_bat_thuong'      // Reader gửi report bất thường
   | 'chuyen_report_phan_hoi' // DC Site chuyển report thành từ chối receipt
-  | 'bac_bo_report';      // DC Site bác bỏ report
+  | 'bac_bo_report'       // DC Site bác bỏ report
+  | 'thu_hoi_ban_in';    // Thu hồi một bản sao in tại hiện trường
 
 export interface AuditEntry {
   eventType: EventType;
