@@ -47,45 +47,67 @@ try {
     }
   }
 
-  // --- 8 account ma trận: email, full_name, roles[], primary_dept ---
+  // Site thứ hai cho mô hình receipt (cần ≥2 site để kiểm sai khác giữa site).
+  let st2 = await sql`SELECT site_id FROM org_site WHERE site_code='HCM'`;
+  let SITE2 = st2[0]?.site_id;
+  if (!SITE2) { SITE2 = randomUUID(); await sql`INSERT INTO org_site (site_id, site_code, name, legacy_primary_bu_id) VALUES (${SITE2}, 'HCM', 'HCM Site', ${BU})`; }
+  await sql`INSERT INTO org_site_bu (site_id, bu_id) VALUES (${SITE2}, ${BU}) ON CONFLICT DO NOTHING`;
+  let qa2 = await sql`SELECT dept_id FROM org_department WHERE dept_code='QA2' AND site_id=${SITE2}`;
+  let QA2_ID = qa2[0]?.dept_id;
+  if (!QA2_ID) {
+    QA2_ID = randomUUID();
+    await sql`INSERT INTO org_department (dept_id, dept_code, name, site_id) VALUES (${QA2_ID}, 'QA2', 'QA HCM', ${SITE2})`;
+  }
+
+  // Bản đồ site theo mã, để gán scope cho vai DC_SITE_DOC_CONTROL.
+  const siteIds = { MML: SITE, HCM: SITE2 };
+
+  // --- Ma trận account: email, full_name, roles[], primary_dept, dcSite? ---
+  // dcSite (mã site) chỉ dùng cho DC_SITE_DOC_CONTROL — gán scope theo site đó.
   const MATRIX = [
-    ['admin@mml.io', 'Admin User', ['DC_ADMIN'], null],
-    ['author@mml.io', 'Author User', ['DC_AUTHOR'], null],
-    ['reader@mml.io', 'Reader User', ['DC_READER'], null],
-    ['dh_qa@mml.io', 'DeptHead QA', ['DC_DEPT_HEAD'], 'QA'],
-    ['dh_prod@mml.io', 'DeptHead PROD', ['DC_DEPT_HEAD'], 'PROD'],
-    ['dh_null@mml.io', 'DeptHead Null', ['DC_DEPT_HEAD'], null],
-    ['mix_aa@mml.io', 'Admin+Author', ['DC_ADMIN', 'DC_AUTHOR'], null],
-    ['mix_ad@mml.io', 'Author+DeptHead QA', ['DC_AUTHOR', 'DC_DEPT_HEAD'], 'QA'],
+    ['admin@mml.io', 'Admin User', ['DC_ADMIN'], null, null],
+    ['author@mml.io', 'Author User', ['DC_AUTHOR'], 'QA', null],
+    ['reader@mml.io', 'Reader User', ['DC_READER'], 'PROD', null],
+    ['dc_mml@mml.io', 'DC Site MML', ['DC_SITE_DOC_CONTROL'], 'QA', 'MML'],
+    ['dc_hcm@mml.io', 'DC Site HCM', ['DC_SITE_DOC_CONTROL'], 'QA2', 'HCM'],
+    ['mix_aa@mml.io', 'Admin+Author', ['DC_ADMIN', 'DC_AUTHOR'], null, null],
+    // Kiêm Author + DC Site cùng site -> kiểm tình huống tự phản hồi (cảnh báo).
+    ['mix_adc@mml.io', 'Author+DC MML', ['DC_AUTHOR', 'DC_SITE_DOC_CONTROL'], 'QA', 'MML'],
+    // Vai cũ giữ lại để test vòng đời cũ còn chạy (DC_DEPT_HEAD@group).
+    ['dh_qa@mml.io', 'DeptHead QA (legacy)', ['DC_DEPT_HEAD'], 'QA', null],
   ];
 
   const result = [];
-  for (const [email, fullName, roles, deptCode] of MATRIX) {
+  for (const [email, fullName, roles, deptCode, dcSite] of MATRIX) {
     const password = pw();
     const hash = await argon2.hash(password, { type: argon2.argon2id });
+    const primaryDept = deptCode ? (deptCode === 'QA2' ? QA2_ID : deptIds[deptCode]) : null;
     let rows = await sql`SELECT user_id FROM users WHERE lower(email)=lower(${email})`;
     let uid;
     if (rows.length) {
       uid = rows[0].user_id;
-      const primaryDept = deptCode ? deptIds[deptCode] : null;
       await sql`UPDATE users SET password_hash=${hash}, full_name=${fullName}, is_active=TRUE, primary_dept_id=${primaryDept} WHERE user_id=${uid}`;
     } else {
       uid = randomUUID();
-      const primaryDept = deptCode ? deptIds[deptCode] : null;
       await sql`INSERT INTO users (user_id, email, full_name, password_hash, is_active, temp_record) VALUES (${uid}, ${email}, ${fullName}, ${hash}, TRUE, FALSE)`;
       await sql`UPDATE users SET primary_dept_id=${primaryDept} WHERE user_id=${uid}`;
     }
-    // Deactivate all existing roles, then ensure matrix roles active
+    // Deactivate all existing roles, then ensure matrix roles active.
     await sql`UPDATE user_roles SET is_active=FALSE WHERE user_id=${uid}`;
     for (const rc of roles) {
-      await sql`INSERT INTO user_roles (user_id, role_code, scope_level, is_active) VALUES (${uid}, ${rc}, 'group', TRUE)
-        ON CONFLICT (user_id, role_code, scope_level, scope_bu_id, scope_site_id, scope_dept_id) DO UPDATE SET is_active=TRUE`;
+      if (rc === 'DC_SITE_DOC_CONTROL') {
+        await sql`INSERT INTO user_roles (user_id, role_code, scope_level, scope_site_id, is_active) VALUES (${uid}, ${rc}, 'site', ${siteIds[dcSite]}, TRUE)
+          ON CONFLICT (user_id, role_code, scope_level, scope_bu_id, scope_site_id, scope_dept_id) DO UPDATE SET is_active=TRUE`;
+      } else {
+        await sql`INSERT INTO user_roles (user_id, role_code, scope_level, is_active) VALUES (${uid}, ${rc}, 'group', TRUE)
+          ON CONFLICT (user_id, role_code, scope_level, scope_bu_id, scope_site_id, scope_dept_id) DO UPDATE SET is_active=TRUE`;
+      }
     }
-    // user_departments: link primary dept if any
-    if (deptCode) {
-      await sql`INSERT INTO user_departments (user_id, dept_id) VALUES (${uid}, ${deptIds[deptCode]}) ON CONFLICT DO NOTHING`;
+    if (primaryDept) {
+      await sql`INSERT INTO user_departments (user_id, dept_id) VALUES (${uid}, ${primaryDept}) ON CONFLICT DO NOTHING`;
     }
-    result.push({ email, password, roles, scope: deptCode ? `dept ${deptCode} (Site MML)` : 'group (no primary dept)' });
+    const scopeDesc = dcSite ? `site ${dcSite}` : (deptCode ? `dept ${deptCode}` : 'group');
+    result.push({ email, password, roles, scope: scopeDesc });
   }
 
   writeFileSync(outPath, JSON.stringify({ generated_at: new Date().toISOString(), accounts: result }, null, 2), { mode: 0o600 });

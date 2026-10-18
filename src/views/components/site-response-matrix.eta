@@ -1,0 +1,31 @@
+<%
+/* components/site-response-matrix.eta — Ma trận phản hồi theo site cho một
+ * phiên bản. Mỗi dòng = một site nhận, trạng thái + người phản hồi + ngày áp
+ * dụng + loại/lý do từ chối.
+ *
+ * Props:
+ *   - receipts: mảng ReceiptRow (có site_code, site_name, status, response_type,
+ *               response_note, apply_date, responded_at)
+ */
+const receipts = it.receipts || [];
+%>
+<table class="data-table site-matrix">
+  <thead><tr><th>Site</th><th>Trạng thái</th><th>Ngày áp dụng</th><th>Phản hồi lúc</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <% receipts.forEach(function(r){ %>
+    <tr>
+      <td><%= r.site_code %> — <%= r.site_name %></td>
+      <td><span class="status status-<%= r.status === 'tu_choi' ? 'thu_hoi' : (r.status === 'chap_nhan' ? 'hieu_luc' : 'da_ban_hanh') %>"><%= it.receiptStatusLabel(r.status) %></span></td>
+      <td><%= r.apply_date || '' %></td>
+      <td><%= (r.responded_at || '').slice(0, 10) %></td>
+      <td>
+        <% if (r.status === 'tu_choi') { %>
+          <strong><%= it.receiptRejectTypeLabel(r.response_type) %></strong>
+          <% if (r.response_note) { %><div class="reject-reason"><%= r.response_note %></div><% } %>
+        <% } %>
+      </td>
+    </tr>
+    <% }) %>
+    <% if (receipts.length === 0) { %><tr><td colspan="5">Chưa phát hành tới site nào.</td></tr><% } %>
+  </tbody>
+</table>

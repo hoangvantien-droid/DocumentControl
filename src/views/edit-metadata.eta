@@ -1,0 +1,39 @@
+<% layout('layout.eta', { title: 'Sửa thông tin đăng ký — DCS', user: it.user }) %>
+<% var v = it.v; %>
+
+<h1>Sửa thông tin đăng ký: <%= v.doc_id %> v<%= v.version_no %></h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<% if (it.locked) { %>
+<div class="alert-banner alert-banner--warning"><strong>Đã khóa:</strong> Đã có site chấp nhận/áp dụng tài liệu này. Không sửa trực tiếp được — nếu sai nội dung, hãy thu hồi và ban hành phiên bản mới.</div>
+<% } else { %>
+<div class="alert-banner alert-banner--info"><strong>Sửa tại chỗ:</strong> Chỉ cho sai thông tin đăng ký (nội dung vẫn đúng). Số hiệu và tệp nội dung không đổi ở đây.</div>
+
+<form method="post" action="/my-documents/<%= v.version_id %>/edit-metadata" class="reg-form">
+  <fieldset>
+    <legend>Thông tin đăng ký</legend>
+    <label>Số hiệu (không sửa được)
+      <input value="<%= v.doc_id %>" disabled>
+    </label>
+    <label>Phiên bản (không sửa được)
+      <input value="<%= v.version_no %>" disabled>
+    </label>
+    <label>Tiêu đề <input name="title" value="<%= v.title || '' %>"></label>
+    <label>Ngày ban hành <input type="date" name="issued_date" value="<%= v.issued_date || '' %>"></label>
+    <label>Ngày hiệu lực <input type="date" name="effective_date" value="<%= v.effective_date || '' %>"></label>
+    <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" min="1" value="<%= v.review_cycle_months || '' %>"></label>
+    <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= v.expiry_date || '' %>"></label>
+    <label>Bộ phận sở hữu
+      <select name="owner_department_id">
+        <option value="">-- giữ nguyên --</option>
+        <% it.depts.forEach(function(d){ %>
+          <option value="<%= d.dept_id %>" <%= v.owner_department_id === d.dept_id ? 'selected' : '' %>><%= d.dept_code %> — <%= d.name %></option>
+        <% }) %>
+      </select>
+    </label>
+  </fieldset>
+  <button type="submit" class="primary">Lưu &amp; cập nhật</button>
+</form>
+<% } %>
+
+<p><a href="/my-documents/<%= v.version_id %>/issuance">← Về tình trạng ban hành</a></p>

@@ -14,6 +14,11 @@ import {
   type DocType, type Origin, type ChangeSignificance,
 } from '../domain/registration.js';
 import { processVersionContent } from '../domain/content.js';
+import {
+  normalizeSiteIds, listReceiptsForVersion, receiptTally, hasAnyAcceptance,
+  editVersionMetadata, deleteUnacceptedVersion, recallByAuthor,
+} from '../domain/receipt.js';
+import { aggregateStatusOf } from '../domain/lifecycle-status.js';
 import type { ScopeLevel } from '../domain/roles.js';
 import { listBu, listSites, listDepartments } from '../domain/org.js';
 import { storeFile } from '../domain/file-store.js';
@@ -28,6 +33,8 @@ interface RegBody {
   file_path?: string; file_hash?: string; owner_department_id?: string;
   supersedes_version_id?: string; change_significance?: string; change_summary?: string;
   link_type?: string; link_code?: string;
+  /** Site nhận (ban hành thẳng). Multipart gửi nhiều cùng tên -> string[]. */
+  site_ids?: string | string[];
   /** Nội dung tệp PDF (Buffer) khi upload multipart. */
   file?: Buffer;
 }
@@ -46,7 +53,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const supersedeOptions = supersedeable.map((vv) =>
       `<option value="${esc(vv.version_id)}">${esc(vv.doc_id)} v${esc(vv.version_no)} (${esc(vv.status)})</option>`).join('');
-    return reply.view('register.eta', { bus, sites, depts, error: null, values: {}, supersedeOptions });
+    return reply.view('register.eta', { bus, sites, depts, error: null, values: {}, supersedeOptions, selectedSiteIds: [] });
   });
 
   /** Bản đang hiệu lực / đã đăng ký có thể làm bản gốc cho update (C.2.6). */
@@ -102,7 +109,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
           changeSignificance: (b.change_significance || null) as ChangeSignificance | null,
           changeSummary: b.change_summary || null,
         },
-        { m14Enabled: false },
+        { m14Enabled: false, siteIds: normalizeSiteIds(b.site_ids) },
       );
       // Nhãn liên kết tối thiểu (REQ số 9 = Chặn khi rời cho_xac_nhan).
       if (b.link_type && b.link_code) {
@@ -131,7 +138,10 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
         const supersedeOptions = supersedeable.map((vv) =>
           `<option value="${esc2(vv.version_id)}">${esc2(vv.doc_id)} v${esc2(vv.version_no)} (${esc2(vv.status)})</option>`).join('');
         reply.code(err.httpStatus);
-        return reply.view('register.eta', { bus, sites, depts, error: err.message, values: b, supersedeOptions });
+        return reply.view('register.eta', {
+          bus, sites, depts, error: err.message, values: b, supersedeOptions,
+          selectedSiteIds: normalizeSiteIds(b.site_ids),
+        });
       }
       throw err;
     }
@@ -213,14 +223,147 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.get('/my-documents', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const docs = await sql`
-      SELECT version_id, doc_id, version_no, title, status,
-             effective_date::text AS effective_date, rejection_reason,
-             parse_status, parse_note
-        FROM document_versions
-       WHERE registrant_user_id = ${user.user_id}
-       ORDER BY submitted_at DESC NULLS LAST, updated_at DESC`;
+    // Kèm số liệu receipt theo site để hiển thị trạng thái tổng hợp (Task 5).
+    const rows = await sql<{
+      version_id: string; doc_id: string; version_no: string; title: string;
+      status: string; effective_date: string | null; rejection_reason: string | null;
+      parse_status: string | null; parse_note: string | null;
+      total: number; accepted: number; rejected: number; pending: number;
+    }[]>`
+      SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
+             v.effective_date::text AS effective_date, v.rejection_reason,
+             v.parse_status, v.parse_note,
+             count(r.*)::int AS total,
+             count(r.*) FILTER (WHERE r.status = 'chap_nhan')::int AS accepted,
+             count(r.*) FILTER (WHERE r.status = 'tu_choi')::int AS rejected,
+             count(r.*) FILTER (WHERE r.status = 'cho_phan_hoi')::int AS pending
+        FROM document_versions v
+        LEFT JOIN document_receipt r ON r.version_id = v.version_id
+       WHERE v.registrant_user_id = ${user.user_id}
+       GROUP BY v.version_id, v.doc_id, v.version_no, v.title, v.status,
+                v.effective_date, v.rejection_reason, v.parse_status, v.parse_note,
+                v.submitted_at, v.updated_at
+       ORDER BY v.submitted_at DESC NULLS LAST, v.updated_at DESC`;
+    const docs = rows.map((d) => ({
+      ...d,
+      aggregate: aggregateStatusOf({
+        total: d.total, accepted: d.accepted, rejected: d.rejected, pending: d.pending,
+      }),
+    }));
     return reply.view('my-documents.eta', { docs });
+  });
+
+  // Tình trạng ban hành theo site (Task 5): ma trận phản hồi + hành động Author.
+  app.get<{ Params: { id: string } }>('/my-documents/:id/issuance', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const ver = await sql<{ version_id: string; doc_id: string; version_no: string; title: string; status: string; registrant_user_id: string }[]>`
+      SELECT version_id, doc_id, version_no, title, status, registrant_user_id
+        FROM document_versions WHERE version_id = ${req.params.id}`;
+    const v = ver[0];
+    if (!v) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    if (v.registrant_user_id !== user.user_id) {
+      reply.code(403); return reply.send('Chỉ người đăng ký xem được tình trạng ban hành tài liệu này');
+    }
+    const [receipts, tally] = await Promise.all([
+      listReceiptsForVersion(sql, v.version_id),
+      receiptTally(sql, v.version_id),
+    ]);
+    const aggregate = aggregateStatusOf(tally);
+    const anyAccepted = tally.accepted > 0;
+    // Điều kiện mở sửa/thu hồi/xóa (xem Task 6): chưa ai chấp nhận HOẶC có từ chối.
+    const canEditOrRecall = tally.accepted === 0 || tally.rejected > 0;
+    const canDelete = tally.accepted === 0;
+    const hasContentReject = receipts.some((r) => r.status === 'tu_choi' && r.response_type === 'sai_noi_dung');
+    const hasMetaReject = receipts.some((r) => r.status === 'tu_choi' && r.response_type === 'sai_dang_ky');
+    return reply.view('issuance-status.eta', {
+      v, receipts, tally, aggregate, anyAccepted,
+      canEditOrRecall, canDelete, hasContentReject, hasMetaReject,
+    });
+  });
+
+  // Sửa metadata tại chỗ (Loại 1 — sai đăng ký). Khóa doc_id + file.
+  app.get<{ Params: { id: string } }>('/my-documents/:id/edit-metadata', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const rows = await sql<{
+      version_id: string; doc_id: string; version_no: string; title: string;
+      issued_date: string | null; effective_date: string | null;
+      review_cycle_months: number | null; expiry_date: string | null;
+      owner_department_id: string | null; status: string; registrant_user_id: string;
+    }[]>`
+      SELECT version_id, doc_id, version_no, title,
+             issued_date::text AS issued_date, effective_date::text AS effective_date,
+             review_cycle_months, expiry_date::text AS expiry_date,
+             owner_department_id, status, registrant_user_id
+        FROM document_versions WHERE version_id = ${req.params.id}`;
+    const v = rows[0];
+    if (!v) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    if (v.registrant_user_id !== user.user_id) { reply.code(403); return reply.send('Chỉ người đăng ký được sửa'); }
+    const accepted = await hasAnyAcceptance(sql, v.version_id);
+    const depts = await listDepartments(sql);
+    return reply.view('edit-metadata.eta', { v, depts, locked: accepted, error: null });
+  });
+
+  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/my-documents/:id/edit-metadata', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const b = req.body;
+    try {
+      await editVersionMetadata(sql, {
+        versionId: req.params.id, userId: user.user_id,
+        patch: {
+          title: (b.title ?? '').trim() || undefined,
+          issuedDate: b.issued_date || undefined,
+          effectiveDate: b.effective_date || undefined,
+          reviewCycleMonths: b.review_cycle_months ? Number(b.review_cycle_months) : undefined,
+          expiryDate: b.expiry_date || null,
+          ownerDepartmentId: b.owner_department_id || undefined,
+        },
+      });
+      return reply.redirect(`/my-documents/${req.params.id}/issuance`);
+    } catch (err) {
+      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      throw err;
+    }
+  });
+
+  // Thu hồi bởi Author (điều kiện mở trong domain).
+  app.get<{ Params: { id: string } }>('/my-documents/:id/recall', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const rows = await sql<{ version_id: string; doc_id: string; version_no: string; title: string; registrant_user_id: string }[]>`
+      SELECT version_id, doc_id, version_no, title, registrant_user_id
+        FROM document_versions WHERE version_id = ${req.params.id}`;
+    const v = rows[0];
+    if (!v) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    if (v.registrant_user_id !== user.user_id) { reply.code(403); return reply.send('Chỉ người đăng ký được thu hồi'); }
+    return reply.view('author-recall.eta', { v, error: null });
+  });
+
+  app.post<{ Params: { id: string }; Body: { reason?: string } }>('/my-documents/:id/recall', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    try {
+      await recallByAuthor(sql, { versionId: req.params.id, userId: user.user_id, reason: req.body.reason ?? '' });
+      return reply.redirect('/my-documents');
+    } catch (err) {
+      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      throw err;
+    }
+  });
+
+  // Xóa bản ban hành (chỉ khi chưa có chấp nhận).
+  app.post<{ Params: { id: string } }>('/my-documents/:id/delete', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    try {
+      await deleteUnacceptedVersion(sql, { versionId: req.params.id, userId: user.user_id });
+      return reply.redirect('/my-documents');
+    } catch (err) {
+      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      throw err;
+    }
   });
 
   // Sửa nháp (lỗi #3): mở lại bản cho_hoan_thien đã lưu, điền sẵn vào form.

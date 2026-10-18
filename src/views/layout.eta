@@ -49,8 +49,8 @@
         <li><a href="/documents">Danh mục tài liệu</a></li>
         <% if (nav.canSeeMyDocuments) { %><li><a href="/my-documents">Tài liệu của tôi</a></li><% } %>
         <li class="sidebar-group">Quy trình</li>
-        <% if (nav.canRelease) { %><li><a href="/pending-confirmation">Chờ tôi xác nhận</a></li><% } %>
-        <% if (nav.isAuthorOnly) { %><li class="muted">Chờ tôi xác nhận: không có quyền</li><% } %>
+        <% if (nav.isSiteDocControl) { %><li><a href="/site-receipts">Chờ site phản hồi</a></li><% } %>
+        <% if (nav.isSiteDocControl) { %><li><a href="/issue-reports">Báo bất thường (site)</a></li><% } %>
         <% if (nav.canRelease) { %><li><a href="/reviews">Rà soát định kỳ</a></li><% } %>
         <% if (nav.canRegister || nav.canRelease) { %><li><a href="/packages">Gói ban hành</a></li><% } %>
         <li class="sidebar-group">Quản trị</li>

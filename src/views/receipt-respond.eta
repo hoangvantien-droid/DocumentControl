@@ -1,0 +1,55 @@
+<% layout('layout.eta', { title: 'Phản hồi tài liệu — DCS', user: it.user }) %>
+<% var r = it.r; var d = it.detail || {}; %>
+
+<h1>Phản hồi tài liệu cho site <%= r.site_code %></h1>
+<% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
+
+<% if (it.selfRegistered) { %>
+<div class="alert-banner alert-banner--warning"><strong>Cảnh báo tách vai:</strong> Bạn là người đăng ký tài liệu này. Việc tự phản hồi được ghi vết đậm trong nhật ký. Cân nhắc để người khác trong site phản hồi.</div>
+<% } %>
+
+<% if (r.other_reject_type === 'sai_noi_dung') { %>
+<div class="alert-banner alert-banner--warning"><strong>Có site báo sai nội dung:</strong> Một site khác đã từ chối phiên bản này vì nghi nội dung sai. Kiểm tra kỹ trước khi chấp nhận.</div>
+<% } else if (r.other_reject_type === 'sai_dang_ky') { %>
+<div class="alert-banner alert-banner--info"><strong>Có site báo sai đăng ký:</strong> Một site khác báo sai thông tin đăng ký (không phải nội dung).</div>
+<% } %>
+
+<section class="detail-head">
+  <dl class="detail-meta">
+    <div><dt>Số hiệu</dt><dd><%= r.doc_id %></dd></div>
+    <div><dt>Phiên bản</dt><dd><%= r.version_no %></dd></div>
+    <div><dt>Tiêu đề</dt><dd><%= r.title %></dd></div>
+    <div><dt>Ngày hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
+    <div><dt>Site nhận</dt><dd><%= r.site_code %> — <%= r.site_name %></dd></div>
+  </dl>
+  <p><a href="/documents/<%= r.version_id %>/download" class="btn-link" target="_blank" rel="noopener">Mở tệp PDF để kiểm tra nội dung</a></p>
+</section>
+
+<% if (it.sections && it.sections.length) { %>
+<section class="detail-sections">
+  <h2>Mục bóc tách</h2>
+  <ul class="check-list">
+    <% it.sections.forEach(function(s){ %><li><%= s.section_code %> — <%= s.section_title %></li><% }) %>
+  </ul>
+</section>
+<% } %>
+
+<div class="respond-actions">
+  <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" class="inline-form">
+    <button type="submit" class="primary">Chấp nhận nhận tài liệu</button>
+  </form>
+
+  <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form">
+    <h2>Từ chối — báo sai sót</h2>
+    <label>Loại sai sót
+      <select name="reject_type" required>
+        <option value="sai_dang_ky">Sai thông tin đăng ký (ngày, số hiệu… — chỉ cần sửa, cập nhật)</option>
+        <option value="sai_noi_dung">Sai nội dung tài liệu (cần thu hồi, ban hành lại)</option>
+      </select>
+    </label>
+    <label>Mô tả sai sót <span class="req">*</span>
+      <textarea name="note" rows="3" required placeholder="Nêu rõ sai sót để người đăng ký khắc phục"></textarea>
+    </label>
+    <button type="submit" class="btn-diff">Từ chối tài liệu</button>
+  </form>
+</div>

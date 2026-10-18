@@ -19,12 +19,15 @@ export interface DocScope {
 // phạm vi (scope). 3 vai: Admin / Biên soạn (DC_AUTHOR) / Phê duyệt (DC_DEPT_HEAD).
 // ============================================================================
 
-/** Người chỉ-xem: không đăng ký, không xác nhận, không quản trị. */
+/** Người chỉ-xem: không đăng ký, không nhận-phản hồi, không quản trị.
+ * Mô hình mới: DC_SITE_DOC_CONTROL cũng là vai nghiệp vụ (không read-only).
+ * Giữ DC_DEPT_HEAD trong phép kiểm cho dữ liệu lịch sử còn active. */
 export function isReadOnlyUser(roleCodes: Set<string>): boolean {
   const canRegister = roleCodes.has('DC_AUTHOR');
-  const canRelease = roleCodes.has('DC_DEPT_HEAD') || roleCodes.has('DC_ADMIN');
+  const isSiteDocControl = roleCodes.has('DC_SITE_DOC_CONTROL');
   const isAdmin = roleCodes.has('DC_ADMIN');
-  return !canRegister && !canRelease && !isAdmin;
+  const legacyRelease = roleCodes.has('DC_DEPT_HEAD');
+  return !canRegister && !isSiteDocControl && !isAdmin && !legacyRelease;
 }
 
 /**
@@ -33,8 +36,11 @@ export function isReadOnlyUser(roleCodes: Set<string>): boolean {
  *   chờ hiệu lực). Không thấy bản lỗi thời, thu hồi, nháp, chờ.
  * - Người có vai nghiệp vụ (Biên soạn/Phê duyệt/Admin): null = không giới hạn
  *   trạng thái (để tra cứu lịch sử bản lỗi thời).
+ *
+ * Re-export từ lifecycle-status (nguồn duy nhất) để không lặp danh sách mã.
  */
-export const CURRENT_VIEW_STATUSES = ['hieu_luc', 'da_dang_ky'] as const;
+export { CURRENT_VIEW_STATUSES } from './lifecycle-status.js';
+import { CURRENT_VIEW_STATUSES } from './lifecycle-status.js';
 
 export function allowedStatusesForViewer(roleCodes: Set<string>): readonly string[] | null {
   return isReadOnlyUser(roleCodes) ? CURRENT_VIEW_STATUSES : null;
@@ -158,7 +164,65 @@ export async function roleCodesOf(sql: Sql, userId: string): Promise<Set<string>
   return new Set(rows.map((r) => r.role_code));
 }
 
-/** 3 vai: có cờ Phê duyệt (DC_DEPT_HEAD). Mã cũ đã map về DC_DEPT_HEAD group ở migration 013. */
+/** (LEGACY) cờ vai duyệt-trước cũ — còn vài route cũ gọi; Task 9 gỡ. */
 export function hasAnyReleaseRole(roleCodes: Set<string>): boolean {
   return roleCodes.has('DC_DEPT_HEAD') || roleCodes.has('DC_ADMIN');
+}
+
+// ============================================================================
+// MÔ HÌNH RECEIPT MỚI — kiểm quyền "bên nhận phản hồi" (DC Site) và report.
+// Nguyên tắc: Admin ĐỨNG NGOÀI luồng tài liệu (không phản hồi/report thay).
+// Kiểm quyền ở tầng domain, không tin route (DCS-8 §4.3).
+// ============================================================================
+
+/** Có phải vai Kiểm soát tài liệu site không (bất kể site nào). */
+export function isSiteDocControl(roleCodes: Set<string>): boolean {
+  return roleCodes.has('DC_SITE_DOC_CONTROL');
+}
+
+/**
+ * Tập site_id mà người dùng giữ vai DC_SITE_DOC_CONTROL (đang active).
+ * Dùng để lọc hàng chờ phản hồi và kiểm quyền từng receipt.
+ */
+export async function siteIdsWithDocControl(sql: Sql, userId: string): Promise<Set<string>> {
+  const rows = await sql<{ scope_site_id: string | null }[]>`
+    SELECT scope_site_id FROM user_roles
+     WHERE user_id = ${userId} AND is_active
+       AND role_code = 'DC_SITE_DOC_CONTROL'
+       AND scope_site_id IS NOT NULL`;
+  return new Set(rows.map((r) => r.scope_site_id!).filter(Boolean));
+}
+
+/**
+ * Quyền phản hồi (chấp nhận/từ chối) receipt của MỘT site — hàm THUẦN.
+ * - Phải giữ DC_SITE_DOC_CONTROL ở ĐÚNG site của receipt.
+ * - Admin KHÔNG được (đứng ngoài luồng tài liệu).
+ */
+export function canRespondReceiptPure(
+  docControlSiteIds: Set<string>,
+  receiptSiteId: string,
+): boolean {
+  return docControlSiteIds.has(receiptSiteId);
+}
+
+/** Quyền phản hồi receipt của một site (async): đọc site từ DB rồi giao hàm thuần. */
+export async function canRespondReceipt(
+  sql: Sql,
+  userId: string,
+  receiptSiteId: string,
+): Promise<boolean> {
+  const siteIds = await siteIdsWithDocControl(sql, userId);
+  return canRespondReceiptPure(siteIds, receiptSiteId);
+}
+
+/**
+ * Quyền gửi report bất thường: bất kỳ người dùng đã đăng nhập có thể ĐỌC tài
+ * liệu đều báo được (Reader là trường hợp chính). Admin đứng ngoài luồng nên
+ * không report. Ở đây giữ đơn giản: không phải Admin-thuần là report được;
+ * kiểm phạm vi đọc cụ thể để tầng route/ catalog xử lý.
+ */
+export function canReportIssue(roleCodes: Set<string>): boolean {
+  // Admin-thuần (chỉ DC_ADMIN, không vai nghiệp vụ khác) đứng ngoài luồng.
+  const onlyAdmin = roleCodes.has('DC_ADMIN') && roleCodes.size === 1;
+  return !onlyAdmin;
 }

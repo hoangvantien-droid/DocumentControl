@@ -4,7 +4,7 @@
 <% if (it.nav && it.nav.canRegister) { %><p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p><% } %>
 
 <table class="data-table">
-  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Bóc tách</th><th>Ngày hiệu lực</th><th></th></tr></thead>
+  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Site chấp nhận</th><th>Tình trạng ban hành</th><th></th></tr></thead>
   <tbody>
     <% it.docs.forEach(function(d){ %>
     <tr>
@@ -16,11 +16,18 @@
           <div class="reject-reason">Lý do: <%= d.rejection_reason %></div>
         <% } %>
       </td>
-      <td><%= d.parse_status || 'chua_chay' %><% if (d.parse_note) { %><br><small><%= d.parse_note %></small><% } %></td>
-      <td><%= d.effective_date || '' %></td>
+      <td>
+        <% if (d.total > 0) { %><%= d.accepted %>/<%= d.total %><% } else { %><span class="muted">—</span><% } %>
+      </td>
+      <td>
+        <% if (d.total > 0) { %>
+          <% var cls = d.aggregate === 'tranh_chap' ? 'status-thu_hoi' : (d.aggregate === 'toan_bo' ? 'status-hieu_luc' : 'status-da_ban_hanh'); %>
+          <span class="status <%= cls %>"><%= it.aggregateStatusLabel(d.aggregate) %></span>
+        <% } else { %><span class="muted">Chưa phát hành</span><% } %>
+      </td>
       <td>
         <% if (d.status === 'cho_hoan_thien') { %><a href="/my-documents/<%= d.version_id %>/edit">Sửa</a><% } %>
-        <% if (d.status === 'tu_choi') { %><a href="/register">Nộp lại</a><% } %>
+        <% if (d.total > 0) { %><a href="/my-documents/<%= d.version_id %>/issuance">Chi tiết</a><% } %>
       </td>
     </tr>
     <% }) %>

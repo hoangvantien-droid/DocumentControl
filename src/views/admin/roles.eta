@@ -1,10 +1,10 @@
 <% layout('/layout.eta', { title: 'Vai trò — DCS', user: it.user }) %>
 
 <div class="warn-banner">
-  Mô hình 3 vai: Admin / Biên soạn / Phê duyệt. Vai trò gán ở cấp hệ thống; phạm vi xác nhận lấy từ Dept chính của người dùng.
+  Mô hình 4 vai: Admin (quản trị + master data) · Biên soạn (đăng ký) · Kiểm soát tài liệu site (nhận &amp; phản hồi theo site) · Người đọc. Admin đứng ngoài luồng tài liệu.
 </div>
 
-<h1>Vai trò theo phạm vi</h1>
+<h1>Vai trò</h1>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <table class="data-table">
@@ -15,7 +15,7 @@
       <td><%= u.full_name %> <small>(<%= u.email %>)</small></td>
       <td>
         <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
-          <span class="chip"><%= it.roleLabel(r.role_code) %></span>
+          <span class="chip"><%= it.roleLabel(r.role_code) %><% if (r.scope_site_id) { %> · site<% } %></span>
         <% }) %>
       </td>
     </tr>
@@ -25,16 +25,44 @@
 
 <h2>Gán vai trò</h2>
 <form method="post" action="/admin/roles" class="role-form">
-  <select name="user_id" required>
-    <option value="">-- người dùng --</option>
-    <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
-  </select>
-  <select name="role_code" required>
-    <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
-    <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
-    <option value="DC_DEPT_HEAD">Phê duyệt — Xác nhận theo Dept chính</option>
-  </select>
-  <input type="hidden" name="scope_level" value="group">
-  <p class="muted">3 vai gán ở cấp hệ thống. Phạm vi duyệt lấy từ Dept chính của người dùng, không chọn BU/Site/Dept ở đây.</p>
+  <label>Người dùng
+    <select name="user_id" required>
+      <option value="">-- người dùng --</option>
+      <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
+    </select>
+  </label>
+  <label>Vai trò
+    <select name="role_code" id="role_code" required>
+      <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
+      <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
+      <option value="DC_SITE_DOC_CONTROL">Kiểm soát tài liệu site — Nhận &amp; phản hồi</option>
+      <option value="DC_READER">Người đọc</option>
+    </select>
+  </label>
+  <!-- scope_level tự đặt theo vai: site cho DC_SITE_DOC_CONTROL, group cho vai khác -->
+  <input type="hidden" name="scope_level" id="scope_level" value="group">
+  <label id="site_field" style="display:none">Site phụ trách
+    <select name="scope_site_id" id="scope_site_id">
+      <option value="">-- chọn site --</option>
+      <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %> — <%= s.name %></option><% }) %>
+    </select>
+  </label>
   <button type="submit">Gán</button>
 </form>
+
+<script>
+(function(){
+  var role = document.getElementById('role_code');
+  var level = document.getElementById('scope_level');
+  var siteField = document.getElementById('site_field');
+  var siteSel = document.getElementById('scope_site_id');
+  function sync(){
+    var isSite = role.value === 'DC_SITE_DOC_CONTROL';
+    siteField.style.display = isSite ? 'block' : 'none';
+    level.value = isSite ? 'site' : 'group';
+    siteSel.required = isSite;
+    if(!isSite) siteSel.value = '';
+  }
+  role.addEventListener('change', sync); sync();
+})();
+</script>

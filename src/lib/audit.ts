@@ -31,7 +31,17 @@ export type EventType =
   | 'tao_goi' | 'gan_vao_goi' | 'doi_ngay_goi' | 'thao_thanh_vien'
   | 'giai_the_goi' | 'kich_hoat_goi' | 'leo_thang'
   | 'sua_khan_cap' | 'dong_hau_kiem_khan_cap'
-  | 'kiem_toan_ven_tep' | 'tieu_huy_ho_so' | 'doi_so_hieu' | 'dong_bo_l1';
+  | 'kiem_toan_ven_tep' | 'tieu_huy_ho_so' | 'doi_so_hieu' | 'dong_bo_l1'
+  // --- Mô hình receipt mới (bên nhận phản hồi) ---
+  | 'ban_hanh'            // Author đăng ký, ban hành thẳng tới các site
+  | 'chap_nhan_nhan'      // DC Site chấp nhận receipt
+  | 'tu_choi_nhan'        // DC Site từ chối receipt (kèm loại sai_dang_ky/sai_noi_dung)
+  | 'tu_phan_hoi_canh_bao'// Author tự phản hồi tài liệu mình (audit đậm)
+  | 'sua_dang_ky'         // Author sửa metadata tại chỗ (Loại 1)
+  | 'xoa_ban_hanh'        // Author xóa bản ban hành khi chưa ai chấp nhận
+  | 'bao_bat_thuong'      // Reader gửi report bất thường
+  | 'chuyen_report_phan_hoi' // DC Site chuyển report thành từ chối receipt
+  | 'bac_bo_report';      // DC Site bác bỏ report
 
 export interface AuditEntry {
   eventType: EventType;

@@ -1,0 +1,43 @@
+<% layout('layout.eta', { title: 'Tình trạng ban hành — DCS', user: it.user }) %>
+<% var v = it.v; var t = it.tally; %>
+
+<h1>Tình trạng ban hành: <%= v.doc_id %> v<%= v.version_no %></h1>
+<p class="muted"><%= v.title %></p>
+
+<% if (it.hasContentReject) { %>
+  <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Có site báo SAI NỘI DUNG. Cần thu hồi và ban hành phiên bản mới. Các site đang áp dụng nên cân nhắc ngừng dùng.' }) %>
+<% } else if (it.hasMetaReject) { %>
+  <%~ include('/components/alert-banner.eta', { type: 'info', text: 'Có site báo sai thông tin đăng ký. Chỉ cần sửa metadata và cập nhật; nội dung vẫn đúng.' }) %>
+<% } %>
+
+<section class="issuance-summary">
+  <% var aggCls = it.aggregate === 'tranh_chap' ? 'status-thu_hoi' : (it.aggregate === 'toan_bo' ? 'status-hieu_luc' : 'status-da_ban_hanh'); %>
+  <p>Trạng thái tổng hợp: <span class="status <%= aggCls %>"><%= it.aggregateStatusLabel(it.aggregate) %></span></p>
+  <p class="muted">Chấp nhận <%= t.accepted %> · Từ chối <%= t.rejected %> · Chờ <%= t.pending %> · Tổng <%= t.total %> site</p>
+</section>
+
+<h2>Phản hồi theo site</h2>
+<%~ include('/components/site-response-matrix.eta', { receipts: it.receipts }) %>
+
+<section class="issuance-actions">
+  <h2>Hành động</h2>
+  <% if (it.canEditOrRecall) { %>
+    <p>
+      <a href="/my-documents/<%= v.version_id %>/edit-metadata" class="btn-link">Sửa thông tin đăng ký (sai đăng ký)</a>
+    </p>
+    <p>
+      <a href="/my-documents/<%= v.version_id %>/recall" class="btn-link">Thu hồi &amp; ban hành phiên bản mới (sai nội dung)</a>
+    </p>
+  <% } else { %>
+    <div class="alert-banner alert-banner--info"><strong>Đã khóa sửa trực tiếp:</strong> Đã có site chấp nhận và áp dụng. Chỉ có thể ra phiên bản mới qua thu hồi.</div>
+    <p><a href="/my-documents/<%= v.version_id %>/recall" class="btn-link">Thu hồi &amp; ban hành phiên bản mới</a></p>
+  <% } %>
+  <% if (it.canDelete) { %>
+    <form method="post" action="/my-documents/<%= v.version_id %>/delete" class="inline-form"
+          onsubmit="return confirm('Xóa bản ban hành này? Chỉ được khi chưa site nào chấp nhận.')">
+      <button type="submit" class="btn-diff">Xóa bản ban hành</button>
+    </form>
+  <% } %>
+</section>
+
+<p><a href="/my-documents">← Về Tài liệu của tôi</a></p>
