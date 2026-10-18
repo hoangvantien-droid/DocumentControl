@@ -1249,3 +1249,63 @@ button.danger { background: var(--status-error-fg); }
   .report-card__actions { grid-template-columns: 1fr; }
   .report-form button { align-self: stretch; min-height: 44px; }
 }
+
+
+/* ============================================================
+   Responsive dùng chung (Task 1) — bảng -> thẻ, form/nút vừa màn.
+   Áp cho MỌI bảng gắn class .responsive-table (td cần data-label).
+   ============================================================ */
+@media (max-width: 768px) {
+  .responsive-table { border: 0; box-shadow: none; background: transparent; }
+  .responsive-table thead { display: none; }
+  .responsive-table tr {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--masan-100);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 12px;
+    padding: 4px 0;
+  }
+  .responsive-table td {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px 12px;
+    min-width: 0;
+    padding: 8px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--masan-50);
+  }
+  .responsive-table tr td:last-child { border-bottom: 0; }
+  .responsive-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--masan-text-secondary, #556);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  .responsive-table td > * { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+  .responsive-table td a { white-space: normal; }
+  /* Hàng rỗng (colspan, data-label="") -> dòng thường, không nhãn. */
+  .responsive-table td[data-label=""] { display: block; text-align: left; }
+  .responsive-table td[data-label=""]::before { content: none; }
+
+  /* Form/panel vừa màn hẹp: trường rộng 100%, cao chạm được. */
+  .reg-form label input, .reg-form label select, .reg-form label textarea,
+  .reg-form > label input, .reg-form > label select, .reg-form > label textarea,
+  .role-form input, .role-form select,
+  .report-form input, .report-form select,
+  .reject-form input, .reject-form select, .reject-form textarea {
+    width: 100%; box-sizing: border-box; min-height: 44px;
+  }
+  /* Nút hành động chính đủ lớn để chạm. */
+  .reg-form button[type="submit"],
+  .role-form button[type="submit"],
+  button.primary { min-height: 44px; }
+  /* Khoảng cách link hành động trong một ô (tránh chạm nhầm). */
+  .row-actions a { display: inline-block; padding: 6px 0; }
+}

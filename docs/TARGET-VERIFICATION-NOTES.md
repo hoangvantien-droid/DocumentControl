@@ -185,3 +185,26 @@ Kiểm chứng luồng (quyền đã đổi chủ):
 
 Kỳ vọng: không vai nào còn bị kẹt do mất quyền. Nếu một chức năng cần người cũ
 (dept head) làm mà giờ không ai làm được, báo lại để gán vai phù hợp.
+
+
+---
+
+## 10. Chuẩn hóa thuật ngữ ISO 9001 + responsive mobile
+
+Trạng thái: ĐÃ CODE (spec iso-terminology-mobile-ui), CHỜ KIỂM THỊ GIÁC.
+
+Ngôn từ (đã đổi): "Xác nhận tiếp nhận" (thay chấp nhận nhận), "Từ chối tiếp
+nhận", "In bản sao có kiểm soát", "Xem xét định kỳ" (thay rà soát), "Ngày có
+hiệu lực", "Số hiệu tài liệu", "Phân phối có kiểm soát theo site", menu "Xem
+xét định kỳ". Chỉ đổi chữ — không đổi enum/mã.
+
+Responsive: thêm class dùng chung .responsive-table (bảng -> thẻ ở <=768px) +
+quy tắc form/nút mobile. Áp cho my-documents, catalog, site-receipts, reviews,
+audit, functional-groups, admin/users, admin/roles, site-response-matrix.
+
+Cần kiểm tay trên target (<=768px hoặc DevTools responsive):
+1. Mở các màn trên bằng điện thoại -> bảng hiện dạng thẻ "Nhãn: giá trị",
+   KHÔNG cuộn ngang.
+2. Form đăng ký / phản hồi / lọc danh mục: trường rộng đủ, nút cao dễ chạm.
+3. Desktop: bảng vẫn hiển thị dạng bảng như cũ (không hồi quy).
+4. Rà nhanh ngôn từ các màn chính đúng thuật ngữ ISO đã liệt kê.

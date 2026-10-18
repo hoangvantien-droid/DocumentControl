@@ -3,35 +3,35 @@
 <h1>Tài liệu của tôi</h1>
 <% if (it.nav && it.nav.canRegister) { %><p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p><% } %>
 
-<table class="data-table">
-  <thead><tr><th>Số hiệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Site chấp nhận</th><th>Tình trạng ban hành</th><th>Thao tác</th></tr></thead>
+<table class="data-table responsive-table">
+  <thead><tr><th>Số hiệu tài liệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Site xác nhận</th><th>Tình trạng ban hành</th><th>Thao tác</th></tr></thead>
   <tbody>
     <% it.docs.forEach(function(d){ %>
     <tr>
-      <td>
+      <td data-label="Số hiệu tài liệu">
         <% if (d.status === 'cho_hoan_thien') { %>
           <%= d.doc_id %>
         <% } else { %>
           <a href="/documents/<%= d.version_id %>"><%= d.doc_id %></a>
         <% } %>
       </td>
-      <td><%= d.version_no %></td>
-      <td><%= d.title %></td>
-      <td><span class="status status-<%= d.status %>"><%= it.docStatusLabel(d.status) %></span>
+      <td data-label="Phiên bản"><%= d.version_no %></td>
+      <td data-label="Tiêu đề"><%= d.title %></td>
+      <td data-label="Trạng thái"><span class="status status-<%= d.status %>"><%= it.docStatusLabel(d.status) %></span>
         <% if (d.status === 'tu_choi' && d.rejection_reason) { %>
           <div class="reject-reason">Lý do: <%= d.rejection_reason %></div>
         <% } %>
       </td>
-      <td>
+      <td data-label="Site xác nhận">
         <% if (d.total > 0) { %><%= d.accepted %>/<%= d.total %><% } else { %><span class="muted">—</span><% } %>
       </td>
-      <td>
+      <td data-label="Tình trạng ban hành">
         <% if (d.total > 0) { %>
           <% var cls = d.aggregate === 'tranh_chap' ? 'status-thu_hoi' : (d.aggregate === 'toan_bo' ? 'status-hieu_luc' : 'status-da_ban_hanh'); %>
           <span class="status <%= cls %>"><%= it.aggregateStatusLabel(d.aggregate) %></span>
         <% } else { %><span class="muted">Chưa phát hành</span><% } %>
       </td>
-      <td class="row-actions">
+      <td class="row-actions" data-label="Thao tác">
         <% if (d.status === 'da_ban_hanh') { %>
           <a href="/documents/<%= d.version_id %>/view" target="_blank" rel="noopener">Xem PDF</a>
           <a href="/my-documents/<%= d.version_id %>/issuance">Tình trạng</a>
@@ -43,6 +43,6 @@
       </td>
     </tr>
     <% }) %>
-    <% if (it.docs.length === 0) { %><tr><td colspan="7">Chưa có tài liệu nào.</td></tr><% } %>
+    <% if (it.docs.length === 0) { %><tr><td colspan="7" data-label="">Chưa có tài liệu nào.</td></tr><% } %>
   </tbody>
 </table>

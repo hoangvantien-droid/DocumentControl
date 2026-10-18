@@ -16,18 +16,18 @@
   <button type="submit">Lọc</button>
 </form>
 
-<table class="data-table">
+<table class="data-table responsive-table">
   <thead><tr><th>Thời điểm</th><th>Tác nhân</th><th>Sự kiện</th><th>Đối tượng</th><th>Mã</th></tr></thead>
   <tbody>
     <% it.rows.forEach(function(r){ %>
     <tr>
-      <td><%= r.occurred_at %></td>
-      <td><%= r.actor_name || (r.actor_type === 'he_thong' ? 'Hệ thống' : r.actor_type) %></td>
-      <td><span class="chip"><%= r.event_type %></span></td>
-      <td><%= r.object_type %></td>
-      <td><code><%= r.object_id %></code></td>
+      <td data-label="Thời điểm"><%= r.occurred_at %></td>
+      <td data-label="Tác nhân"><%= r.actor_name || (r.actor_type === 'he_thong' ? 'Hệ thống' : r.actor_type) %></td>
+      <td data-label="Sự kiện"><span class="chip"><%= r.event_type %></span></td>
+      <td data-label="Đối tượng"><%= r.object_type %></td>
+      <td data-label="Mã"><code><%= r.object_id %></code></td>
     </tr>
     <% }) %>
-    <% if (it.rows.length === 0) { %><tr><td colspan="5">Không có bản ghi vết khớp bộ lọc.</td></tr><% } %>
+    <% if (it.rows.length === 0) { %><tr><td colspan="5" data-label="">Không có bản ghi vết khớp bộ lọc.</td></tr><% } %>
   </tbody>
 </table>

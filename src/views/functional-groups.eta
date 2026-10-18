@@ -15,15 +15,15 @@
   </div>
 <% } %>
 
-<table class="data-table">
+<table class="data-table responsive-table">
   <thead><tr><th>Mã</th><th>Tên (công việc)</th><th>Người phụ trách</th><th>Thành viên</th></tr></thead>
   <tbody>
     <% it.groups.forEach(function(g){ %>
     <tr>
-      <td><b><%= g.code %></b></td>
-      <td><%= g.name %></td>
-      <td><% var o = it.users.find(function(u){return u.user_id===g.owner_user_id}); %><%= o ? o.full_name : g.owner_user_id %></td>
-      <td>
+      <td data-label="Mã"><b><%= g.code %></b></td>
+      <td data-label="Tên (công việc)"><%= g.name %></td>
+      <td data-label="Người phụ trách"><% var o = it.users.find(function(u){return u.user_id===g.owner_user_id}); %><%= o ? o.full_name : g.owner_user_id %></td>
+      <td data-label="Thành viên">
         <% var ms = (it.membersByGroup[g.group_id] || []); ms.forEach(function(m){ %>
           <span class="chip"><%= m.full_name || m.email %>
             <form method="post" action="/functional-groups/members/remove" style="display:inline">

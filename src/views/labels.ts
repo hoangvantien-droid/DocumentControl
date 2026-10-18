@@ -57,9 +57,9 @@ export const AGGREGATE_STATUS_LABELS: Record<string, string> = {
  * bảng dữ liệu lịch sử vẫn đọc được, không lộ mã kỹ thuật.
  */
 export const ROLE_LABELS: Record<string, string> = {
-  DC_ADMIN: 'Admin — Quản trị hệ thống',
-  DC_AUTHOR: 'Biên soạn — Đăng ký tài liệu',
-  DC_SITE_DOC_CONTROL: 'Kiểm soát tài liệu site — Nhận & phản hồi',
+  DC_ADMIN: 'Quản trị hệ thống',
+  DC_AUTHOR: 'Biên soạn tài liệu',
+  DC_SITE_DOC_CONTROL: 'Kiểm soát tài liệu (site)',
   DC_READER: 'Người đọc',
   // Vai cũ (gác cổng nguồn) — giữ nhãn cho dữ liệu lịch sử, không gán mới.
   DC_DEPT_HEAD: 'Phê duyệt (vai cũ: theo Dept chính)',

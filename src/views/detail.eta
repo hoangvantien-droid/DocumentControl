@@ -15,7 +15,7 @@
     <% if (d.status === 'hieu_luc' || d.status === 'da_ban_hanh') { %>
       <form method="post" action="/documents/<%= d.version_id %>/print" style="display:inline">
         <input type="hidden" name="location" value="">
-        <button type="submit" class="btn-diff">In bản kiểm soát</button>
+        <button type="submit" class="btn-diff">In bản sao có kiểm soát</button>
       </form>
     <% } %>
     <% if (it.nav && it.nav.canReport) { %>
@@ -58,7 +58,7 @@
   <div><dt>Loại</dt><dd><%= d.doc_type %> (<%= d.origin %>)</dd></div>
   <div><dt>Phạm vi</dt><dd><%= it.scopeLabel(d.scope_level) %></dd></div>
   <div><dt>Ngày áp dụng dự kiến</dt><dd><%= d.issued_date || '' %></dd></div>
-  <div><dt>Ngày hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
+  <div><dt>Ngày có hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
   <div><dt>Rà soát tới</dt><dd><%= d.next_review_date || '' %></dd></div>
 </dl>
 
@@ -93,7 +93,7 @@
 </details>
 
 <details class="detail-panel">
-  <summary>Áp dụng theo site</summary>
+  <summary>Phân phối có kiểm soát theo site</summary>
   <% if (!it.rollout || it.rollout.length === 0) { %><p class="muted">Chưa khai site áp dụng.</p><% } else { %>
     <ul class="matrix-list">
       <% it.rollout.forEach(function(r){ %>

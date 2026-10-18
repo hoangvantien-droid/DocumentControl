@@ -52,7 +52,7 @@
         <li class="sidebar-group">Quy trình</li>
         <% if (nav.isSiteDocControl) { %><li><a href="/site-receipts">Chờ site phản hồi</a></li><% } %>
         <% if (nav.isSiteDocControl) { %><li><a href="/issue-reports">Báo bất thường (site)</a></li><% } %>
-        <% if (nav.canRegister) { %><li><a href="/reviews">Rà soát định kỳ</a></li><% } %>
+        <% if (nav.canRegister) { %><li><a href="/reviews">Xem xét định kỳ</a></li><% } %>
         <% if (nav.canRegister) { %><li><a href="/packages">Gói ban hành</a></li><% } %>
         <% } %>
         <% if (nav.isAdmin) { %>

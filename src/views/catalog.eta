@@ -74,7 +74,7 @@
   <button type="submit">Lọc</button>
 </form>
 
-<table class="data-table catalog-table">
+<table class="data-table responsive-table catalog-table">
   <thead><tr><th>Số hiệu</th><th>PB</th><th>Tiêu đề</th><th>Loại</th><th>Phạm vi</th><th>Trạng thái</th><th>Hiệu lực</th><th>File PDF</th></tr></thead>
   <tbody>
     <% it.docs.forEach(function(d){ %>
