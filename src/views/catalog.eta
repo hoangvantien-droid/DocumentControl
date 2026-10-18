@@ -24,13 +24,10 @@
   <label>Trạng thái:
     <select name="status">
       <option value="">-- Tất cả --</option>
-      <option value="hieu_luc" <%= it.statusFilter==='hieu_luc'?'selected':'' %>>Hiện hành</option>
+      <option value="da_ban_hanh" <%= it.statusFilter==='da_ban_hanh'?'selected':'' %>>Đã ban hành</option>
+      <option value="thu_hoi" <%= it.statusFilter==='thu_hoi'?'selected':'' %>>Đã thu hồi</option>
       <option value="het_hieu_luc" <%= it.statusFilter==='het_hieu_luc'?'selected':'' %>>Hết hiệu lực</option>
-      <option value="cho_xac_nhan" <%= it.statusFilter==='cho_xac_nhan'?'selected':'' %>>Chờ duyệt</option>
       <option value="cho_hoan_thien" <%= it.statusFilter==='cho_hoan_thien'?'selected':'' %>>Nháp</option>
-      <option value="da_dang_ky" <%= it.statusFilter==='da_dang_ky'?'selected':'' %>>Đã đăng ký</option>
-      <option value="tu_choi" <%= it.statusFilter==='tu_choi'?'selected':'' %>>Từ chối</option>
-      <option value="thu_hoi" <%= it.statusFilter==='thu_hoi'?'selected':'' %>>Thu hồi</option>
     </select>
   </label>
   <label>Loại:
@@ -86,15 +83,13 @@
       <td data-label="PB"><%= d.version_no %></td>
       <td data-label="Tiêu đề"><%= d.title %></td>
       <td data-label="Loại"><%= d.doc_type %></td>
-      <td data-label="Phạm vi"><%= d.scope_level %></td>
-      <td data-label="Trạng thái"><span class="status status-<%= d.status %>"><%= d.status %></span></td>
+      <td data-label="Phạm vi"><%= it.scopeLabel(d.scope_level) %></td>
+      <td data-label="Trạng thái"><span class="status status-<%= d.status %>"><%= it.docStatusLabel(d.status) %></span></td>
       <td data-label="Hiệu lực"><%= d.effective_date || '' %></td>
       <td data-label="File PDF">
-        <% if (d.status === 'da_dang_ky' || d.status === 'hieu_luc') { %>
-          <a href="/documents/<%= d.version_id %>/download">Tải PDF</a>
-          <% if (d.status === 'hieu_luc') { %>
-            · <a href="/documents/<%= d.version_id %>">In bản kiểm soát</a>
-          <% } %>
+        <% if (d.status === 'da_ban_hanh' || d.status === 'da_dang_ky' || d.status === 'hieu_luc') { %>
+          <a href="/documents/<%= d.version_id %>/view" target="_blank" rel="noopener">Xem PDF</a>
+          · <a href="/documents/<%= d.version_id %>/download">Tải</a>
         <% } else { %>—<% } %>
       </td>
     </tr>
