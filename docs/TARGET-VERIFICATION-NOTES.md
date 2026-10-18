@@ -142,14 +142,46 @@ phải ra kết quả.
 
 ---
 
-## 8. Việc tồn đọng (chủ động để sau UAT, gom làm 1 lần)
+## 8. Việc tồn đọng (cập nhật)
 
-- Route guard cho /my-documents, /site-receipts, /issue-reports: hiện an toàn
-  với Admin (lọc rỗng / trang "chưa được gán") nhưng CHƯA trả 403 cứng cho nhất
-  quán tuyệt đối. Cân nhắc thêm guard nếu muốn chặt.
-- Rà soát các NÚT hành động BÊN TRONG trang (thu hồi, sửa ma trận...) — đã kiểm
-  quyền ở route nhưng chưa rà đối chiếu hiển thị-vs-quyền toàn bộ như đã làm với
-  menu.
-- Các test DB cũ bám vòng đời cũ (skip-domain, constraints) có thể cần cập nhật
-  khi chạy npm test trên target (trạng thái cũ vẫn trong CHECK nên phần lớn vẫn
-  chạy; rà lại kết quả).
+ĐÃ XỬ LÝ (các đợt sau UAT):
+- [x] Chặn Admin ở route trang nghiệp vụ (requireDocFlow cho /documents, /reviews).
+- [x] Gỡ link /confirm cũ ở trang chủ (đổi sang dashboard receipt).
+- [x] Gỡ TOÀN BỘ vai DC_DEPT_HEAD + lớp duyệt-trước cũ (xem mục 9).
+- [x] 2 bug 500 (recall body rỗng, issuance thiếu receiptStatusLabel) + 22P02 uuid rỗng.
+
+CÒN LẠI (tùy chọn, chưa chặn):
+- Route guard 403 cứng cho /my-documents, /site-receipts, /issue-reports — hiện
+  an toàn (lọc rỗng / trang "chưa được gán"), thêm nếu muốn nhất quán tuyệt đối.
+- Tính năng rollout cũ (document_site_rollout) còn trong detail.eta — trùng vai
+  trò với receipt theo site; cân nhắc gỡ ở đợt sau (nút "Thêm site" có thể 403
+  với người không thuộc bộ phận soạn — là luật đúng, chỉ là UX).
+- Test DB cũ (skip-domain, constraints, receipt-model.integration) cần rà/cập
+  nhật khi chạy npm test trên target; nhiều ca sẽ xanh lại sau fix 22P02.
+
+---
+
+## 9. Gỡ vai DC_DEPT_HEAD — cần kiểm chứng trên target
+
+Trạng thái: ĐÃ CODE (commit sau 2c59fe6), CHỜ KIỂM CHỨNG.
+
+Thay đổi lớn: bỏ hẳn vai duyệt-trước cũ và lớp /confirm. Deploy kèm MIGRATION 021.
+
+Bắt buộc khi deploy:
+1. npm run migrate  — áp 021_deactivate_legacy_release_roles (is_active=FALSE cho
+   DC_DEPT_HEAD / DC_SITE_QA_MANAGER / DC_BU_OWNER / DC_GROUP_OWNER còn sót).
+2. Kiểm DB: SELECT role_code, count(*) FROM user_roles WHERE is_active GROUP BY 1;
+   -> không còn 4 vai cũ ở trạng thái active.
+
+Kiểm chứng luồng (quyền đã đổi chủ):
+- Rà soát định kỳ (/reviews): giờ theo BỘ PHẬN SỞ HỮU tài liệu (owner_department_id),
+  không còn theo vai release. Đăng nhập Author thuộc dept sở hữu -> thấy & kết
+  luận được; người ngoài dept sở hữu -> 403.
+- Thu hồi tài liệu: KHÔNG còn ở màn chi tiết (/documents/:id/recall đã xóa).
+  Author thu hồi qua /my-documents/:id/recall (màn Tình trạng ban hành).
+- Màn chi tiết: KHÔNG còn panel "Phân phối tới" (ma trận thủ công) và nút "Thu
+  hồi" — phân phối giờ là receipt theo site.
+- /confirm, /pending-confirmation: route đã xóa -> URL trực tiếp trả 404.
+
+Kỳ vọng: không vai nào còn bị kẹt do mất quyền. Nếu một chức năng cần người cũ
+(dept head) làm mà giờ không ai làm được, báo lại để gán vai phù hợp.
