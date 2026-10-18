@@ -3,14 +3,14 @@
  */
 import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
-import { requireUser } from '../middleware/auth.js';
+import { requireDocFlow } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
 import { reviewBacklog, recordVerdict, type Verdict } from '../domain/review.js';
 import { canRelease } from '../domain/permissions.js';
 
 export function registerReviewRoutes(app: FastifyInstance, sql: Sql): void {
   app.get('/reviews', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireDocFlow(sql, req, reply);
     if (!user) return reply;
     const rows = await reviewBacklog(sql);
     const visible = [];
@@ -25,7 +25,7 @@ export function registerReviewRoutes(app: FastifyInstance, sql: Sql): void {
   app.post<{ Params: { id: string }; Body: Record<string, string> }>(
     '/reviews/:id/verdict',
     async (req, reply) => {
-      const user = requireUser(req, reply);
+      const user = await requireDocFlow(sql, req, reply);
       if (!user) return reply;
       try {
         await recordVerdict(sql, {

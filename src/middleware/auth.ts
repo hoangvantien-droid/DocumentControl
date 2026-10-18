@@ -66,6 +66,25 @@ export function requireUser(req: FastifyRequest, reply: FastifyReply): SessionUs
   return user;
 }
 
+/**
+ * Chặn truy cập trang nghiệp vụ tài liệu cho Admin-THUẦN (đứng ngoài luồng).
+ * Phòng thủ sâu ở route: ẩn menu là chưa đủ, URL trực tiếp cũng phải bị chặn.
+ * Trả user nếu được phép; null nếu đã gửi phản hồi (redirect/403).
+ */
+export async function requireDocFlow(
+  sql: Sql, req: FastifyRequest, reply: FastifyReply,
+): Promise<SessionUser | null> {
+  const user = requireUser(req, reply);
+  if (!user) return null;
+  const { isDocFlowUser } = await import('../domain/permissions.js');
+  if (!(await isDocFlowUser(sql, user.user_id))) {
+    reply.code(403);
+    reply.send('Admin quản trị không truy cập trang nghiệp vụ tài liệu. Dùng tài khoản có vai Biên soạn / Kiểm soát tài liệu site / Người đọc.');
+    return null;
+  }
+  return user;
+}
+
 /** Đặt cookie phiên đã ký. */
 export function setSessionCookie(reply: FastifyReply, sessionId: string): void {
   reply.setCookie(SESSION_COOKIE, sessionId, {

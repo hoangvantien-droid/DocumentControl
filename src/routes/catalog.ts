@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import { existsSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import type { Sql } from 'postgres';
-import { requireUser } from '../middleware/auth.js';
+import { requireUser, requireDocFlow } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
 import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
@@ -25,7 +25,7 @@ import type { Config } from '../config.js';
 
 export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
   app.get<{ Querystring: { status?: string; q?: string; doc_type?: string; origin?: string; eff_from?: string; eff_to?: string; preset?: string; sort?: string; site_id?: string; rollout_status?: string } }>('/documents', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireDocFlow(sql, req, reply);
     if (!user) return reply;
     const f = {
       status: (req.query.status ?? '').trim() || null,
@@ -102,7 +102,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   });
 
   app.get<{ Params: { id: string } }>('/documents/:id', async (req, reply) => {
-    const user = requireUser(req, reply);
+    const user = await requireDocFlow(sql, req, reply);
     if (!user) return reply;
     let detail;
     try {

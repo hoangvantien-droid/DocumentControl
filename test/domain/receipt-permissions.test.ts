@@ -16,6 +16,7 @@ import {
   canRespondReceiptPure,
   canReportIssue,
   isReadOnlyUser,
+  isDocFlowRoles,
 } from '../../src/domain/permissions.js';
 
 const roles = (...codes: string[]) => new Set(codes);
@@ -56,6 +57,27 @@ describe('canReportIssue — Admin-thuần đứng ngoài luồng', () => {
   });
   test('Admin kiêm Reader vẫn report được (không phải admin-thuần)', () => {
     assert.equal(canReportIssue(roles('DC_ADMIN', 'DC_READER')), true);
+  });
+});
+
+describe('isDocFlowRoles — Admin-thuần đứng ngoài luồng tài liệu', () => {
+  test('Admin-thuần -> KHÔNG thuộc luồng (chặn trang nghiệp vụ)', () => {
+    assert.equal(isDocFlowRoles(roles('DC_ADMIN')), false);
+  });
+  test('Author -> thuộc luồng', () => {
+    assert.equal(isDocFlowRoles(roles('DC_AUTHOR')), true);
+  });
+  test('DC Site -> thuộc luồng', () => {
+    assert.equal(isDocFlowRoles(roles('DC_SITE_DOC_CONTROL')), true);
+  });
+  test('Reader -> thuộc luồng', () => {
+    assert.equal(isDocFlowRoles(roles('DC_READER')), true);
+  });
+  test('Admin kiêm Author -> thuộc luồng (không phải admin-thuần)', () => {
+    assert.equal(isDocFlowRoles(roles('DC_ADMIN', 'DC_AUTHOR')), true);
+  });
+  test('không vai nào -> không thuộc luồng', () => {
+    assert.equal(isDocFlowRoles(roles()), false);
   });
 });
 

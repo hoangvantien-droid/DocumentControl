@@ -181,6 +181,22 @@ export function isSiteDocControl(roleCodes: Set<string>): boolean {
 }
 
 /**
+ * Tham gia luồng tài liệu = Author / DC Site / Reader. Admin-THUẦN (chỉ
+ * DC_ADMIN, không vai nghiệp vụ nào) đứng NGOÀI luồng — không vào các trang
+ * nghiệp vụ (danh mục, rà soát, gói ban hành...). Hàm thuần.
+ */
+export function isDocFlowRoles(roleCodes: Set<string>): boolean {
+  return roleCodes.has('DC_AUTHOR')
+    || roleCodes.has('DC_SITE_DOC_CONTROL')
+    || roleCodes.has('DC_READER');
+}
+
+/** Async: đọc vai từ DB rồi quyết định có thuộc luồng tài liệu không. */
+export async function isDocFlowUser(sql: Sql, userId: string): Promise<boolean> {
+  return isDocFlowRoles(await roleCodesOf(sql, userId));
+}
+
+/**
  * Tập site_id mà người dùng giữ vai DC_SITE_DOC_CONTROL (đang active).
  * Dùng để lọc hàng chờ phản hồi và kiểm quyền từng receipt.
  */
