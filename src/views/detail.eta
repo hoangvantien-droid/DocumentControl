@@ -73,9 +73,11 @@
   <summary>Nội dung bóc tách (văn bản)</summary>
   <% if (it.sections.length === 0) { %>
     <p class="muted">Chưa bóc tách nội dung.</p>
+    <% if (it.isRegistrant) { %>
     <form method="post" action="/documents/<%= d.version_id %>/process">
       <button type="submit" class="btn-diff">Bóc tách nội dung từ tệp</button>
     </form>
+    <% } %>
   <% } else { %>
     <% it.sections.forEach(function(s){ %>
       <div class="section-block"><h3><%= s.section_code %> <%= s.section_title %></h3><p><%= s.raw_text || '' %></p></div>
