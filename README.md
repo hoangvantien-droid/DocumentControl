@@ -35,9 +35,10 @@ hai lớp, phiên bản, phân phối, xác nhận đọc, dán nhãn nội dung
 thành công, server khởi động và mọi route bảo vệ đúng, `npm run test:unit` (logic
 phân đoạn/bóc tách) xanh.
 
-**Chưa verify (cần PostgreSQL):** 20 test ràng buộc CSDL, các luồng nghiệp vụ
-end-to-end. Chạy khi deploy lên VPS (`npm run migrate` + `npm test`). Máy phát
-triển hiện không cài được PostgreSQL (nguồn tải EnterpriseDB bị chặn).
+**Đã verify trên VPS (2026-10-18):** `npm run test:unit` 105 pass / 0 fail;
+UAT final report trong `docs/DCS_UAT_Final_Report.pdf` (414 pass, 0 fail, 56 skip);
+production đã chạy đủ 16 migration (001 → 016). Xem `docs/STATUS.md` để biết
+trạng thái deploy và task tồn đọng.
 
 ## Chạy dưới máy phát triển
 
