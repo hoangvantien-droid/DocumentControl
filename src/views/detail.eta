@@ -130,31 +130,6 @@
 </details>
 
 <details class="detail-panel">
-  <summary>Phân phối tới</summary>
-  <% if (!it.matrix || it.matrix.length === 0) { %><p class="muted">Chưa khai.</p><% } else { %>
-    <ul class="matrix-list">
-      <% it.matrix.forEach(function(m){ %>
-        <li>
-          <%= m.department_code %><% if (m.functional_group_name) { %> ∩ <%= m.functional_group_name %><% } %>
-          <% if (it.canRecallMatrix) { %>
-            <form method="post" action="/documents/<%= d.version_id %>/matrix/remove" style="display:inline">
-              <input type="hidden" name="matrix_id" value="<%= m.matrix_id %>">
-              <button type="submit" class="chip-x">×</button>
-            </form>
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
-  <% } %>
-  <% if (it.canRecallMatrix) { %>
-    <div hx-get="/documents/<%= d.version_id %>/matrix-options" hx-trigger="load" hx-swap="innerHTML"></div>
-  <% } %>
-  <% if (it.canRecall && (d.status === 'da_dang_ky' || d.status === 'hieu_luc' || d.status === 'da_ban_hanh')) { %>
-    <p><a href="/documents/<%= d.version_id %>/recall" class="danger-link">Thu hồi tài liệu</a></p>
-  <% } %>
-</details>
-
-<details class="detail-panel">
   <summary>Lịch sử &amp; ghi vết</summary>
   <% if (it.history && it.history.length > 0) { %>
     <ul class="detail-history">

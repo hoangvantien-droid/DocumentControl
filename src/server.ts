@@ -20,7 +20,6 @@ import { registerHomeRoutes } from './routes/home.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerDocumentRoutes } from './routes/documents.js';
-import { registerConfirmationRoutes } from './routes/confirmation.js';
 import { registerReceiptRoutes } from './routes/receipts.js';
 import { registerIssueReportRoutes } from './routes/issue-reports.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
@@ -94,7 +93,6 @@ async function main() {
   registerHomeRoutes(app, sql);
   registerAdminRoutes(app, sql);
   registerDocumentRoutes(app, sql, config);
-  registerConfirmationRoutes(app, sql);
   registerReceiptRoutes(app, sql);
   registerIssueReportRoutes(app, sql);
   registerCatalogRoutes(app, sql, config);

@@ -11,12 +11,7 @@ export type RoleCode =
   | 'DC_ADMIN'
   | 'DC_AUTHOR'
   | 'DC_SITE_DOC_CONTROL'
-  | 'DC_READER'
-  // Mã cũ (gác cổng nguồn) — giữ cho dữ liệu lịch sử, không gán mới.
-  | 'DC_DEPT_HEAD'
-  | 'DC_SITE_QA_MANAGER'
-  | 'DC_BU_OWNER'
-  | 'DC_GROUP_OWNER';
+  | 'DC_READER';
 
 export type ScopeLevel = 'group' | 'bu' | 'site' | 'dept';
 

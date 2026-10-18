@@ -10,58 +10,6 @@
 import type { Sql, TransactionSql } from 'postgres';
 import { writeAudit } from '../lib/audit.js';
 
-export interface MatrixRow {
-  matrix_id: string;
-  doc_id: string;
-  department_id: string;
-  department_code: string | null;
-  functional_group_id: string | null;
-  functional_group_name: string | null;
-  require_ack: boolean;
-}
-
-export async function listMatrix(sql: Sql, docId: string): Promise<MatrixRow[]> {
-  return sql<MatrixRow[]>`
-    SELECT m.matrix_id, m.doc_id, m.department_id, dep.dept_code AS department_code,
-           m.functional_group_id, fg.name AS functional_group_name, m.require_ack
-      FROM distribution_matrix m
-      JOIN org_department dep ON dep.dept_id = m.department_id
-      LEFT JOIN functional_groups fg ON fg.group_id = m.functional_group_id
-     WHERE m.doc_id = ${docId}
-     ORDER BY dep.dept_code`;
-}
-
-export async function addMatrix(
-  sql: Sql,
-  input: { docId: string; departmentId: string; functionalGroupId?: string | null; requireAck?: boolean; createdBy: string },
-): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`
-      INSERT INTO distribution_matrix (doc_id, department_id, functional_group_id, require_ack, created_by)
-      VALUES (${input.docId}, ${input.departmentId}, ${input.functionalGroupId ?? null},
-              ${input.requireAck ?? true}, ${input.createdBy})
-      ON CONFLICT (doc_id, department_id, functional_group_id) DO NOTHING`;
-    await writeAudit(tx as TransactionSql, {
-      eventType: 'sua_ma_tran', actorUserId: input.createdBy,
-      objectType: 'documents', objectId: input.docId,
-      afterState: { department_id: input.departmentId, functional_group_id: input.functionalGroupId ?? null },
-    });
-  });
-}
-
-export async function removeMatrix(sql: Sql, matrixId: string, userId: string): Promise<void> {
-  await sql.begin(async (tx) => {
-    const [row] = await tx<{ doc_id: string }[]>`
-      DELETE FROM distribution_matrix WHERE matrix_id = ${matrixId} RETURNING doc_id`;
-    if (row) {
-      await writeAudit(tx as TransactionSql, {
-        eventType: 'sua_ma_tran', actorUserId: userId,
-        objectType: 'documents', objectId: row.doc_id, afterState: { removed_matrix: matrixId },
-      });
-    }
-  });
-}
-
 /**
  * Giải danh sách người nhận cho một tài liệu — PHÉP GIAO qua v_distribution_resolved.
  * Trả về số người phải đọc (dùng cho "số người sẽ nhận" trên form đăng ký).

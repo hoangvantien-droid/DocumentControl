@@ -73,8 +73,6 @@ try {
     ['mix_aa@mml.io', 'Admin+Author', ['DC_ADMIN', 'DC_AUTHOR'], null, null],
     // Kiêm Author + DC Site cùng site -> kiểm tình huống tự phản hồi (cảnh báo).
     ['mix_adc@mml.io', 'Author+DC MML', ['DC_AUTHOR', 'DC_SITE_DOC_CONTROL'], 'QA', 'MML'],
-    // Vai cũ giữ lại để test vòng đời cũ còn chạy (DC_DEPT_HEAD@group).
-    ['dh_qa@mml.io', 'DeptHead QA (legacy)', ['DC_DEPT_HEAD'], 'QA', null],
   ];
 
   const result = [];

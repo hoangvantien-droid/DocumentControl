@@ -5,20 +5,15 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireDocFlow } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
-import { reviewBacklog, recordVerdict, type Verdict } from '../domain/review.js';
-import { canRelease } from '../domain/permissions.js';
+import { reviewBacklogForOwner, recordVerdict, type Verdict } from '../domain/review.js';
 
 export function registerReviewRoutes(app: FastifyInstance, sql: Sql): void {
   app.get('/reviews', async (req, reply) => {
     const user = await requireDocFlow(sql, req, reply);
     if (!user) return reply;
-    const rows = await reviewBacklog(sql);
-    const visible = [];
-    for (const row of rows) {
-      if (await canRelease(sql, user.user_id, row)) visible.push(row);
-    }
-    const active = visible.filter((r) => r.status === 'dang_ra_soat');
-    const pending = visible.filter((r) => r.status === 'treo_cho_ban_moi');
+    const rows = await reviewBacklogForOwner(sql, user.user_id);
+    const active = rows.filter((r) => r.status === 'dang_ra_soat');
+    const pending = rows.filter((r) => r.status === 'treo_cho_ban_moi');
     return reply.view('reviews.eta', { active, pending });
   });
 
