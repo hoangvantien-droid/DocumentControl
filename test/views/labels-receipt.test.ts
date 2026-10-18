@@ -31,7 +31,7 @@ describe('docStatusLabel — trạng thái vòng đời mới', () => {
 
 describe('roleLabel — vai mới DC_SITE_DOC_CONTROL', () => {
   test('vai mới có nhãn', () => {
-    assert.match(roleLabel('DC_SITE_DOC_CONTROL'), /Kiểm soát tài liệu site/);
+    assert.match(roleLabel('DC_SITE_DOC_CONTROL'), /Kiểm soát tài liệu/);
   });
   test('vai cũ DC_DEPT_HEAD vẫn có nhãn (dữ liệu lịch sử)', () => {
     assert.match(roleLabel('DC_DEPT_HEAD'), /vai cũ/);

@@ -1,7 +1,7 @@
 <% layout('layout.eta', { title: 'Bản in — DCS', user: it.user }) %>
 <% var rec = it.rec; %>
 
-<h1>Đã tạo bản in kiểm soát</h1>
+<h1>Đã tạo bản sao có kiểm soát</h1>
 <div class="pkg-card">
   <p><b><%= rec.doc_id %></b> phiên bản <%= rec.version_no %></p>
   <p>Mã bản in: <code><%= rec.print_id %></code></p>

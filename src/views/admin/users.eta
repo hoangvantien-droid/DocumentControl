@@ -7,14 +7,14 @@
 <h1>Quản trị người dùng</h1>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
-<table class="data-table">
+<table class="data-table responsive-table">
   <thead><tr><th>Họ tên</th><th>Email</th><th>Trạng thái</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
   <tbody>
     <% it.users.forEach(function(u){ %>
     <tr>
-      <td><%= u.full_name %></td>
-      <td><%= u.email %></td>
-      <td><% if (u.is_active) { %><span class="status-pill--active">Hoạt động</span><% } else { %>Ngừng<% } %></td>
+      <td data-label="Họ tên"><%= u.full_name %></td>
+      <td data-label="Email"><%= u.email %></td>
+      <td data-label="Trạng thái"><% if (u.is_active) { %><span class="status-pill--active">Hoạt động</span><% } else { %>Ngừng<% } %></td>
       <td>
         <% var ds = (it.deptsByUser[u.user_id] || []); ds.forEach(function(did){
              var d = it.depts.find(function(x){return x.dept_id===did}); %>

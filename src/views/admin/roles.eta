@@ -7,13 +7,13 @@
 <h1>Vai trò</h1>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
-<table class="data-table">
+<table class="data-table responsive-table">
   <thead><tr><th>Tên</th><th>Email</th><th>Vai trò hiện có</th></tr></thead>
   <tbody>
     <% it.users.forEach(function(u){ %>
     <tr>
-      <td><%= u.full_name || '' %></td>
-      <td><%= u.email || '' %></td>
+      <td data-label="Tên"><%= u.full_name || '' %></td>
+      <td data-label="Email"><%= u.email || '' %></td>
       <td>
         <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
           <span class="chip"><%= it.roleLabel(r.role_code) %><% if (r.scope_site_id) { %> · site<% } %></span>

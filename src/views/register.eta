@@ -16,7 +16,7 @@
 <form method="post" action="<%= it.editVersionId ? '/my-documents/' + it.editVersionId + '/edit' : '/register' %>" class="reg-form" enctype="multipart/form-data">
 <% if (it.editVersionId) { %><input type="hidden" name="edit_version_id" value="<%= it.editVersionId %>"><% } %>
   <fieldset id="field-doc_id">
-    <legend>Định danh &amp; phạm vi</legend>
+    <legend>Định danh &amp; phạm vi áp dụng</legend>
     <label>Số hiệu tài liệu <span class="req">*</span>
       <input name="doc_id" required value="<%= val.doc_id || '' %>" placeholder="MML/QA/HD-005">
     </label>
@@ -33,7 +33,7 @@
         <option value="ngoai_bo" <%= val.origin==='ngoai_bo'?'selected':'' %>>Ngoại bộ</option>
       </select>
     </label>
-    <label>Cấp phạm vi
+    <label>Cấp phạm vi áp dụng
       <select name="scope_level">
         <% var scopeLevels = ['group','bu','site','dept']; scopeLevels.forEach(function(s){ %>
           <option value="<%= s %>" <%= val.scope_level===s?'selected':'' %>><%= it.scopeLabel(s) %></option>
@@ -83,7 +83,7 @@
     <label>Tiêu đề <span class="req">*</span> <input name="title" required value="<%= val.title || '' %>"></label>
     <label>Ngày áp dụng dự kiến <span class="req">*</span> <input type="date" name="issued_date" required value="<%= val.issued_date || '' %>"></label>
     <label id="field-external-eff" style="display:<%= val.origin==='ngoai_bo'?'block':'none' %>">Ngày hiệu lực pháp lý (ngoại bộ) <input type="date" name="external_effective_date" value="<%= val.external_effective_date || '' %>"></label>
-    <label>Ngày hiệu lực (DCS) <span class="req">*</span> <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
+    <label>Ngày có hiệu lực <span class="req">*</span> <input type="date" name="effective_date" required value="<%= val.effective_date || '' %>"></label>
     <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" value="<%= val.review_cycle_months || '12' %>" min="1"></label>
     <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= val.expiry_date || '' %>"></label>
     <label>Bộ phận sở hữu <span class="req">*</span>
@@ -124,7 +124,7 @@
     <div id="change_summary_error" class="field__hint field__hint--error" style="display:none">Thay đổi lớn bắt buộc nhập tóm tắt lý do.</div>
   </fieldset>
 
-  <button type="submit" class="primary">Nộp đăng ký</button>
+  <button type="submit" class="primary">Ban hành tài liệu</button>
   <button type="submit" class="btn-diff" formaction="/register/draft">Lưu nháp</button>
 </form>
 <script>

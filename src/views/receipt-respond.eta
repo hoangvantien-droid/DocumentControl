@@ -36,7 +36,7 @@
 
 <div class="respond-actions">
   <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" class="inline-form">
-    <button type="submit" class="primary">Chấp nhận nhận tài liệu</button>
+    <button type="submit" class="primary">Xác nhận tiếp nhận</button>
   </form>
 
   <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form">
@@ -50,6 +50,6 @@
     <label>Mô tả sai sót <span class="req">*</span>
       <textarea name="note" rows="3" required placeholder="Nêu rõ sai sót để người đăng ký khắc phục"></textarea>
     </label>
-    <button type="submit" class="btn-diff">Từ chối tài liệu</button>
+    <button type="submit" class="btn-diff">Từ chối tiếp nhận</button>
   </form>
 </div>
