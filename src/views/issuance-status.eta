@@ -17,7 +17,7 @@
 </section>
 
 <h2>Phản hồi theo site</h2>
-<%~ include('/components/site-response-matrix.eta', { receipts: it.receipts }) %>
+<%~ include('/components/site-response-matrix.eta', { receipts: it.receipts, receiptStatusLabel: it.receiptStatusLabel, receiptRejectTypeLabel: it.receiptRejectTypeLabel }) %>
 
 <section class="issuance-actions">
   <h2>Hành động</h2>

@@ -66,7 +66,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.post<{ Body: RegBody }>('/register', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const b = req.body;
+    const b = (req.body ?? {}) as typeof req.body;
     try {
       // Lưu tệp PDF thật nếu có upload; tính file_path + file_hash SHA-256.
       let filePath = b.file_path || '';
@@ -143,7 +143,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.post<{ Body: RegBody }>('/register/draft', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const b = req.body;
+    const b = (req.body ?? {}) as typeof req.body;
     let filePath = b.file_path || '';
     let fileHash = b.file_hash || '';
     if (b.file && Buffer.isBuffer(b.file) && b.file.length > 0) {
@@ -300,7 +300,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.post<{ Params: { id: string }; Body: Record<string, string> }>('/my-documents/:id/edit-metadata', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const b = req.body;
+    const b = (req.body ?? {}) as typeof req.body;
     try {
       await editVersionMetadata(sql, {
         versionId: req.params.id, userId: user.user_id,
@@ -337,7 +337,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const user = requireUser(req, reply);
     if (!user) return reply;
     try {
-      await recallByAuthor(sql, { versionId: req.params.id, userId: user.user_id, reason: req.body.reason ?? '' });
+      await recallByAuthor(sql, { versionId: req.params.id, userId: user.user_id, reason: (req.body ?? {}).reason ?? '' });
       return reply.redirect('/my-documents');
     } catch (err) {
       if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
@@ -397,7 +397,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.post<{ Params: { id: string }; Body: RegBody }>('/my-documents/:id/edit', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const b = req.body;
+    const b = (req.body ?? {}) as typeof req.body;
     const existing = await sql`
       SELECT version_id, status FROM document_versions
        WHERE version_id = ${req.params.id}

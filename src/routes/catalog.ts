@@ -181,8 +181,8 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     try {
       await addSiteRollout(sql, {
         versionId: req.params.id,
-        siteId: (req.body.site_id ?? '').trim(),
-        plannedDate: (req.body.planned_date ?? '').trim() || null,
+        siteId: ((req.body ?? {}).site_id ?? '').trim(),
+        plannedDate: ((req.body ?? {}).planned_date ?? '').trim() || null,
         actorUserId: user.user_id,
       });
       return reply.redirect(`/documents/${req.params.id}`);
@@ -199,10 +199,10 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     try {
       await setSiteRolloutStatus(sql, {
         versionId: req.params.id,
-        siteId: (req.body.site_id ?? '').trim(),
-        status: (req.body.status ?? '').trim() as 'chua_ap_dung' | 'da_ap_dung' | 'tam_hoan',
-        appliedDate: (req.body.applied_date ?? '').trim() || null,
-        pauseReason: (req.body.pause_reason ?? '').trim() || null,
+        siteId: ((req.body ?? {}).site_id ?? '').trim(),
+        status: ((req.body ?? {}).status ?? '').trim() as 'chua_ap_dung' | 'da_ap_dung' | 'tam_hoan',
+        appliedDate: ((req.body ?? {}).applied_date ?? '').trim() || null,
+        pauseReason: ((req.body ?? {}).pause_reason ?? '').trim() || null,
         actorUserId: user.user_id,
       });
       return reply.redirect(`/documents/${req.params.id}`);
@@ -253,8 +253,8 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     if (!allowed) { reply.code(403); return reply.send('Không đủ thẩm quyền sửa ma trận phân phối'); }
     await addMatrix(sql, {
       docId: detail.doc_id,
-      departmentId: req.body.department_id ?? '',
-      functionalGroupId: req.body.functional_group_id || null,
+      departmentId: (req.body ?? {}).department_id ?? '',
+      functionalGroupId: (req.body ?? {}).functional_group_id || null,
       createdBy: user.user_id,
     });
     return reply.redirect(`/documents/${req.params.id}`);
@@ -263,7 +263,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
   app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/matrix/remove', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const matrixId = req.body.matrix_id ?? '';
+    const matrixId = (req.body ?? {}).matrix_id ?? '';
     const row = (await sql<{ doc_id: string }[]>`
       SELECT doc_id FROM distribution_matrix WHERE matrix_id = ${matrixId}`)[0];
     const detail = row ? await loadDetail(sql, req.params.id) : null;
@@ -317,7 +317,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       if (!user) return reply;
       try {
         await recallVersion(sql, {
-          versionId: req.params.id, adminUserId: user.user_id, reason: req.body.reason ?? '',
+          versionId: req.params.id, adminUserId: user.user_id, reason: (req.body ?? {}).reason ?? '',
         });
         return reply.redirect(`/documents/${req.params.id}`);
       } catch (err) {

@@ -41,9 +41,9 @@ export function registerFunctionalGroupRoutes(app: FastifyInstance, sql: Sql): v
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
     try {
       await createGroup(sql, {
-        code: (req.body.code ?? '').trim(),
-        name: (req.body.name ?? '').trim(),
-        ownerUserId: req.body.owner_user_id ?? '',
+        code: ((req.body ?? {}).code ?? '').trim(),
+        name: ((req.body ?? {}).name ?? '').trim(),
+        ownerUserId: (req.body ?? {}).owner_user_id ?? '',
       });
       return reply.redirect('/functional-groups');
     } catch (err) {
@@ -56,7 +56,7 @@ export function registerFunctionalGroupRoutes(app: FastifyInstance, sql: Sql): v
     const user = requireUser(req, reply);
     if (!user) return reply;
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
-    await addMember(sql, req.body.group_id ?? '', req.body.user_id ?? '', user.user_id);
+    await addMember(sql, (req.body ?? {}).group_id ?? '', (req.body ?? {}).user_id ?? '', user.user_id);
     return reply.redirect('/functional-groups');
   });
 
@@ -64,7 +64,7 @@ export function registerFunctionalGroupRoutes(app: FastifyInstance, sql: Sql): v
     const user = requireUser(req, reply);
     if (!user) return reply;
     if (!await requireSystemAdmin(req, reply, sql)) return reply;
-    await removeMember(sql, req.body.group_id ?? '', req.body.user_id ?? '');
+    await removeMember(sql, (req.body ?? {}).group_id ?? '', (req.body ?? {}).user_id ?? '');
     return reply.redirect('/functional-groups');
   });
 }

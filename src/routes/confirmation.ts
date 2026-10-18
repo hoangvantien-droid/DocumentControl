@@ -77,7 +77,7 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
     async (req, reply) => {
       const user = requireUser(req, reply);
       if (!user) return reply;
-      const b = req.body;
+      const b = (req.body ?? {}) as typeof req.body;
       const adminCheckNos = ['7', '8', '9', '9b']
         .filter((no) => b[`chk${no}`] === 'on');
       try {
@@ -100,7 +100,7 @@ export function registerConfirmationRoutes(app: FastifyInstance, sql: Sql): void
       if (!user) return reply;
       try {
         await rejectRegistration(sql, {
-          versionId: req.params.id, adminUserId: user.user_id, reason: req.body.reason ?? '',
+          versionId: req.params.id, adminUserId: user.user_id, reason: (req.body ?? {}).reason ?? '',
         });
         return reply.redirect('/pending-confirmation');
       } catch (err) {

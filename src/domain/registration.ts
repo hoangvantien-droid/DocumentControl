@@ -175,6 +175,7 @@ export async function submitRegistration(
     }
 
     const versionId = randomUUID();
+    const ownerDeptId = (v.ownerDepartmentId ?? '').trim() || null; // '' -> NULL tranh 22P02
     await tx`
       INSERT INTO document_versions (
         version_id, doc_id, version_no, title,
@@ -189,7 +190,7 @@ export async function submitRegistration(
         ${v.issuedDate},
         ${v.externalEffectiveDate ?? null}, ${v.effectiveDate}, ${v.reviewCycleMonths}, ${v.expiryDate ?? null},
         ${v.sourceChannel}, ${v.filePath}, ${v.fileHash},
-        'da_ban_hanh', ${v.registrantUserId}, ${v.ownerDepartmentId},
+        'da_ban_hanh', ${v.registrantUserId}, ${ownerDeptId},
         ${v.supersedesVersionId ?? null}, ${v.changeSignificance ?? null}, ${v.changeSummary ?? null},
         now()
       )`;
