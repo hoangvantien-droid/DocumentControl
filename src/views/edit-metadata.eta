@@ -19,7 +19,7 @@
       <input value="<%= v.version_no %>" disabled>
     </label>
     <label>Tiêu đề <input name="title" value="<%= v.title || '' %>"></label>
-    <label>Ngày ban hành <input type="date" name="issued_date" value="<%= v.issued_date || '' %>"></label>
+    <label>Ngày áp dụng dự kiến <input type="date" name="issued_date" value="<%= v.issued_date || '' %>"></label>
     <label>Ngày có hiệu lực <input type="date" name="effective_date" value="<%= v.effective_date || '' %>"></label>
     <label>Chu kỳ rà soát (tháng) <input type="number" name="review_cycle_months" min="1" value="<%= v.review_cycle_months || '' %>"></label>
     <label>Ngày hết hạn (tuỳ chọn) <input type="date" name="expiry_date" value="<%= v.expiry_date || '' %>"></label>
