@@ -8,15 +8,17 @@
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <table class="data-table">
-  <thead><tr><th>Người dùng</th><th>Vai trò hiện có</th></tr></thead>
+  <thead><tr><th>Tên</th><th>Email</th><th>Vai trò hiện có</th></tr></thead>
   <tbody>
     <% it.users.forEach(function(u){ %>
     <tr>
-      <td><%= u.full_name %> <small>(<%= u.email %>)</small></td>
+      <td><%= u.full_name || '' %></td>
+      <td><%= u.email || '' %></td>
       <td>
         <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
           <span class="chip"><%= it.roleLabel(r.role_code) %><% if (r.scope_site_id) { %> · site<% } %></span>
         <% }) %>
+        <% if (rs.length === 0) { %><span class="muted">—</span><% } %>
       </td>
     </tr>
     <% }) %>
@@ -25,10 +27,14 @@
 
 <h2>Gán vai trò</h2>
 <form method="post" action="/admin/roles" class="role-form">
+  <label>Tìm người dùng (theo tên hoặc email)
+    <input type="search" id="user_filter" placeholder="Gõ tên hoặc email để lọc…" autocomplete="off">
+  </label>
   <label>Người dùng
-    <select name="user_id" required>
-      <option value="">-- người dùng --</option>
-      <% it.users.forEach(function(u){ %><option value="<%= u.user_id %>"><%= u.full_name %></option><% }) %>
+    <select name="user_id" id="user_select" required size="6">
+      <% it.users.forEach(function(u){ %>
+        <option value="<%= u.user_id %>" data-search="<%= ((u.full_name || '') + ' ' + (u.email || '')).toLowerCase() %>"><%= u.full_name || '(chưa có tên)' %> — <%= u.email || '(chưa có email)' %></option>
+      <% }) %>
     </select>
   </label>
   <label>Vai trò
@@ -39,7 +45,6 @@
       <option value="DC_READER">Người đọc</option>
     </select>
   </label>
-  <!-- scope_level tự đặt theo vai: site cho DC_SITE_DOC_CONTROL, group cho vai khác -->
   <input type="hidden" name="scope_level" id="scope_level" value="group">
   <label id="site_field" style="display:none">Site phụ trách
     <select name="scope_site_id" id="scope_site_id">
@@ -52,6 +57,23 @@
 
 <script>
 (function(){
+  // Lọc danh sách người dùng theo tên HOẶC email.
+  var filter = document.getElementById('user_filter');
+  var select = document.getElementById('user_select');
+  if (filter && select) {
+    var opts = Array.prototype.slice.call(select.options);
+    filter.addEventListener('input', function(){
+      var q = filter.value.trim().toLowerCase();
+      opts.forEach(function(o){
+        var hit = !q || (o.getAttribute('data-search') || '').indexOf(q) >= 0;
+        o.hidden = !hit;
+      });
+      // tự chọn option khớp đầu tiên cho tiện
+      var firstVisible = opts.filter(function(o){ return !o.hidden; })[0];
+      if (firstVisible) select.value = firstVisible.value;
+    });
+  }
+  // Hiện chọn Site khi vai là Kiểm soát tài liệu site.
   var role = document.getElementById('role_code');
   var level = document.getElementById('scope_level');
   var siteField = document.getElementById('site_field');
