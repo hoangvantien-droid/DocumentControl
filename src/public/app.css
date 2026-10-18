@@ -1138,6 +1138,11 @@ button.danger { background: var(--status-error-fg); }
   }
   /* Giá trị canh phải, xuống dòng khi dài. */
   .catalog-table td { text-align: right; }
+  /* catalog-card-nowrap-fix: chong tran ngang tren mobile */
+  .catalog-table td { flex-wrap: wrap; min-width: 0; }
+  .catalog-table td::before { max-width: 45%; overflow-wrap: anywhere; }
+  .catalog-table td > * { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+  .catalog-table td a { white-space: normal; }
   /* Hàng rỗng (colspan, data-label="") hiển thị thành dòng thường, không nhãn. */
   .catalog-table td[data-label=""] { display: block; text-align: left; }
   .catalog-table td[data-label=""]::before { content: none; }
