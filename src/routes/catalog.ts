@@ -101,6 +101,29 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
     return reply.send(readFileSync(absPath));
   });
 
+
+  // Xem PDF nhung truc tiep (inline) - khac /download (attachment ep tai ve).
+  app.get<{ Params: { id: string } }>('/documents/:id/view', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    const row = (await sql<{ file_path: string; doc_id: string; version_no: string; status: string }[]>`
+      SELECT file_path, doc_id, version_no, status FROM document_versions
+       WHERE version_id = ${req.params.id}`)[0];
+    if (!row) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
+    if (!isCurrentStatus(row.status)) {
+      reply.code(403); return reply.send('Chỉ xem được tệp của tài liệu hiện hành');
+    }
+    if (!(await canViewDoc(sql, user.user_id, req.params.id))) {
+      reply.code(403); return reply.send('Không có quyền xem tài liệu này');
+    }
+    const absPath = row.file_path;
+    if (!absPath || !existsSync(absPath)) { reply.code(404); return reply.send('Tệp không còn tồn tại'); }
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `inline; filename="${row.doc_id}_v${row.version_no}.pdf"`);
+    return reply.send(readFileSync(absPath));
+  });
+
+
   app.get<{ Params: { id: string } }>('/documents/:id', async (req, reply) => {
     const user = await requireDocFlow(sql, req, reply);
     if (!user) return reply;
