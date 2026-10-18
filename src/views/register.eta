@@ -63,6 +63,9 @@
   <fieldset id="field-sites">
     <legend>Site nhận tài liệu (ban hành thẳng) <span class="req">*</span></legend>
     <p class="muted" style="margin:.25rem 0 .5rem">Tài liệu được ban hành ngay tới các site chọn dưới đây. Mỗi site tự xác nhận nhận hoặc từ chối.</p>
+    <% if (!it.sites || it.sites.length === 0) { %>
+      <div class="alert-banner alert-banner--warning register-no-site"><strong>Chưa có site nào:</strong> Hệ thống chưa khai báo site nhận. Liên hệ quản trị để thêm site (master data) trước khi đăng ký tài liệu.</div>
+    <% } %>
     <div class="site-pick" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem">
       <% it.sites.forEach(function(x){ %>
         <label style="display:flex;align-items:center;gap:.4rem;font-weight:400">
