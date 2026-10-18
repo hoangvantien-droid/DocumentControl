@@ -1,6 +1,6 @@
 <% layout('layout.eta', { title: 'Trang chủ — DCS', user: it.user }) %>
 
-<!-- Trang chủ (DCS-7 §1.3): hôm nay tôi cần làm gì. Khối không có việc thì ẩn hẳn. -->
+<!-- Trang chủ: hôm nay tôi cần làm gì. Khối không có việc thì ẩn hẳn. -->
 <section class="home">
   <h1>Xin chào<%= it.user && it.user.full_name ? ', ' + it.user.full_name : '' %></h1>
 
@@ -11,32 +11,34 @@
     </form>
   </div>
 
-  <% if (it.pending && it.pending.length > 0) { %>
+  <% if (it.pendingReceipts && it.pendingReceipts.length > 0) { %>
     <div class="home-block">
-      <h2>Việc chờ tôi xác nhận (<%= it.pending.length %>)</h2>
+      <h2>Chờ site bạn phản hồi (<%= it.pendingReceipts.length %>)</h2>
       <ul class="home-list">
-        <% it.pending.forEach(function(p){ %>
-          <li><a href="/confirm/<%= p.version_id %>"><%= p.doc_id %> v<%= p.version_no %> — <%= p.title %></a></li>
-        <% }) %>
-      </ul>
-    </div>
-  <% } %>
-
-  <% if (it.rejected && it.rejected.length > 0) { %>
-    <div class="home-block">
-      <h2>Tài liệu của tôi bị từ chối (<%= it.rejected.length %>)</h2>
-      <ul class="home-list">
-        <% it.rejected.forEach(function(r){ %>
+        <% it.pendingReceipts.forEach(function(r){ %>
           <li>
-            <a href="/register"><%= r.doc_id %> v<%= r.version_no %> — <%= r.title %></a>
-            <div class="reject-reason">Lý do: <%= r.rejection_reason %></div>
+            <a href="/site-receipts/<%= r.receipt_id %>"><%= r.doc_id %> v<%= r.version_no %> — <%= r.title %></a>
+            <span class="muted"> · site <%= r.site_code %></span>
+            <% if (r.other_reject_type === 'sai_noi_dung') { %> · <span class="status status-thu_hoi">site khác báo sai nội dung</span><% } %>
           </li>
         <% }) %>
       </ul>
+      <p><a href="/site-receipts" class="btn-link">Xem tất cả</a></p>
     </div>
   <% } %>
 
-  <% if ((!it.pending || it.pending.length===0) && (!it.rejected || it.rejected.length===0)) { %>
+  <% if (it.rejectedMine && it.rejectedMine.length > 0) { %>
+    <div class="home-block">
+      <h2>Tài liệu của bạn bị site báo sai sót (<%= it.rejectedMine.length %>)</h2>
+      <ul class="home-list">
+        <% it.rejectedMine.forEach(function(r){ %>
+          <li><a href="/my-documents/<%= r.version_id %>/issuance"><%= r.doc_id %> v<%= r.version_no %> — <%= r.title %></a></li>
+        <% }) %>
+      </ul>
+    </div>
+  <% } %>
+
+  <% if ((!it.pendingReceipts || it.pendingReceipts.length===0) && (!it.rejectedMine || it.rejectedMine.length===0)) { %>
     <p class="build-note">Không có việc nào cần bạn xử lý hôm nay.</p>
   <% } %>
 </section>
