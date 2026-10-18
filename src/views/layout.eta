@@ -46,20 +46,24 @@
       <ul>
         <li class="sidebar-group">Không gian chung</li>
         <li><a href="/">Trang chủ</a></li>
-        <li><a href="/documents">Danh mục tài liệu</a></li>
+        <% if (nav.inDocFlow) { %><li><a href="/documents">Danh mục tài liệu</a></li><% } %>
         <% if (nav.canSeeMyDocuments) { %><li><a href="/my-documents">Tài liệu của tôi</a></li><% } %>
+        <% if (nav.inDocFlow) { %>
         <li class="sidebar-group">Quy trình</li>
         <% if (nav.isSiteDocControl) { %><li><a href="/site-receipts">Chờ site phản hồi</a></li><% } %>
         <% if (nav.isSiteDocControl) { %><li><a href="/issue-reports">Báo bất thường (site)</a></li><% } %>
-        <% if (nav.canRelease) { %><li><a href="/reviews">Rà soát định kỳ</a></li><% } %>
-        <% if (nav.canRegister || nav.canRelease) { %><li><a href="/packages">Gói ban hành</a></li><% } %>
+        <% if (nav.canRegister || nav.isSiteDocControl) { %><li><a href="/reviews">Rà soát định kỳ</a></li><% } %>
+        <% if (nav.canRegister || nav.isSiteDocControl) { %><li><a href="/packages">Gói ban hành</a></li><% } %>
+        <% } %>
+        <% if (nav.isAdmin) { %>
         <li class="sidebar-group">Quản trị</li>
-        <% if (nav.isAdmin) { %><li><a href="/functional-groups">Nhóm chức năng</a></li><% } %>
-        <% if (nav.isAdmin) { %><li><a href="/admin/org">Quản trị tổ chức</a></li><% } %>
-        <% if (nav.isAdmin) { %><li><a href="/admin/users">Quản trị người dùng</a></li><% } %>
-        <% if (nav.isAdmin) { %><li><a href="/admin/roles">Vai trò</a></li><% } %>
+        <li><a href="/functional-groups">Nhóm chức năng</a></li>
+        <li><a href="/admin/org">Quản trị tổ chức</a></li>
+        <li><a href="/admin/users">Quản trị người dùng</a></li>
+        <li><a href="/admin/roles">Vai trò</a></li>
         <li class="sidebar-group">Hệ thống</li>
-        <% if (nav.canRelease) { %><li><a href="/audit">Ghi vết</a></li><% } %>
+        <li><a href="/audit">Ghi vết</a></li>
+        <% } %>
       </ul>
       <p class="phase-note">Giai đoạn 1 — L1 chưa vận hành</p>
     </nav>

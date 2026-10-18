@@ -121,20 +121,6 @@
     <div id="change_summary_error" class="field__hint field__hint--error" style="display:none">Thay đổi lớn bắt buộc nhập tóm tắt lý do.</div>
   </fieldset>
 
-  <fieldset id="field-link_code">
-    <legend>Nhãn liên kết (bắt buộc ít nhất một)</legend>
-    <label>Loại nhãn
-      <select name="link_type">
-        <option value="dieu_khoan">Điều khoản</option>
-        <option value="cong_doan">Công đoạn</option>
-        <option value="diem_kiem_soat">Điểm kiểm soát</option>
-        <option value="moi_nguy">Mối nguy</option>
-        <option value="tai_lieu">Tài liệu</option>
-      </select>
-    </label>
-    <label>Mã liên kết <input name="link_code" placeholder="BRC-9-5.6.2"></label>
-  </fieldset>
-
   <button type="submit" class="primary">Nộp đăng ký</button>
   <button type="submit" class="btn-diff" formaction="/register/draft">Lưu nháp</button>
 </form>
@@ -186,7 +172,6 @@
     <a href="#field-doc_id" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đủ trường bắt buộc' }) %></a>
     <a href="#field-file" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã chọn tệp PDF' }) %></a>
     <a href="#field-change_significance" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Khai mức độ thay đổi nếu thay thế' }) %></a>
-    <a href="#field-link_code" class="reg-checklist__link"><%~ include('/components/check-item.eta', { mark: 'warn', label: 'Đã có nhãn liên kết' }) %></a>
   </ul>
 </aside>
 </div>

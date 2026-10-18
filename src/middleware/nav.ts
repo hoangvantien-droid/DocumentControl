@@ -22,6 +22,9 @@ export interface NavFlags {
   canSeeMyDocuments: boolean;
   /** Người chỉ-xem (Reader): không đăng ký, không nhận-phản hồi, không quản trị. */
   isReadOnly: boolean;
+  /** Tham gia luồng tài liệu (Author / DC Site / Reader). Admin-thuần = false:
+   *  Admin đứng NGOÀI luồng, chỉ quản trị + master data. */
+  inDocFlow: boolean;
   /** (LEGACY) cờ vai duyệt-trước cũ — route cũ còn đọc; Task 9 gỡ. */
   canRelease: boolean;
 }
@@ -30,19 +33,25 @@ export async function buildNav(sql: Sql, user: SessionUser | null): Promise<NavF
   if (!user) {
     return {
       canRegister: false, isSiteDocControl: false, canReport: false,
-      isAdmin: false, canSeeMyDocuments: false, isReadOnly: true, canRelease: false,
+      isAdmin: false, canSeeMyDocuments: false, isReadOnly: true,
+      inDocFlow: false, canRelease: false,
     };
   }
   const roles = await roleCodesOf(sql, user.user_id);
   const canRegister = roles.has('DC_AUTHOR');
+  const siteDocControl = isSiteDocControl(roles);
   const isAdmin = roles.has('DC_ADMIN');
+  const reader = roles.has('DC_READER');
+  // Admin-thuần (chỉ DC_ADMIN, không vai nghiệp vụ) đứng ngoài luồng tài liệu.
+  const inDocFlow = canRegister || siteDocControl || reader;
   return {
     canRegister,
-    isSiteDocControl: isSiteDocControl(roles),
+    isSiteDocControl: siteDocControl,
     canReport: canReportIssue(roles),
     isAdmin,
     canSeeMyDocuments: canRegister,
     isReadOnly: isReadOnlyUser(roles),
+    inDocFlow,
     canRelease: hasAnyReleaseRole(roles),
   };
 }
