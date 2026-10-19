@@ -156,6 +156,15 @@ export interface PendingReceiptRow extends ReceiptRow {
  * Hàng chờ phản hồi của một DC Site: các receipt cho_phan_hoi thuộc các site
  * người dùng phụ trách. Kèm cờ cảnh báo nếu cùng version đã có site khác từ chối.
  */
+/** Đếm nhanh số receipt đang chờ phản hồi của các site (cho badge sidebar). */
+export async function pendingReceiptCountForSites(sql: Sql, siteIds: string[]): Promise<number> {
+  if (siteIds.length === 0) return 0;
+  const rows = await sql<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM document_receipt
+     WHERE status = 'cho_phan_hoi' AND site_id = ANY(${siteIds}::uuid[])`;
+  return rows[0]?.n ?? 0;
+}
+
 export async function pendingReceiptsForSites(
   sql: Sql,
   siteIds: string[],
