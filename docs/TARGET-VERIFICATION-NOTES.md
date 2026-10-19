@@ -208,3 +208,24 @@ Cần kiểm tay trên target (<=768px hoặc DevTools responsive):
 2. Form đăng ký / phản hồi / lọc danh mục: trường rộng đủ, nút cao dễ chạm.
 3. Desktop: bảng vẫn hiển thị dạng bảng như cũ (không hồi quy).
 4. Rà nhanh ngôn từ các màn chính đúng thuật ngữ ISO đã liệt kê.
+
+
+---
+
+## 11. Cảnh báo lỗi nghiệp vụ tại chỗ (friendly-error-messages)
+
+Trạng thái: ĐÃ CODE, CHỜ KIỂM THỊ GIÁC.
+
+- Thay reply.send(err.message) (trang text trắng) bằng helper sendBusinessError:
+  request htmx -> toast lỗi góc màn (#toast-zone), KHÔNG rời trang; request
+  thường -> trang error.eta có layout + alert-banner (không text trần).
+- Nút ở-lại-trang đã gắn htmx + toast: phản hồi receipt (accept/reject), báo
+  bất thường (convert/dismiss). Thành công -> HX-Redirect (sendOk).
+- Nút chuyển-trang (In, đăng ký...) dùng fallback error.eta khi lỗi.
+
+Kiểm tay trên target:
+1. Mở màn phản hồi receipt -> Từ chối thiếu lý do / sai trạng thái -> TOAST
+   cảnh báo hiện góc màn, KHÔNG nhảy trang trắng.
+2. Chấp nhận/từ chối thành công -> điều hướng về /site-receipts.
+3. Bấm In bản chưa hiệu lực -> trang thông báo có layout (không text trần).
+4. Lỗi hệ thống (không phải BusinessError) vẫn trả 500 (không bị che).

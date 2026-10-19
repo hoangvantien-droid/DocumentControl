@@ -1,0 +1,5 @@
+<% layout('layout.eta', { title: 'Thông báo — DCS', user: it.user }) %>
+
+<h1>Không thực hiện được thao tác</h1>
+<%~ include('/components/alert-banner.eta', { type: 'warning', text: it.message || 'Thao tác bị chặn bởi quy tắc nghiệp vụ.' }) %>
+<p><a href="#" onclick="history.back();return false;" class="btn-link">← Quay lại</a></p>

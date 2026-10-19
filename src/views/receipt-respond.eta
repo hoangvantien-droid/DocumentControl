@@ -35,11 +35,11 @@
 <% } %>
 
 <div class="respond-actions">
-  <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" class="inline-form">
+  <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" class="inline-form" hx-post="/site-receipts/<%= r.receipt_id %>/accept" hx-target="#toast-zone" hx-swap="beforeend">
     <button type="submit" class="primary">Xác nhận tiếp nhận</button>
   </form>
 
-  <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form">
+  <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form" hx-post="/site-receipts/<%= r.receipt_id %>/reject" hx-target="#toast-zone" hx-swap="beforeend">
     <h2>Từ chối — báo sai sót</h2>
     <label>Loại sai sót
       <select name="reject_type" required>

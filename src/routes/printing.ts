@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import { registerPrint, verifyToken, auditQrLookup, recallPrintedCopy } from '../domain/printing.js';
 
 export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: { basePath: string; publicUrl: string }): void {
@@ -29,7 +30,7 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: {
         });
         return reply.view('print-result.eta', { rec });
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },
@@ -46,7 +47,7 @@ export function registerPrintingRoutes(app: FastifyInstance, sql: Sql, config: {
         await recallPrintedCopy(sql, { printId, userId: user.user_id });
         return reply.redirect(`/documents/${req.params.id}`);
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },

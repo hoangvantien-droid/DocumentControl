@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import type { Sql } from 'postgres';
 import { requireUser, requireDocFlow } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
   isCurrentStatus,
@@ -178,7 +179,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       });
       return reply.redirect(`/documents/${req.params.id}`);
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -198,7 +199,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       });
       return reply.redirect(`/documents/${req.params.id}`);
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -211,7 +212,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       await acknowledge(sql, req.params.id, user.user_id);
       return reply.redirect(`/documents/${req.params.id}`);
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });

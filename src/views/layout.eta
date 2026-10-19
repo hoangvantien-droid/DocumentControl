@@ -72,5 +72,14 @@
       <%~ it.body %>
     </main>
   </div>
+  <!-- Vùng cảnh báo tại chỗ: htmx chèn toast lỗi nghiệp vụ vào đây. -->
+  <div id="toast-zone" class="toast-zone" aria-live="polite"></div>
+  <script>
+  // htmx mặc định KHÔNG swap với 4xx/5xx. Cho phép swap nội dung lỗi nghiệp vụ (4xx).
+  document.body.addEventListener('htmx:beforeSwap', function (evt) {
+    var st = evt.detail.xhr.status;
+    if (st >= 400 && st < 500) { evt.detail.shouldSwap = true; evt.detail.isError = false; }
+  });
+  </script>
 </body>
 </html>

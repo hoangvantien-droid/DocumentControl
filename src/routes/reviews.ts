@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireDocFlow } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import { reviewBacklogForOwner, recordVerdict, type Verdict } from '../domain/review.js';
 import { canRegisterDocuments } from '../domain/permissions.js';
 
@@ -32,7 +33,7 @@ export function registerReviewRoutes(app: FastifyInstance, sql: Sql): void {
         });
         return reply.redirect('/reviews');
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },
