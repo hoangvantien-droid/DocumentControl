@@ -261,3 +261,30 @@ Kiểm chứng trên target:
 5. Copy URL dán tab mới -> ra đúng kết quả đã lọc (share được).
 6. Bật 'Bao gồm bản lịch sử' -> bản hết hiệu lực hiện (nền xám, nhãn bản đang áp dụng).
 7. Kiểm AI/MCP search vẫn chạy (không truyền bộ lọc UI, hành vi như cũ).
+
+---
+
+## 13. Redesign giao diện (học từ digi-office Masan)
+
+Trạng thái: ĐÃ CODE, CHỜ KIỂM THỊ GIÁC TRÊN TRÌNH DUYỆT. Chỉ đổi giao diện;
+KHÔNG đổi route/nghiệp vụ. Làm theo 4 lớp:
+
+- Lớp 1 — Sidebar: thêm icon SVG inline mỗi mục (không thêm icon-font), badge
+  đếm receipt chờ phản hồi cạnh 'Chờ site phản hồi' (chỉ DC Site; 1 COUNT nhẹ).
+- Lớp 2 — Page header + toolbar nút hành động theo mục đích (.btn-action--*)
+  + component /components/action-icon.eta. Áp mẫu cho Danh mục (nút 'Đăng ký
+  tài liệu' cho Author).
+- Lớp 3 — Bảng .data-table: header DÍNH khi cuộn (top = chiều cao topbar);
+  helper .cell-status (pill + mốc thời gian). Bỏ overflow:hidden để sticky chạy.
+- Lớp 4 — Thanh lọc Danh mục thành thẻ .filter-bar (lưới trường tự co + hàng
+  nút Lọc/Xóa lọc). Áp CÓ CHỌN LỌC, không bọc mọi thứ thành card.
+
+Kiểm tay trên target:
+1. Sidebar: mỗi mục có icon; DC Site thấy badge số cạnh 'Chờ site phản hồi'
+   (bằng số receipt cho_phan_hoi); badge mất khi = 0.
+2. Danh mục: tiêu đề + mô tả + nút 'Đăng ký tài liệu' (Author); Reader không có nút.
+3. Cuộn một bảng dài (danh mục/ghi vết) -> hàng tiêu đề dính dưới topbar.
+4. Thanh lọc Danh mục hiện dạng thẻ lưới; nút Lọc (xanh) + Xóa lọc (trung tính).
+5. Mobile <=768px: toolbar + filter-bar nút full-width; bảng vẫn về dạng thẻ.
+6. Rà hồi quy: các bảng khác (users/roles/audit/my-documents) vẫn hiển thị đúng
+   sau khi .data-table đổi sang border-collapse: separate + sticky th.
