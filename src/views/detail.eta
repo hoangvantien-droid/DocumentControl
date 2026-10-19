@@ -1,5 +1,15 @@
 <% layout('layout.eta', { title: 'Chi tiết — DCS', user: it.user }) %>
 <% var d = it.d; %>
+<%
+/* Nguồn PDF nhúng inline:
+ *  - Bản hiện hành (da_ban_hanh/hieu_luc/da_dang_ky) -> /view (ai có quyền xem đều xem được).
+ *  - Bản chưa phát hành (cho_xac_nhan/cho_hoan_thien) mà người xem là người đăng ký
+ *    -> /preview (route cho phép người đăng ký đọc trước). Tránh iframe gãy 403.
+ *  - Còn lại -> /view (để hiện đúng thông báo không xem được). */
+var _preRelease = (d.status === 'cho_xac_nhan' || d.status === 'cho_hoan_thien');
+var _pdfPath = (_preRelease && it.isRegistrant) ? 'preview' : 'view';
+var pdfSrc = '/documents/' + d.version_id + '/' + _pdfPath;
+%>
 
 <div class="detail-header">
   <h1><%= d.doc_id %> — phiên bản <%= d.version_no %></h1>
@@ -10,8 +20,8 @@
   </p>
 
   <div class="detail-actions">
-    <a href="/documents/<%= d.version_id %>/view" target="_blank" rel="noopener" class="btn-link">Mở PDF toàn màn hình</a>
-    <a href="/documents/<%= d.version_id %>/download" class="btn-link">Tải PDF</a>
+    <a href="<%= pdfSrc %>" target="_blank" rel="noopener" class="btn-link">Mở PDF toàn màn hình</a>
+    <% if (!_preRelease) { %><a href="/documents/<%= d.version_id %>/download" class="btn-link">Tải PDF</a><% } %>
     <% if (d.status === 'hieu_luc' || d.status === 'da_ban_hanh') { %>
       <details class="print-box">
         <summary class="btn-diff">In bản sao có kiểm soát</summary>
@@ -80,8 +90,8 @@
 
 <!-- Nội dung chính: PDF gốc, toàn chiều rộng -->
 <section class="pdf-viewer">
-  <iframe class="pdf-frame" src="/documents/<%= d.version_id %>/view" title="Nội dung PDF tài liệu"></iframe>
-  <p class="pdf-fallback muted">Không hiển thị được PDF? <a href="/documents/<%= d.version_id %>/view" target="_blank" rel="noopener">Mở ở tab mới</a> hoặc <a href="/documents/<%= d.version_id %>/download">tải về</a>.</p>
+  <iframe class="pdf-frame" src="<%= pdfSrc %>" title="Nội dung PDF tài liệu"></iframe>
+  <p class="pdf-fallback muted">Không hiển thị được PDF? <a href="<%= pdfSrc %>" target="_blank" rel="noopener">Mở ở tab mới</a><% if (!_preRelease) { %> hoặc <a href="/documents/<%= d.version_id %>/download">tải về</a><% } %>.</p>
 </section>
 
 <details class="detail-panel">
