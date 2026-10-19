@@ -110,8 +110,8 @@ export async function listVisibleDocuments(
          OR (${preset} = 'new30' AND v.effective_date >= CURRENT_DATE - INTERVAL '30 days')
          OR (${preset} = 'expiring30' AND v.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days')
          OR (${preset} = 'overdue' AND v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE))
-       AND (${siteId}::uuid IS NULL OR EXISTS (SELECT 1 FROM document_site_rollout r WHERE r.version_id = v.version_id AND r.site_id = ${siteId}::uuid))
-       AND (${rolloutStatus}::varchar IS NULL OR EXISTS (SELECT 1 FROM document_site_rollout r WHERE r.version_id = v.version_id AND (${siteId}::uuid IS NULL OR r.site_id = ${siteId}::uuid) AND r.status = ${rolloutStatus}))
+       AND (${siteId}::uuid IS NULL OR EXISTS (SELECT 1 FROM document_receipt rc WHERE rc.version_id = v.version_id AND rc.site_id = ${siteId}::uuid))
+       AND (${rolloutStatus}::varchar IS NULL OR EXISTS (SELECT 1 FROM document_receipt rc WHERE rc.version_id = v.version_id AND (${siteId}::uuid IS NULL OR rc.site_id = ${siteId}::uuid) AND rc.status = CASE ${rolloutStatus} WHEN 'chua_ap_dung' THEN 'cho_phan_hoi' WHEN 'da_ap_dung' THEN 'chap_nhan' WHEN 'tam_hoan' THEN 'tu_choi' ELSE ${rolloutStatus} END))
      ORDER BY
        CASE WHEN ${sort} = 'ban_hanh_moi' THEN v.issued_date END DESC NULLS LAST,
        CASE WHEN ${sort} = 'sap_het_han' THEN v.expiry_date END ASC NULLS LAST,

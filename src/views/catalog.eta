@@ -55,12 +55,12 @@
       <%~ it.siteOptions %>
     </select>
   </label>
-  <label>Trạng thái site:
+  <label>Tình trạng tiếp nhận:
     <select name="rollout_status">
       <option value="">--</option>
-      <option value="chua_ap_dung" <%= ff.rollout_status==='chua_ap_dung'?'selected':'' %>>Chưa áp dụng</option>
-      <option value="da_ap_dung" <%= ff.rollout_status==='da_ap_dung'?'selected':'' %>>Đã áp dụng</option>
-      <option value="tam_hoan" <%= ff.rollout_status==='tam_hoan'?'selected':'' %>>Tạm hoãn</option>
+      <option value="chua_ap_dung" <%= ff.rollout_status==='chua_ap_dung'?'selected':'' %>>Chờ phản hồi</option>
+      <option value="da_ap_dung" <%= ff.rollout_status==='da_ap_dung'?'selected':'' %>>Đã tiếp nhận</option>
+      <option value="tam_hoan" <%= ff.rollout_status==='tam_hoan'?'selected':'' %>>Đã từ chối</option>
     </select>
   </label>
   <label>Sắp xếp:
