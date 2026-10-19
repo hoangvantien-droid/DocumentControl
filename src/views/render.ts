@@ -11,6 +11,13 @@ import {
   receiptStatusLabel, receiptRejectTypeLabel, issueReportStatusLabel, aggregateStatusLabel,
 } from './labels.js';
 
+/**
+ * Phiên bản tài nguyên tĩnh để chống cache (cache-busting). Tính MỘT lần lúc
+ * nạp module -> mỗi lần restart dịch vụ (mỗi lần deploy) sinh giá trị mới, buộc
+ * trình duyệt tải lại app.css. Tránh lỗi 'CSS cũ còn cache' (vd icon phóng to).
+ */
+const ASSET_VERSION = Date.now().toString(36);
+
 declare module 'fastify' {
   interface FastifyReply {
     view(template: string, data?: Record<string, unknown>): FastifyReply;
@@ -42,6 +49,7 @@ export function registerViewLayer(app: FastifyInstance, eta: Eta, basePath: stri
       user: req?.currentUser ?? null,
       nav: req?.nav ?? {},
       basePath,
+      assetVersion: ASSET_VERSION,
       // Nhãn tiếng Việt dùng chung cho mọi view (không in thẳng mã enum).
       docStatusLabel,
       scopeLabel,
