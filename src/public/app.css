@@ -1436,3 +1436,7 @@ button.danger { background: var(--status-error-fg); }
 html { scroll-behavior: smooth; }
 #add-user, #tao-goi { scroll-margin-top: calc(var(--topbar-h) + var(--sp-4)); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Nhãn + select chọn đơn vị cụ thể (BU/Site/Dept) trong rail lọc tìm kiếm. */
+.search-filters .filter-select-label { display: block; font-size: var(--fs-aux); color: var(--muted); margin-bottom: 8px; }
+.search-filters .filter-select-label select { margin-top: 3px; }

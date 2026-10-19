@@ -58,6 +58,28 @@ const has = (arr, v) => (arr||[]).indexOf(v) !== -1;
       </fieldset>
 
       <fieldset>
+        <legend>Đơn vị cụ thể</legend>
+        <label class="filter-select-label">Khối (BU)
+          <select name="bu_id">
+            <option value="">— Tất cả khối —</option>
+            <% var _bus = it.bus || []; _bus.forEach(function(b){ %><option value="<%= b.bu_id %>" <%= f.buId===b.bu_id ? "selected" : "" %>><%= b.bu_code %> — <%= b.name %></option><% }) %>
+          </select>
+        </label>
+        <label class="filter-select-label">Nhà máy/Site
+          <select name="site_id">
+            <option value="">— Tất cả site —</option>
+            <% var _sts = it.sites || []; _sts.forEach(function(st){ %><option value="<%= st.site_id %>" <%= f.siteId===st.site_id ? "selected" : "" %>><%= st.site_code %> — <%= st.name %></option><% }) %>
+          </select>
+        </label>
+        <label class="filter-select-label">Bộ phận
+          <select name="dept_id">
+            <option value="">— Tất cả bộ phận —</option>
+            <% var _dps = it.depts || []; _dps.forEach(function(d){ %><option value="<%= d.dept_id %>" <%= f.deptId===d.dept_id ? "selected" : "" %>><%= d.dept_code %> — <%= d.name %></option><% }) %>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
         <legend>Ngày hiệu lực</legend>
         <label class="filter-date">Từ <input type="date" name="eff_from" value="<%= f.effFrom || "" %>"></label>
         <label class="filter-date">Đến <input type="date" name="eff_to" value="<%= f.effTo || "" %>"></label>

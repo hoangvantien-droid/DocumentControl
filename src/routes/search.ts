@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { search, suggest, type SearchFilters } from '../domain/search.js';
+import { listBu, listSites, listDepartments } from '../domain/org.js';
 import { writeAudit } from '../lib/audit.js';
 
 interface SearchQuery {
@@ -21,6 +22,9 @@ interface SearchQuery {
   eff_to?: string;
   match_level?: string | string[];
   sort?: string;
+  bu_id?: string;
+  site_id?: string;
+  dept_id?: string;
 }
 
 function asArray(v?: string | string[]): string[] {
@@ -39,10 +43,28 @@ function parseState(query: SearchQuery) {
   const effFrom = (query.eff_from ?? '').trim();
   const effTo = (query.eff_to ?? '').trim();
   const sort = (query.sort ?? '').trim();
-  const filters: SearchFilters = { docTypes, matchLevels, origin, scopeLevel, effFrom, effTo, sort };
+  const buId = (query.bu_id ?? '').trim();
+  const siteId = (query.site_id ?? '').trim();
+  const deptId = (query.dept_id ?? '').trim();
+  const filters: SearchFilters = { docTypes, matchLevels, origin, scopeLevel, effFrom, effTo, sort, buId, siteId, deptId };
   // f: phản chiếu trạng thái về view (giữ trên URL, dựng chip).
-  const f = { q, includeHistorical, docTypes, matchLevels, origin, scopeLevel, effFrom, effTo, sort };
+  const f = { q, includeHistorical, docTypes, matchLevels, origin, scopeLevel, effFrom, effTo, sort, buId, siteId, deptId };
   return { q, includeHistorical, filters, f };
+}
+
+/** Nhãn người đọc cho BU/Site/Dept đang chọn (để dựng chip). Chỉ truy vấn khi
+ *  có ít nhất một đơn vị được chọn — tránh 3 truy vấn thừa khi không lọc. */
+async function resolveScopeNames(
+  sql: Sql,
+  f: { buId: string; siteId: string; deptId: string },
+): Promise<{ bu: string | null; site: string | null; dept: string | null }> {
+  const out = { bu: null as string | null, site: null as string | null, dept: null as string | null };
+  if (!f.buId && !f.siteId && !f.deptId) return out;
+  const [bus, sites, depts] = await Promise.all([listBu(sql), listSites(sql), listDepartments(sql)]);
+  if (f.buId) { const b = bus.find((x) => x.bu_id === f.buId); if (b) out.bu = b.bu_code + ' — ' + b.name; }
+  if (f.siteId) { const x = sites.find((y) => y.site_id === f.siteId); if (x) out.site = x.site_code + ' — ' + x.name; }
+  if (f.deptId) { const d = depts.find((y) => y.dept_id === f.deptId); if (d) out.dept = d.dept_code + ' — ' + d.name; }
+  return out;
 }
 
 export function registerSearchRoutes(app: FastifyInstance, sql: Sql): void {
@@ -60,7 +82,8 @@ export function registerSearchRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     const { q, includeHistorical, filters, f } = parseState(req.query);
     const hits = q ? await search(sql, user.user_id, q, includeHistorical, filters) : [];
-    return reply.view('search-results-list.eta', { q, hits, f });
+    const scopeNames = await resolveScopeNames(sql, f);
+    return reply.view('search-results-list.eta', { q, hits, f, scopeNames });
   });
 
   // Trang kết quả đầy đủ. Công tắc bản lịch sử mặc định tắt (REQ-K06).
@@ -68,7 +91,10 @@ export function registerSearchRoutes(app: FastifyInstance, sql: Sql): void {
     const user = requireUser(req, reply);
     if (!user) return reply;
     const { q, includeHistorical, filters, f } = parseState(req.query);
-    const hits = q ? await search(sql, user.user_id, q, includeHistorical, filters) : [];
+    const [hits, bus, sites, depts] = await Promise.all([
+      q ? search(sql, user.user_id, q, includeHistorical, filters) : Promise.resolve([]),
+      listBu(sql), listSites(sql), listDepartments(sql),
+    ]);
     if (q) {
       await sql.begin(async (tx) => {
         await writeAudit(tx as never, {
@@ -78,6 +104,14 @@ export function registerSearchRoutes(app: FastifyInstance, sql: Sql): void {
         });
       });
     }
-    return reply.view('search-results.eta', { q, hits, includeHistorical, f });
+    const b = bus.find((x) => x.bu_id === f.buId);
+    const st = sites.find((x) => x.site_id === f.siteId);
+    const dp = depts.find((x) => x.dept_id === f.deptId);
+    const scopeNames = {
+      bu: b ? b.bu_code + ' — ' + b.name : null,
+      site: st ? st.site_code + ' — ' + st.name : null,
+      dept: dp ? dp.dept_code + ' — ' + dp.name : null,
+    };
+    return reply.view('search-results.eta', { q, hits, includeHistorical, f, bus, sites, depts, scopeNames });
   });
 }

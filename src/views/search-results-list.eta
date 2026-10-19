@@ -18,6 +18,9 @@ function buildHref(omit, omitVal){
   if (f.effFrom && omit!=='eff_from') parts.push('eff_from=' + enc(f.effFrom));
   if (f.effTo && omit!=='eff_to') parts.push('eff_to=' + enc(f.effTo));
   if (f.sort && omit!=='sort') parts.push('sort=' + enc(f.sort));
+  if (f.buId && omit!=='bu_id') parts.push('bu_id=' + enc(f.buId));
+  if (f.siteId && omit!=='site_id') parts.push('site_id=' + enc(f.siteId));
+  if (f.deptId && omit!=='dept_id') parts.push('dept_id=' + enc(f.deptId));
   return '/search?' + parts.join('&');
 }
 const originLabel = { noi_bo: 'Nội bộ', ngoai_bo: 'Bên ngoài' };
@@ -30,6 +33,10 @@ if (f.scopeLevel) chips.push({ label: 'Phạm vi: ' + (scopeLabelMap[f.scopeLeve
 (f.matchLevels||[]).forEach(function(m){ chips.push({ label: 'Khớp: ' + (matchLabelMap[m]||m), href: buildHref('match_level', m) }); });
 if (f.effFrom) chips.push({ label: 'Hiệu lực từ ' + f.effFrom, href: buildHref('eff_from') });
 if (f.effTo) chips.push({ label: 'Hiệu lực đến ' + f.effTo, href: buildHref('eff_to') });
+const scopeNames = it.scopeNames || {};
+if (f.buId) chips.push({ label: 'Khối: ' + (scopeNames.bu || f.buId), href: buildHref('bu_id') });
+if (f.siteId) chips.push({ label: 'Site: ' + (scopeNames.site || f.siteId), href: buildHref('site_id') });
+if (f.deptId) chips.push({ label: 'Bộ phận: ' + (scopeNames.dept || f.deptId), href: buildHref('dept_id') });
 %>
 <% if (chips.length) { %>
 <div class="filter-chips">

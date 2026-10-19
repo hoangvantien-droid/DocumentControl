@@ -19,7 +19,9 @@ Log trên target: journalctl -u dcs -f   (hoặc --since "10 min ago").
     023 search: mở rộng fn_search/fn_search_limited thêm bộ lọc đa chiều
         + cột làm giàu kết quả — BẮT BUỘC cho trang tìm kiếm mới,
     024 search: sửa lỗi 42703 'si.origin' — JOIN documents lấy origin;
-        BẮT BUỘC chạy cùng/sau 023 để trang tìm kiếm không lỗi 500)
+        BẮT BUỘC chạy cùng/sau 023 để trang tìm kiếm không lỗi 500,
+    025 search: thêm lọc theo BU/Site/Dept cụ thể — thêm p_bu_id/p_site_id/
+        p_dept_id. BẮT BUỘC chạy để các dropdown đơn vị hoạt động)
 5. Seed dữ liệu thử (nếu môi trường mới):   node scripts/uat/seed_uat.js
 6. Khởi động lại dịch vụ:   sudo systemctl restart dcs
 7. Chạy test DB đầy đủ (tùy chọn):   npm test
@@ -263,6 +265,8 @@ Kiểm chứng trên target:
 5. Copy URL dán tab mới -> ra đúng kết quả đã lọc (share được).
 6. Bật 'Bao gồm bản lịch sử' -> bản hết hiệu lực hiện (nền xám, nhãn bản đang áp dụng).
 7. Kiểm AI/MCP search vẫn chạy (không truyền bộ lọc UI, hành vi như cũ).
+8. Lọc theo đơn vị cụ thể (025): chọn một Khối/Site/Bộ phận ở rail -> kết quả
+   lọc đúng tài liệu có scope khớp; chip hiện tên đơn vị (mã — tên), bấm ✕ gỡ.
 
 ---
 
