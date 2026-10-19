@@ -1,59 +1,90 @@
 <% layout('layout.eta', { title: 'Kết quả tìm — DCS', user: it.user }) %>
+<%
+/* Trang kết quả tìm kiếm — bộ lọc đa chiều, áp tức thì bằng htmx.
+ *   - Rail trái là MỘT form: mọi control có hx-get=/search/results, hx-trigger=change,
+ *     hx-target=#search-results, hx-push-url=true -> lọc tức thì + đồng bộ URL để share.
+ *   - Ô tìm q + nút Tìm cũng nằm trong form (submit = lọc lại).
+ *   - #search-results chứa chip + đếm + danh sách (search-results-list.eta), swap khi lọc.
+ */
+const f = it.f || {};
+const q = f.q || '';
+const docTypes = ['SOP', 'WI', 'Form', 'Policy', 'External'];
+const has = (arr, v) => (arr||[]).indexOf(v) !== -1;
+%>
 
 <h1>Kết quả tìm kiếm</h1>
 
-<%
-/* Trang kết quả tìm kiếm (Yêu cầu 16). Bố cục hai cột:
- *   - .search-filters: cột lọc trái 200px cố định (16.1). CHỈ TRÌNH BÀY —
- *     không nối logic lọc phía máy chủ (không đổi route/domain). Các ô tích
- *     là gợi ý trực quan; "Xoá lọc" quay về /search?q=<q>.
- *   - .search-results-col: danh sách kết quả chiếm phần còn lại (min-width:0
- *     để không tràn/cuộn ngang ở 1280px — Yêu cầu 2.3).
- * Thanh trên (.search-bar-full) giữ ô tìm + công tắc "Bao gồm bản lịch sử"
- * + số kết quả (16.2). Mỗi kết quả dùng result-card (16.3, Yêu cầu 9.2–9.5).
- */
-const q = it.q || '';
-const clearHref = '/search?q=' + encodeURIComponent(q);
-const docTypes = ['SOP', 'WI', 'Form', 'Policy', 'External'];
-%>
+<form method="get" action="/search" class="search-form"
+      hx-get="/search/results" hx-target="#search-results" hx-swap="innerHTML"
+      hx-trigger="change, submit, keyup changed delay:400ms from:input[name='q']" hx-push-url="true">
 
-<div class="search-layout">
-  <aside class="search-filters">
-    <!-- Công tắc gập bộ lọc trên mobile (thuần CSS). Ẩn trên desktop. -->
-    <input type="checkbox" id="filters-toggle" class="filters-toggle" aria-hidden="true">
-    <label for="filters-toggle" class="filters-summary"><h2>Bộ lọc</h2></label>
-    <fieldset>
-      <legend>Loại tài liệu</legend>
-      <% docTypes.forEach(function(t){ %>
-        <label class="filter-check"><input type="checkbox" name="doc_type" value="<%= t %>"> <%= t %></label>
-      <% }) %>
-    </fieldset>
-    <a class="filter-clear" href="<%= clearHref %>">Xoá lọc</a>
-  </aside>
-
-  <div class="search-results-col">
-    <form method="get" action="/search" class="search-bar-full">
-      <input type="search" name="q" value="<%= q %>" placeholder="Tìm số hiệu, tiêu đề, nội dung…" autofocus>
-      <label class="hist-toggle">
-        <input type="checkbox" name="historical" value="1" <%= it.includeHistorical ? 'checked' : '' %>>
-        Bao gồm bản lịch sử
-      </label>
-      <button type="submit">Tìm</button>
-    </form>
-
-    <% if (it.q && it.hits.length === 0) { %>
-      <%~ include('/components/empty-state.eta', {
-        reason: 'Không tìm thấy kết quả cho "' + q + '". Tài liệu có thể đã hết hiệu lực hoặc dùng từ khoá khác.',
-        actionLabel: 'Bật "Bao gồm bản lịch sử" và tìm lại',
-        actionHref: '/search?q=' + encodeURIComponent(q) + '&historical=1'
-      }) %>
-    <% } else { %>
-      <p class="result-count"><%= it.hits.length %> kết quả</p>
-      <ul class="result-list">
-        <% it.hits.forEach(function(h){ %>
-          <%~ include('/components/result-card.eta', { hit: h }) %>
-        <% }) %>
-      </ul>
-    <% } %>
+  <div class="search-bar-full">
+    <input type="search" name="q" value="<%= q %>" placeholder="Tìm số hiệu, tiêu đề, nội dung…" autofocus>
+    <label class="hist-toggle">
+      <input type="checkbox" name="historical" value="1" <%= f.includeHistorical ? "checked" : "" %>>
+      Bao gồm bản lịch sử
+    </label>
+    <button type="submit">Tìm</button>
   </div>
-</div>
+
+  <div class="search-layout">
+    <aside class="search-filters">
+      <input type="checkbox" id="filters-toggle" class="filters-toggle" aria-hidden="true">
+      <label for="filters-toggle" class="filters-summary"><h2>Bộ lọc</h2></label>
+
+      <fieldset>
+        <legend>Loại tài liệu</legend>
+        <% docTypes.forEach(function(t){ %>
+          <label class="filter-check"><input type="checkbox" name="doc_type" value="<%= t %>" <%= has(f.docTypes, t) ? "checked" : "" %>> <%= t %></label>
+        <% }) %>
+      </fieldset>
+
+      <fieldset>
+        <legend>Nguồn</legend>
+        <label class="filter-check"><input type="radio" name="origin" value="" <%= !f.origin ? "checked" : "" %>> Tất cả</label>
+        <label class="filter-check"><input type="radio" name="origin" value="noi_bo" <%= f.origin==="noi_bo" ? "checked" : "" %>> Nội bộ</label>
+        <label class="filter-check"><input type="radio" name="origin" value="ben_ngoai" <%= f.origin==="ben_ngoai" ? "checked" : "" %>> Bên ngoài</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Phạm vi</legend>
+        <select name="scope_level">
+          <option value="">Tất cả phạm vi</option>
+          <option value="group" <%= f.scopeLevel==="group" ? "selected" : "" %>>Toàn hệ thống</option>
+          <option value="bu" <%= f.scopeLevel==="bu" ? "selected" : "" %>>Khối (BU)</option>
+          <option value="site" <%= f.scopeLevel==="site" ? "selected" : "" %>>Nhà máy/Site</option>
+          <option value="dept" <%= f.scopeLevel==="dept" ? "selected" : "" %>>Bộ phận</option>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ngày hiệu lực</legend>
+        <label class="filter-date">Từ <input type="date" name="eff_from" value="<%= f.effFrom || "" %>"></label>
+        <label class="filter-date">Đến <input type="date" name="eff_to" value="<%= f.effTo || "" %>"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Cấp khớp</legend>
+        <label class="filter-check"><input type="checkbox" name="match_level" value="doc_id" <%= has(f.matchLevels, "doc_id") ? "checked" : "" %>> Số hiệu</label>
+        <label class="filter-check"><input type="checkbox" name="match_level" value="document" <%= has(f.matchLevels, "document") ? "checked" : "" %>> Tiêu đề</label>
+        <label class="filter-check"><input type="checkbox" name="match_level" value="section" <%= has(f.matchLevels, "section") ? "checked" : "" %>> Nội dung mục</label>
+        <label class="filter-check"><input type="checkbox" name="match_level" value="fulltext" <%= has(f.matchLevels, "fulltext") ? "checked" : "" %>> Toàn văn</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sắp xếp</legend>
+        <select name="sort">
+          <option value="" <%= !f.sort ? "selected" : "" %>>Liên quan nhất</option>
+          <option value="eff_new" <%= f.sort==="eff_new" ? "selected" : "" %>>Mới hiệu lực</option>
+          <option value="doc_id" <%= f.sort==="doc_id" ? "selected" : "" %>>Số hiệu</option>
+        </select>
+      </fieldset>
+
+      <a class="filter-clear" href="/search?q=<%= encodeURIComponent(q) %>">Xoá tất cả lọc</a>
+    </aside>
+
+    <div class="search-results-col" id="search-results">
+      <%~ include('/search-results-list.eta', { q: q, hits: it.hits, f: f }) %>
+    </div>
+  </div>
+</form>

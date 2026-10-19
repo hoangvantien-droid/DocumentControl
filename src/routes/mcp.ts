@@ -246,7 +246,8 @@ export function registerSearchTool(
     userId: string,
     q: string,
     includeHistorical: boolean,
-    limit: number,
+    filters?: import('../domain/search.js').SearchFilters,
+    limit?: number,
   ) => Promise<SearchHit[]> = defaultSearch,
 ): void {
   const inputSchema = {
@@ -277,6 +278,7 @@ export function registerSearchTool(
         userId, // 3.1: user_id của Resolved_User
         q,
         include_historical ?? false, // 3.3/3.4: cờ nguyên vẹn, mặc định false
+        {}, // AI search không dùng bộ lọc đa chiều của UI
         clampLimit(limit), // 6.1/6.2
       );
       const results = mapSearchHits(hits); // 3.2/3.5/6.3: ánh xạ, không lọc lại
