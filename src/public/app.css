@@ -443,6 +443,9 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .check-label.admin { font-weight: 600; }
 .check-label.locked { opacity: .6; }
 .btn-diff { margin-left: 8px; padding: 4px 10px; border: 1px solid var(--brand); background: #fff; color: var(--brand); border-radius: 6px; cursor: pointer; }
+/* Nút 'Báo bất thường' — cùng dáng .btn-diff nhưng màu cảnh báo (amber) để phân biệt với nút In (xanh brand). */
+.btn-report { display: inline-block; margin-left: 8px; padding: 4px 10px; border: 1px solid var(--status-warning-fg); background: var(--status-warning-bg); color: #9a5a1e; border-radius: 6px; cursor: pointer; font: inherit; }
+.btn-report:hover { background: var(--status-warning-fg); color: #fff; }
 .reject-form { margin-top: 16px; display: flex; gap: 8px; }
 .reject-form input { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; }
 .doc-title { color: var(--muted); font-size: 15px; margin-top: -8px; }
@@ -1157,6 +1160,7 @@ button.danger { background: var(--status-error-fg); }
   .detail-footer { grid-template-columns: 1fr; }
   .detail-actions { flex-direction: column; align-items: stretch; }
   .detail-actions .btn-diff,
+  .detail-actions .btn-report,
   .detail-actions button { width: 100%; min-height: 44px; }
   /* Nút "Xác nhận đã đọc" full-width dễ chạm. Form xác nhận là anh em
      cấp cao, có thể bị banner trạng thái chèn giữa nên không dùng bộ chọn
