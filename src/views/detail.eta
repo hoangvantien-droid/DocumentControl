@@ -70,7 +70,7 @@
   <div><dt>Phạm vi</dt><dd><%= it.scopeLabel(d.scope_level) %></dd></div>
   <div><dt>Ngày áp dụng dự kiến</dt><dd><%= d.issued_date || '' %></dd></div>
   <div><dt>Ngày có hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
-  <div><dt>Rà soát tới</dt><dd><%= d.next_review_date || '' %></dd></div>
+  <div><dt>Xem xét tới</dt><dd><%= d.next_review_date || '' %></dd></div>
 </dl>
 
 <!-- Nội dung chính: PDF gốc, toàn chiều rộng -->
