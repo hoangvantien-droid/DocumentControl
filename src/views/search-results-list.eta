@@ -1,0 +1,57 @@
+<%
+/* search-results-list.eta — mảnh kết quả dùng chung cho trang đầy đủ và lọc htmx.
+ * Render: chip bộ lọc đang áp dụng (gỡ từng chiều) + số kết quả + danh sách thẻ.
+ * Props: q (chuỗi tìm), hits (mảng), f (trạng thái lọc từ route).
+ */
+const f = it.f || {};
+const q = it.q || '';
+// Dựng href gỡ một chiều lọc: sao chép f, bỏ khoá tương ứng, giữ q + các chiều còn lại.
+function enc(v){ return encodeURIComponent(v); }
+function buildHref(omit, omitVal){
+  const parts = [];
+  if (q) parts.push('q=' + enc(q));
+  if (f.includeHistorical) parts.push('historical=1');
+  (f.docTypes||[]).forEach(function(t){ if (!(omit==='doc_type' && t===omitVal)) parts.push('doc_type=' + enc(t)); });
+  (f.matchLevels||[]).forEach(function(m){ if (!(omit==='match_level' && m===omitVal)) parts.push('match_level=' + enc(m)); });
+  if (f.origin && omit!=='origin') parts.push('origin=' + enc(f.origin));
+  if (f.scopeLevel && omit!=='scope_level') parts.push('scope_level=' + enc(f.scopeLevel));
+  if (f.effFrom && omit!=='eff_from') parts.push('eff_from=' + enc(f.effFrom));
+  if (f.effTo && omit!=='eff_to') parts.push('eff_to=' + enc(f.effTo));
+  if (f.sort && omit!=='sort') parts.push('sort=' + enc(f.sort));
+  return '/search?' + parts.join('&');
+}
+const originLabel = { noi_bo: 'Nội bộ', ben_ngoai: 'Bên ngoài' };
+const scopeLabelMap = { group: 'Toàn hệ thống', bu: 'Khối (BU)', site: 'Nhà máy/Site', dept: 'Bộ phận' };
+const matchLabelMap = { doc_id: 'Số hiệu', document: 'Tiêu đề', section: 'Nội dung mục', fulltext: 'Toàn văn' };
+const chips = [];
+(f.docTypes||[]).forEach(function(t){ chips.push({ label: 'Loại: ' + t, href: buildHref('doc_type', t) }); });
+if (f.origin) chips.push({ label: 'Nguồn: ' + (originLabel[f.origin]||f.origin), href: buildHref('origin') });
+if (f.scopeLevel) chips.push({ label: 'Phạm vi: ' + (scopeLabelMap[f.scopeLevel]||f.scopeLevel), href: buildHref('scope_level') });
+(f.matchLevels||[]).forEach(function(m){ chips.push({ label: 'Khớp: ' + (matchLabelMap[m]||m), href: buildHref('match_level', m) }); });
+if (f.effFrom) chips.push({ label: 'Hiệu lực từ ' + f.effFrom, href: buildHref('eff_from') });
+if (f.effTo) chips.push({ label: 'Hiệu lực đến ' + f.effTo, href: buildHref('eff_to') });
+%>
+<% if (chips.length) { %>
+<div class="filter-chips">
+  <% chips.forEach(function(c){ %>
+    <a class="filter-chip" href="<%= c.href %>"><%= c.label %> <span class="filter-chip__x" aria-hidden="true">✕</span></a>
+  <% }) %>
+</div>
+<% } %>
+
+<% if (q && it.hits.length === 0) { %>
+  <%~ include('/components/empty-state.eta', {
+    reason: 'Không tìm thấy kết quả cho "' + q + '" với bộ lọc hiện tại. Thử bỏ bớt lọc hoặc bật "Bao gồm bản lịch sử".',
+    actionLabel: 'Bỏ lọc, giữ từ khoá',
+    actionHref: '/search?q=' + encodeURIComponent(q)
+  }) %>
+<% } else if (!q) { %>
+  <p class="result-count muted">Nhập từ khoá để tìm số hiệu, tiêu đề hoặc nội dung tài liệu.</p>
+<% } else { %>
+  <p class="result-count"><%= it.hits.length %> kết quả<% if (chips.length) { %> · đã lọc<% } %></p>
+  <ul class="result-list">
+    <% it.hits.forEach(function(h){ %>
+      <%~ include('/components/result-card.eta', { hit: h }) %>
+    <% }) %>
+  </ul>
+<% } %>

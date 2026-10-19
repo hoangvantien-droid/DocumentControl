@@ -882,6 +882,16 @@ button.danger { background: var(--status-error-fg); }
 .search-filters .filter-check { display: block; font-size: var(--fs-aux); padding: 2px 0; }
 .search-filters .filter-clear { font-size: var(--fs-aux); }
 .search-results-col { min-width: 0; }  /* min-width:0 để không tràn ở 1280px */
+/* Bộ lọc tìm kiếm: select/date trong rail rộng hết cột; chip lọc đang áp dụng. */
+.search-filters select, .search-filters input[type=date] { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: var(--fs-aux); background: #fff; }
+.search-filters .filter-date { display: block; font-size: var(--fs-aux); color: var(--muted); margin-bottom: 6px; }
+.search-filters .filter-date input { margin-top: 2px; }
+.search-filters .filter-clear { display: inline-block; margin-top: 4px; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; font-size: 12px; border-radius: 999px; border: 1px solid var(--masan-100); background: var(--masan-50); color: var(--masan-900); text-decoration: none; }
+.filter-chip:hover { background: var(--masan-100); text-decoration: none; }
+.filter-chip__x { font-size: 11px; color: var(--muted); }
+.filter-chip:hover .filter-chip__x { color: var(--danger); }
 
 /* ---- Chi tiết: đầu trang gom + hàng nút + cuối trang (Yêu cầu 17.2, 17.4) ---- */
 .detail-header { margin-bottom: var(--sp-4); }

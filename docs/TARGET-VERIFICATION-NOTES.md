@@ -15,7 +15,9 @@ Log trên target: journalctl -u dcs -f   (hoặc --since "10 min ago").
 3. Build:   npm run build
 4. Chạy migration:   npm run migrate
    (áp 017 receipt model, 018 vai DC_SITE_DOC_CONTROL, 019 audit events,
-    020 fn_search/v_current_documents coi da_ban_hanh là hiện hành)
+    020 fn_search/v_current_documents coi da_ban_hanh là hiện hành,
+    023 search: mở rộng fn_search/fn_search_limited thêm bộ lọc đa chiều
+        + cột làm giàu kết quả — BẮT BUỘC cho trang tìm kiếm mới)
 5. Seed dữ liệu thử (nếu môi trường mới):   node scripts/uat/seed_uat.js
 6. Khởi động lại dịch vụ:   sudo systemctl restart dcs
 7. Chạy test DB đầy đủ (tùy chọn):   npm test
@@ -231,3 +233,31 @@ Kiểm tay trên target:
 2. Chấp nhận/từ chối thành công -> điều hướng về /site-receipts.
 3. Bấm In bản chưa hiệu lực -> trang thông báo có layout (không text trần).
 4. Lỗi hệ thống (không phải BusinessError) vẫn trả 500 (không bị che).
+
+---
+
+## 12. Trang tìm kiếm — bộ lọc đa chiều + thẻ kết quả giàu thông tin
+
+Trạng thái: ĐÃ CODE, CHỜ KIỂM CHỨNG TRÊN TARGET (cần migration 023 + Postgres).
+
+Thay đổi:
+- Migration 023: fn_search / fn_search_limited thêm tham số lọc (doc_types[],
+  origin, scope_level, eff_from, eff_to, match_levels[], sort) và trả thêm cột
+  scope_level, effective_date, next_review_date, owner_department_id,
+  department_name, origin. Giữ 4 tham số đầu nên lời gọi cũ (MCP/suggest) không gãy.
+- Bộ lọc rail trái giờ HOẠT ĐỘNG THẬT (trước chỉ trang trí): Loại tài liệu,
+  Nguồn, Phạm vi, Ngày hiệu lực (từ/đến), Cấp khớp, Sắp xếp. Áp tức thì qua htmx
+  (GET /search/results, swap #search-results, hx-push-url giữ URL chia sẻ được).
+- Chip bộ lọc đang áp dụng phía trên danh sách, bấm ✕ gỡ từng chiều; 'Xoá tất cả
+  lọc' giữ lại từ khoá. Đếm kết quả kèm nhãn 'đã lọc'.
+- Thẻ kết quả: dòng 2 thêm Hiệu lực + Bộ phận + nhãn cấp khớp tiếng Việt
+  (khớp số hiệu / tiêu đề / nội dung mục / toàn văn). Bản lịch sử nền xám.
+
+Kiểm chứng trên target:
+1. npm run migrate (áp 023) rồi tìm một từ khoá có nhiều kết quả.
+2. Tick 'Loại: SOP' -> danh sách lọc ngay, không rời trang; URL thêm doc_type=SOP.
+3. Đặt khoảng Ngày hiệu lực, chọn Phạm vi, đổi Sắp xếp -> kết quả đổi đúng.
+4. Bấm chip ✕ -> gỡ đúng một chiều, giữ các chiều còn lại.
+5. Copy URL dán tab mới -> ra đúng kết quả đã lọc (share được).
+6. Bật 'Bao gồm bản lịch sử' -> bản hết hiệu lực hiện (nền xám, nhãn bản đang áp dụng).
+7. Kiểm AI/MCP search vẫn chạy (không truyền bộ lọc UI, hành vi như cũ).
