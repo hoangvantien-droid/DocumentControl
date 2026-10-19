@@ -1,7 +1,11 @@
 <% layout('layout.eta', { title: 'Phản hồi tài liệu — DCS', user: it.user }) %>
 <% var r = it.r; var d = it.detail || {}; %>
 
-<h1>Phản hồi tài liệu cho site <%= r.site_code %></h1>
+<div class="detail-header">
+  <h1>Phản hồi tài liệu cho site <%= r.site_code %></h1>
+  <p class="doc-title"><%= r.doc_id %> · phiên bản <%= r.version_no %> · <%= r.title %></p>
+</div>
+
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <% if (it.selfRegistered) { %>
@@ -14,42 +18,51 @@
 <div class="alert-banner alert-banner--info"><strong>Có site báo sai đăng ký:</strong> Một site khác báo sai thông tin đăng ký (không phải nội dung).</div>
 <% } %>
 
-<section class="detail-head">
-  <dl class="detail-meta">
-    <div><dt>Số hiệu</dt><dd><%= r.doc_id %></dd></div>
-    <div><dt>Phiên bản</dt><dd><%= r.version_no %></dd></div>
-    <div><dt>Tiêu đề</dt><dd><%= r.title %></dd></div>
-    <div><dt>Ngày hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
-    <div><dt>Site nhận</dt><dd><%= r.site_code %> — <%= r.site_name %></dd></div>
-  </dl>
-  <p><a href="/documents/<%= r.version_id %>/download" class="btn-link" target="_blank" rel="noopener">Mở tệp PDF để kiểm tra nội dung</a></p>
-</section>
+<div class="confirm-layout">
+  <section class="confirm-file">
+    <p class="confirm-file__title">Nội dung tài liệu — đọc kỹ trước khi phản hồi</p>
+    <object class="confirm-file__embed" data="/documents/<%= r.version_id %>/view" type="application/pdf">
+      <div class="confirm-file__placeholder">Trình duyệt không hiển thị PDF trực tiếp. Dùng liên kết bên dưới để mở hoặc tải về.</div>
+    </object>
+    <p class="confirm-file__link">
+      <a href="/documents/<%= r.version_id %>/view" class="btn-link" target="_blank" rel="noopener">Mở PDF toàn màn hình</a>
+      · <a href="/documents/<%= r.version_id %>/download" class="btn-link">Tải PDF</a>
+    </p>
 
-<% if (it.sections && it.sections.length) { %>
-<section class="detail-sections">
-  <h2>Mục bóc tách</h2>
-  <ul class="check-list">
-    <% it.sections.forEach(function(s){ %><li><%= s.section_code %> — <%= s.section_title %></li><% }) %>
-  </ul>
-</section>
-<% } %>
+    <% if (it.sections && it.sections.length) { %>
+    <details class="detail-panel" style="margin-top:14px">
+      <summary>Mục bóc tách (<%= it.sections.length %>)</summary>
+      <ul class="check-list">
+        <% it.sections.forEach(function(s){ %><li><%= s.section_code %> — <%= s.section_title %></li><% }) %>
+      </ul>
+    </details>
+    <% } %>
+  </section>
 
-<div class="respond-actions">
-  <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" class="inline-form" hx-post="/site-receipts/<%= r.receipt_id %>/accept" hx-target="#toast-zone" hx-swap="beforeend">
-    <button type="submit" class="primary">Xác nhận tiếp nhận</button>
-  </form>
+  <aside class="confirm-panel">
+    <dl class="detail-meta">
+      <div><dt>Số hiệu</dt><dd><%= r.doc_id %></dd></div>
+      <div><dt>Phiên bản</dt><dd><%= r.version_no %></dd></div>
+      <div><dt>Ngày hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
+      <div><dt>Site nhận</dt><dd><%= r.site_code %> — <%= r.site_name %></dd></div>
+    </dl>
 
-  <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form" hx-post="/site-receipts/<%= r.receipt_id %>/reject" hx-target="#toast-zone" hx-swap="beforeend">
-    <h2>Từ chối — báo sai sót</h2>
-    <label>Loại sai sót
-      <select name="reject_type" required>
-        <option value="sai_dang_ky">Sai thông tin đăng ký (ngày, số hiệu… — chỉ cần sửa, cập nhật)</option>
-        <option value="sai_noi_dung">Sai nội dung tài liệu (cần thu hồi, ban hành lại)</option>
-      </select>
-    </label>
-    <label>Mô tả sai sót <span class="req">*</span>
-      <textarea name="note" rows="3" required placeholder="Nêu rõ sai sót để người đăng ký khắc phục"></textarea>
-    </label>
-    <button type="submit" class="btn-diff">Từ chối tiếp nhận</button>
-  </form>
+    <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" hx-post="/site-receipts/<%= r.receipt_id %>/accept" hx-target="#toast-zone" hx-swap="beforeend">
+      <button type="submit" class="primary">Xác nhận tiếp nhận</button>
+    </form>
+
+    <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form" hx-post="/site-receipts/<%= r.receipt_id %>/reject" hx-target="#toast-zone" hx-swap="beforeend">
+      <h2>Từ chối — báo sai sót</h2>
+      <label>Loại sai sót
+        <select name="reject_type" required>
+          <option value="sai_dang_ky">Sai thông tin đăng ký (ngày, số hiệu… — chỉ cần sửa, cập nhật)</option>
+          <option value="sai_noi_dung">Sai nội dung tài liệu (cần thu hồi, ban hành lại)</option>
+        </select>
+      </label>
+      <label>Mô tả sai sót <span class="req">*</span>
+        <textarea name="note" rows="3" required placeholder="Nêu rõ sai sót để người đăng ký khắc phục"></textarea>
+      </label>
+      <button type="submit" class="btn-diff">Từ chối tiếp nhận</button>
+    </form>
+  </aside>
 </div>
