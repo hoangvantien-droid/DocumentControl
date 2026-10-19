@@ -1,7 +1,11 @@
 <% layout('layout.eta', { title: 'Ghi vết — DCS', user: it.user }) %>
 
-<h1>Ghi vết (append-only)</h1>
-<p class="muted">Bản ghi vết không sửa, không xoá — kể cả Super Admin. Trả lời "ai đã làm gì, khi nào".</p>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Ghi vết (append-only)</h1>
+    <p class="page-header__desc">Bản ghi vết không sửa, không xoá — kể cả Super Admin. Trả lời "ai đã làm gì, khi nào".</p>
+  </div>
+</div>
 
 <form method="get" action="/audit" class="inline-form">
   <input name="object_id" placeholder="Mã đối tượng (version_id, doc_id…)" value="<%= it.filter.object_id || '' %>">

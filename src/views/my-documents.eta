@@ -1,7 +1,16 @@
 <% layout('layout.eta', { title: 'Tài liệu của tôi — DCS', user: it.user }) %>
 
-<h1>Tài liệu của tôi</h1>
-<% if (it.nav && it.nav.canRegister) { %><p><a href="/register" class="btn-link">+ Đăng ký tài liệu mới</a></p><% } %>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Tài liệu của tôi</h1>
+    <p class="page-header__desc">Tài liệu bạn đăng ký. Theo dõi trạng thái tiếp nhận của site và tình trạng ban hành.</p>
+  </div>
+  <div class="toolbar">
+    <% if (it.nav && it.nav.canRegister) { %>
+      <a href="/register" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Đăng ký tài liệu</a>
+    <% } %>
+  </div>
+</div>
 
 <table class="data-table responsive-table">
   <thead><tr><th>Số hiệu tài liệu</th><th>Phiên bản</th><th>Tiêu đề</th><th>Trạng thái</th><th>Site xác nhận</th><th>Tình trạng ban hành</th><th>Thao tác</th></tr></thead>

@@ -4,7 +4,12 @@
   Người dùng khai tay chỉ dùng khi L1 chưa vận hành. Khi L1 lên, người dùng đồng bộ tự động.
 </div>
 
-<h1>Quản trị người dùng</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Quản trị người dùng</h1>
+    <p class="page-header__desc">Tài khoản và gán bộ phận. Khai tay tạm thời khi L1 chưa vận hành.</p>
+  </div>
+</div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <table class="data-table responsive-table">

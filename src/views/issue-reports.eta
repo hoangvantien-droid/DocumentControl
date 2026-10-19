@@ -1,6 +1,10 @@
 <% layout('layout.eta', { title: 'Báo bất thường — DCS', user: it.user }) %>
 
-<h1>Báo bất thường từ người đọc</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Báo bất thường từ người đọc</h1>
+  </div>
+</div>
 
 <% if (it.notControl) { %>
   <div class="alert-banner alert-banner--info"><strong>Thông tin:</strong> Bạn chưa được gán vai Kiểm soát tài liệu cho site nào.</div>

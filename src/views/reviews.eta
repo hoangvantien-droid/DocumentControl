@@ -1,6 +1,11 @@
 <% layout('layout.eta', { title: 'Xem xét định kỳ — DCS', user: it.user }) %>
 
-<h1>Xem xét định kỳ</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Xem xét định kỳ</h1>
+    <p class="page-header__desc">Tài liệu tới hạn xem xét theo bộ phận sở hữu. Kết luận giữ nguyên, sửa đổi hoặc thu hồi.</p>
+  </div>
+</div>
 
 <h2>Đang xem xét (<%= it.active.length %>)</h2>
 <table class="data-table responsive-table">

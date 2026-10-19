@@ -276,6 +276,11 @@ KHÔNG đổi route/nghiệp vụ. Làm theo 4 lớp:
 - Lớp 2 — Page header + toolbar nút hành động theo mục đích (.btn-action--*)
   + component /components/action-icon.eta. Áp mẫu cho Danh mục (nút 'Đăng ký
   tài liệu' cho Author).
+  * Roll out page-header ra các trang danh sách/làm việc: home, my-documents,
+    reviews, site-receipts, issue-reports, packages, audit, functional-groups,
+    admin/org, admin/users, admin/roles. (detail.eta giữ .detail-header riêng;
+    bỏ qua trang form/kết quả: register, edit-metadata, print-result, error,
+    compare, verify, login.)
 - Lớp 3 — Bảng .data-table: header DÍNH khi cuộn (top = chiều cao topbar);
   helper .cell-status (pill + mốc thời gian). Bỏ overflow:hidden để sticky chạy.
 - Lớp 4 — Thanh lọc Danh mục thành thẻ .filter-bar (lưới trường tự co + hàng
