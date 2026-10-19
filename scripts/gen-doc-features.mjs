@@ -6,88 +6,84 @@
 const children = [];
 const add = (...x) => children.push(...x);
 
-add(...COVER("Mo ta Phan quyen & Tinh nang", "Tai lieu tom tat - ban dung noi bo"));
-add(new Paragraph({ spacing: { before: 200 }, children: [R("Phien ban mo hinh: ban hanh thang theo site (receipt). Cap nhat theo code hien tai.", { italics: true, color: MUTED, size: 20 })] }));
+add(...COVER("Mô tả Phân quyền & Tính năng", "Tài liệu tóm tắt — bản dùng nội bộ"));
+add(new Paragraph({ spacing: { before: 200 }, children: [R("Phiên bản mô hình: ban hành thẳng theo site (receipt). Cập nhật theo code hiện tại.", { italics: true, color: MUTED, size: 20 })] }));
 add(new Paragraph({ children: [new PageBreak()] }));
 
-// 1. Tong quan
-add(H1("1. DCS la gi"));
-add(P("DCS quan ly vong doi tai lieu va phan phoi co kiem soat toi cac nha may/site. Nguoi bien soan ban hanh tai lieu thang toi cac site; moi site xac nhan tiep nhan hoac tu choi khi phat hien sai sot. He thong luu ghi vet khong sua, ho tro tim kiem toan van, in ban sao co kiem soat gan ma QR, va xem xet dinh ky."));
+add(H1("1. DCS là gì"));
+add(P("DCS quản lý vòng đời tài liệu và phân phối có kiểm soát tới các nhà máy/site. Người biên soạn ban hành tài liệu thẳng tới các site; mỗi site xác nhận tiếp nhận hoặc từ chối khi phát hiện sai sót. Hệ thống lưu ghi vết không sửa, hỗ trợ tìm kiếm toàn văn, in bản sao có kiểm soát gắn mã QR, và xem xét định kỳ."));
 
-// 2. Bon vai tro
-add(H1("2. Bon vai tro & pham vi quyen"));
-add(P("He thong co 4 vai. Admin dung NGOAI luong tai lieu (chi quan tri + du lieu goc); ba vai con lai tham gia luong nghiep vu."));
+add(H1("2. Bốn vai trò & phạm vi quyền"));
+add(P("Hệ thống có 4 vai. Admin đứng NGOÀI luồng tài liệu (chỉ quản trị + dữ liệu gốc); ba vai còn lại tham gia luồng nghiệp vụ."));
 add(TABLE(
-  ["Vai tro", "Lam duoc gi", "Pham vi"],
+  ["Vai trò", "Làm được gì", "Phạm vi"],
   [
-    ["Quan tri he thong\n(DC_ADMIN)", "Quan ly to chuc (BU/Site/Phong ban), nguoi dung, vai tro; xem ghi vet. Khong dang ky/duyet tai lieu.", "Toan he thong (quan tri)"],
-    ["Bien soan tai lieu\n(DC_AUTHOR)", "Dang ky & ban hanh tai lieu; sua/thu hoi/xoa ban cua minh theo dieu kien; ket luan xem xet dinh ky (bo phan so huu); tao goi ban hanh.", "Tai lieu minh dang ky"],
-    ["Kiem soat tai lieu site\n(DC_SITE_DOC_CONTROL)", "Xac nhan tiep nhan / tu choi tai lieu toi site minh phu trach; tham dinh bao bat thuong cua nguoi doc.", "Theo site duoc gan"],
-    ["Nguoi doc\n(DC_READER)", "Tra cuu & doc tai lieu hien hanh trong pham vi; bao bat thuong; xac nhan da doc.", "Chi-xem theo pham vi"],
+    ["Quản trị hệ thống\n(DC_ADMIN)", "Quản lý tổ chức (BU/Site/Phòng ban), người dùng, vai trò; xem ghi vết. Không đăng ký/duyệt tài liệu.", "Toàn hệ thống (quản trị)"],
+    ["Biên soạn tài liệu\n(DC_AUTHOR)", "Đăng ký & ban hành tài liệu; sửa/thu hồi/xóa bản của mình theo điều kiện; kết luận xem xét định kỳ (bộ phận sở hữu); tạo gói ban hành.", "Tài liệu mình đăng ký"],
+    ["Kiểm soát tài liệu site\n(DC_SITE_DOC_CONTROL)", "Xác nhận tiếp nhận / từ chối tài liệu tới site mình phụ trách; thẩm định báo bất thường của người đọc.", "Theo site được gán"],
+    ["Người đọc\n(DC_READER)", "Tra cứu & đọc tài liệu hiện hành trong phạm vi; báo bất thường; xác nhận đã đọc.", "Chỉ-xem theo phạm vi"],
   ],
   [22, 56, 22],
 ));
-add(new Paragraph({ spacing: { before: 100 }, children: [R("Menu an han muc khong co quyen; chan ca o route (go URL truc tiep van bi tu choi).", { italics: true, color: MUTED, size: 20 })] }));
+add(new Paragraph({ spacing: { before: 100 }, children: [R("Menu ẩn hẳn mục không có quyền; chặn cả ở route (gõ URL trực tiếp vẫn bị từ chối).", { italics: true, color: MUTED, size: 20 })] }));
 
-// 3. Tinh nang chinh
 add(new Paragraph({ children: [new PageBreak()] }));
-add(H1("3. Tinh nang chinh theo vai"));
+add(H1("3. Tính năng chính theo vai"));
 
-add(H2("Bien soan (Author)"));
+add(H2("Biên soạn (Author)"));
 [
-  "Dang ky tai lieu: tai len PDF, khai so hieu/loai/pham vi/ngay hieu luc, chon site nhan -> ban hanh thang (trang thai Da ban hanh).",
-  "Tai lieu cua toi: danh sach tai lieu minh dang ky kem trang thai tong hop tiep nhan theo site.",
-  "Tinh trang ban hanh: ma tran phan hoi tung site (cho/chap nhan/tu choi); sua metadata, thu hoi, xoa theo dieu kien.",
-  "Xem xet dinh ky: ket luan Giu nguyen / Can sua / Huy bo cho tai lieu bo phan minh so huu.",
-  "Goi ban hanh: gom nhieu tai lieu ban hanh dong loat.",
+  "Đăng ký tài liệu: tải lên PDF, khai số hiệu/loại/phạm vi/ngày hiệu lực, chọn site nhận → ban hành thẳng (trạng thái Đã ban hành).",
+  "Tài liệu của tôi: danh sách tài liệu mình đăng ký kèm trạng thái tổng hợp tiếp nhận theo site.",
+  "Tình trạng ban hành: ma trận phản hồi từng site (chờ/chấp nhận/từ chối); sửa metadata, thu hồi, xóa theo điều kiện.",
+  "Xem xét định kỳ: kết luận Giữ nguyên / Cần sửa / Hủy bỏ cho tài liệu bộ phận mình sở hữu.",
+  "Gói ban hành: gom nhiều tài liệu ban hành đồng loạt.",
 ].forEach(t => add(LI(t)));
 
-add(H2("Kiem soat tai lieu site (DC Site)"));
+add(H2("Kiểm soát tài liệu site (DC Site)"));
 [
-  "Cho site phan hoi: hang cho cac tai lieu ban hanh toi site minh; xem PDF inline roi Xac nhan tiep nhan hoac Tu choi (chon loai sai sot + ly do).",
-  "Bao bat thuong (site): tham dinh report cua nguoi doc -> chuyen thanh tu choi receipt hoac bac bo.",
+  "Chờ site phản hồi: hàng chờ các tài liệu ban hành tới site mình; xem PDF trực tiếp trong trang rồi Xác nhận tiếp nhận hoặc Từ chối (chọn loại sai sót + lý do).",
+  "Báo bất thường (site): thẩm định report của người đọc → chuyển thành từ chối receipt hoặc bác bỏ.",
 ].forEach(t => add(LI(t)));
 
-add(H2("Nguoi doc (Reader)"));
+add(H2("Người đọc (Reader)"));
 [
-  "Danh muc & tim kiem: tra cuu tai lieu hien hanh theo pham vi; loc da chieu (loai, nguon, pham vi, BU/Site/Phong ban, ngay hieu luc, cap khop).",
-  "Xem chi tiet: PDF hien thi truc tiep trong trang; xac nhan da doc; bao bat thuong neu phat hien sai.",
+  "Danh mục & tìm kiếm: tra cứu tài liệu hiện hành theo phạm vi; lọc đa chiều (loại, nguồn, phạm vi, BU/Site/Phòng ban, ngày hiệu lực, cấp khớp).",
+  "Xem chi tiết: PDF hiển thị trực tiếp trong trang; xác nhận đã đọc; báo bất thường nếu phát hiện sai.",
 ].forEach(t => add(LI(t)));
 
-add(H2("Dung chung"));
+add(H2("Dùng chung"));
 [
-  "Tim kiem toan van (chay doc lap voi lop AI); goi y nhanh tren thanh dieu huong.",
-  "In ban sao co kiem soat: gan ma QR theo site de tra cuu nguon goc; thu hoi ban in.",
-  "Ghi vet (append-only): ai lam gi, khi nao - khong sua, khong xoa.",
+  "Tìm kiếm toàn văn (chạy độc lập với lớp AI); gợi ý nhanh trên thanh điều hướng.",
+  "In bản sao có kiểm soát: gắn mã QR theo site để tra cứu nguồn gốc; thu hồi bản in.",
+  "Ghi vết (chỉ ghi thêm): ai làm gì, khi nào — không sửa, không xóa.",
 ].forEach(t => add(LI(t)));
 
-// 4. Vong doi
 add(new Paragraph({ children: [new PageBreak()] }));
-add(H1("4. Vong doi tai lieu & trang thai"));
+add(H1("4. Vòng đời tài liệu & trạng thái"));
 add(TABLE(
-  ["Trang thai", "Y nghia"],
+  ["Trạng thái", "Ý nghĩa"],
   [
-    ["Cho hoan thien", "Ban nhap, chua ban hanh."],
-    ["Da ban hanh", "Dang hien hanh; da gui toi site de tiep nhan."],
-    ["Da thu hoi", "Author thu hoi - khong con hieu luc."],
-    ["Het hieu luc", "Bi phien ban moi thay the."],
+    ["Chờ hoàn thiện", "Bản nháp, chưa ban hành."],
+    ["Đã ban hành", "Đang hiện hành; đã gửi tới site để tiếp nhận."],
+    ["Đã thu hồi", "Author thu hồi — không còn hiệu lực."],
+    ["Hết hiệu lực", "Bị phiên bản mới thay thế."],
   ],
   [30, 70],
 ));
-add(H2("Trang thai tiep nhan theo tung site (receipt)"));
+add(H2("Trạng thái tiếp nhận theo từng site (receipt)"));
 add(TABLE(
-  ["Receipt", "Y nghia"],
+  ["Receipt", "Ý nghĩa"],
   [
-    ["Cho phan hoi", "Site chua phan hoi."],
-    ["Da chap nhan", "Site tiep nhan, ghi ngay ap dung."],
-    ["Da tu choi", "Site tra lai: Sai thong tin dang ky hoac Sai noi dung tai lieu (kem ly do)."],
+    ["Chờ phản hồi", "Site chưa phản hồi."],
+    ["Đã chấp nhận", "Site tiếp nhận, ghi ngày áp dụng."],
+    ["Đã từ chối", "Site trả lại: Sai thông tin đăng ký hoặc Sai nội dung tài liệu (kèm lý do)."],
   ],
   [30, 70],
 ));
-add(H2("Trang thai tong hop (suy tu cac receipt)"));
-add(P("Chua phat hanh -> Dang cho -> Mot phan (co site chap nhan) -> Toan bo (tat ca chap nhan). Co bat ky tu choi nao -> Tranh chap (uu tien canh bao de Author xu ly)."));
+add(H2("Trạng thái tổng hợp (suy từ các receipt)"));
+add(P("Chưa phát hành → Đang chờ → Một phần (có site chấp nhận) → Toàn bộ (tất cả chấp nhận). Có bất kỳ từ chối nào → Tranh chấp (ưu tiên cảnh báo để Author xử lý)."));
 
 const doc = new Document({ styles, numbering, sections: [{ properties: { page: pageMargin }, children }] });
 const buf = await Packer.toBuffer(doc);
 writeFileSync("docs/uat/DCS-MoTa-PhanQuyen-TinhNang.docx", buf);
-console.log("WROTE docs/uat/DCS-MoTa-PhanQuyen-TinhNang.docx");
+console.log("WROTE features doc");
