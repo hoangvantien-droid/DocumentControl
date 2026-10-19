@@ -104,45 +104,6 @@
 </details>
 
 <details class="detail-panel">
-  <summary>Phân phối có kiểm soát theo site</summary>
-  <% if (!it.rollout || it.rollout.length === 0) { %><p class="muted">Chưa khai site áp dụng.</p><% } else { %>
-    <ul class="matrix-list">
-      <% it.rollout.forEach(function(r){ %>
-        <li>
-          <b><%= r.site_code %></b> — <%= r.site_name %> · <%= r.status %>
-          <% if (r.planned_date) { %> · dự kiến <%= r.planned_date %><% } %>
-          <% if (r.applied_date) { %> · áp dụng <%= r.applied_date %><% } %>
-          <% if (r.status === 'tam_hoan' && r.pause_reason) { %> · lý do: <%= r.pause_reason %><% } %>
-          <% if (it.canManageRollout) { %>
-            <form method="post" action="/documents/<%= d.version_id %>/rollout/status" style="display:inline">
-              <input type="hidden" name="site_id" value="<%= r.site_id %>">
-              <select name="status">
-                <option value="chua_ap_dung" <%= r.status==='chua_ap_dung'?'selected':'' %>>Chưa áp dụng</option>
-                <option value="da_ap_dung" <%= r.status==='da_ap_dung'?'selected':'' %>>Đã áp dụng</option>
-                <option value="tam_hoan" <%= r.status==='tam_hoan'?'selected':'' %>>Tạm hoãn</option>
-              </select>
-              <input type="date" name="applied_date" value="<%= r.applied_date || '' %>" placeholder="ngày áp dụng">
-              <input name="pause_reason" value="<%= r.pause_reason || '' %>" placeholder="lý do tạm hoãn">
-              <button type="submit">Lưu</button>
-            </form>
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
-  <% } %>
-  <% if (it.canManageRollout) { %>
-    <form method="post" action="/documents/<%= d.version_id %>/rollout/add" class="inline-form">
-      <select name="site_id">
-        <option value="">-- thêm site --</option>
-        <%~ it.siteOptions %>
-      </select>
-      <input type="date" name="planned_date">
-      <button type="submit">Thêm site</button>
-    </form>
-  <% } %>
-</details>
-
-<details class="detail-panel">
   <summary>Bản sao có kiểm soát đã in (<%= (it.printedCopies || []).length %>)</summary>
   <% if (!it.printedCopies || it.printedCopies.length === 0) { %>
     <p class="muted">Chưa in bản sao có kiểm soát nào.</p>
