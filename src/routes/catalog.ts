@@ -12,7 +12,6 @@ import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
   isCurrentStatus,
 } from '../domain/catalog.js';
-import { listRollout, addSiteRollout, setSiteRolloutStatus, isDraftingDept } from '../domain/rollout.js';
 import { listSites } from '../domain/org.js';
 import { canViewVersion as canViewDoc } from '../domain/catalog.js';
 import { processVersionContent } from '../domain/content.js';
@@ -155,53 +154,8 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
         ackState = { show: !h.acknowledged, done: h.acknowledged, inherited: h.inherited };
       }
     }
-    const [rollout, sites] = await Promise.all([
-      listRollout(sql, req.params.id),
-      listSites(sql),
-    ]);
-    const canManageRollout = await isDraftingDept(sql, user.user_id, req.params.id);
-    const escD = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const siteOptions = sites.map((s) => `<option value="${escD(s.site_id)}">${escD(s.site_code)} — ${escD(s.name)}</option>`).join('');
     const isRegistrant = detail.registrant_user_id === user.user_id;
-    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, rollout, sites, siteOptions, canManageRollout, isRegistrant });
-  });
-
-  // Rollout theo site: thêm site + ngày áp dụng dự kiến (bộ phận soạn thảo).
-  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/rollout/add', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    try {
-      await addSiteRollout(sql, {
-        versionId: req.params.id,
-        siteId: ((req.body ?? {}).site_id ?? '').trim(),
-        plannedDate: ((req.body ?? {}).planned_date ?? '').trim() || null,
-        actorUserId: user.user_id,
-      });
-      return reply.redirect(`/documents/${req.params.id}`);
-    } catch (err) {
-      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
-      throw err;
-    }
-  });
-
-  // Rollout theo site: cập nhật đã áp dụng / tạm hoãn (bộ phận soạn thảo).
-  app.post<{ Params: { id: string }; Body: Record<string, string> }>('/documents/:id/rollout/status', async (req, reply) => {
-    const user = requireUser(req, reply);
-    if (!user) return reply;
-    try {
-      await setSiteRolloutStatus(sql, {
-        versionId: req.params.id,
-        siteId: ((req.body ?? {}).site_id ?? '').trim(),
-        status: ((req.body ?? {}).status ?? '').trim() as 'chua_ap_dung' | 'da_ap_dung' | 'tam_hoan',
-        appliedDate: ((req.body ?? {}).applied_date ?? '').trim() || null,
-        pauseReason: ((req.body ?? {}).pause_reason ?? '').trim() || null,
-        actorUserId: user.user_id,
-      });
-      return reply.redirect(`/documents/${req.params.id}`);
-    } catch (err) {
-      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
-      throw err;
-    }
+    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, isRegistrant });
   });
 
   // Thu hồi: hiện tác động trước, rồi xác nhận.
