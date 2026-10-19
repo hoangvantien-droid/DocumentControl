@@ -463,8 +463,25 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 /* Nút 'Báo bất thường' — cùng dáng .btn-diff nhưng màu cảnh báo (amber) để phân biệt với nút In (xanh brand). */
 .btn-report { display: inline-block; margin-left: 8px; padding: 4px 10px; border: 1px solid var(--status-warning-fg); background: var(--status-warning-bg); color: #9a5a1e; border-radius: 6px; cursor: pointer; font: inherit; }
 .btn-report:hover { background: var(--status-warning-fg); color: #fff; }
-.reject-form { margin-top: 16px; display: flex; gap: 8px; }
-.reject-form input { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; }
+/* Form từ chối receipt: xếp DỌC ở mọi kích thước (select + textarea + nút).
+ * Trước đây display:flex (hàng ngang) khiến nút 'Từ chối tiếp nhận' bị nhồi
+ * ngoài panel 320px trên desktop -> không thấy. Column mới hiện đủ các trường. */
+.reject-form { margin-top: 16px; display: flex; flex-direction: column; gap: var(--sp-3); }
+.reject-form h2 { font-size: var(--fs-section); font-weight: var(--fw-section); margin: 0; color: var(--masan-900); }
+.reject-form > label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-aux); color: var(--muted); }
+.reject-form input, .reject-form select, .reject-form textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  font-size: 13px; background: #fff; color: var(--color-text); font-family: inherit;
+}
+.reject-form input:focus, .reject-form select:focus, .reject-form textarea:focus {
+  border-color: var(--masan-600); box-shadow: 0 0 0 3px rgba(0,119,230,.12); outline: none;
+}
+/* Nút từ chối: block, màu cảnh báo (đỏ) cho rõ là hành động từ chối. */
+.reject-form button[type=submit] {
+  align-self: flex-start; margin-left: 0; padding: 8px 16px; border-radius: var(--radius-md); cursor: pointer;
+  background: var(--status-error-bg); color: var(--status-error-fg); border: 1px solid #F6C9CE; font-weight: 600;
+}
+.reject-form button[type=submit]:hover { background: #FBDBDE; }
 .doc-title { color: var(--muted); font-size: 15px; margin-top: -8px; }
 
 /* ---- Trang chủ khối việc (T-039) ---- */
@@ -1210,9 +1227,9 @@ button.danger { background: var(--status-error-fg); }
   .confirm-file__embed { height: 60vh; }
   /* Nút Xác nhận + form Từ chối xếp dọc, full-width dễ chạm. */
   .confirm-panel > form > button.primary { width: 100%; min-height: 44px; }
-  .reject-form { flex-direction: column; }
   .reject-form input,
-  .reject-form button.danger { width: 100%; min-height: 44px; }
+  .reject-form button[type=submit] { width: 100%; min-height: 44px; }
+  .reject-form button[type=submit] { align-self: stretch; justify-content: center; }
 }
 
 /* ================================================================
