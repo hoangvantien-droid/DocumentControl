@@ -1440,3 +1440,41 @@ html { scroll-behavior: smooth; }
 /* Nhãn + select chọn đơn vị cụ thể (BU/Site/Dept) trong rail lọc tìm kiếm. */
 .search-filters .filter-select-label { display: block; font-size: var(--fs-aux); color: var(--muted); margin-bottom: 8px; }
 .search-filters .filter-select-label select { margin-top: 3px; }
+
+/* ================================================================
+ * REDESIGN — Bố cục 3 màn quản trị: panel hành động (gán/tạo) bên trái
+ * dính theo cuộn, dữ liệu (bảng/danh sách) bên phải. Đưa thao tác lên đầu.
+ * ================================================================ */
+.admin-layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: var(--sp-5); align-items: start; }
+.admin-panel {
+  position: sticky; top: calc(var(--topbar-h) + var(--sp-4));
+  background: var(--surface); border: 1px solid var(--masan-100);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+  padding: var(--sp-4); min-width: 0;
+}
+.admin-panel__title { font-size: var(--fs-section); font-weight: var(--fw-section); margin: 0 0 var(--sp-3); color: var(--masan-900); }
+.admin-form { display: flex; flex-direction: column; gap: var(--sp-3); }
+.admin-form > label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-aux); color: var(--muted); }
+.admin-form input, .admin-form select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  font-size: 13px; background: #fff; color: var(--color-text);
+}
+.admin-form input:focus, .admin-form select:focus {
+  border-color: var(--masan-600); box-shadow: 0 0 0 3px rgba(0,119,230,.12); outline: none;
+}
+.admin-form button[type=submit] { align-self: flex-start; }
+/* Nhiều panel xếp dọc (vd org 3 khối trong cùng một cột trái). */
+.admin-panel + .admin-panel { margin-top: var(--sp-4); }
+.admin-data { min-width: 0; }
+.admin-data__subtitle { font-size: var(--fs-subtle); font-weight: var(--fw-subtle); color: var(--masan-900); margin: 0 0 var(--sp-2); }
+@media (max-width: 900px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  .admin-panel { position: static; }
+  .admin-form button[type=submit] { width: 100%; min-height: 44px; }
+}
+
+/* Khối tổ chức: form thêm/gán lên đầu, danh sách gọn phía dưới. */
+.org-col .admin-form { margin-bottom: var(--sp-3); }
+.org-col__subform { padding-top: var(--sp-3); border-top: 1px dashed var(--color-border); }
+.org-col__count { font-size: var(--fs-aux); color: var(--muted); margin: var(--sp-3) 0 var(--sp-1); font-weight: 600; }
+.org-col h2 { color: var(--masan-900); }

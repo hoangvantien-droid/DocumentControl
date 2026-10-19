@@ -9,66 +9,68 @@
     <h1>Quản trị người dùng</h1>
     <p class="page-header__desc">Tài khoản và gán bộ phận. Khai tay tạm thời khi L1 chưa vận hành.</p>
   </div>
-  <div class="toolbar">
-    <a href="#add-user" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Thêm người dùng</a>
-  </div>
 </div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
-<table class="data-table responsive-table">
-  <thead><tr><th>Họ tên</th><th>Email</th><th>Trạng thái</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
-  <tbody>
-    <% it.users.forEach(function(u){ %>
-    <tr>
-      <td data-label="Họ tên"><%= u.full_name %></td>
-      <td data-label="Email"><%= u.email %></td>
-      <td data-label="Trạng thái"><% if (u.is_active) { %><span class="status-pill--active">Hoạt động</span><% } else { %>Ngừng<% } %></td>
-      <td>
-        <% var ds = (it.deptsByUser[u.user_id] || []); ds.forEach(function(did){
-             var d = it.depts.find(function(x){return x.dept_id===did}); %>
-          <span class="chip"><%= d ? d.dept_code : did %>
-            <form method="post" action="/admin/users/remove-dept" style="display:inline">
-              <input type="hidden" name="user_id" value="<%= u.user_id %>">
-              <input type="hidden" name="dept_id" value="<%= did %>">
-              <button type="submit" class="chip-x" title="Xóa phòng ban này">×</button>
-            </form>
-          </span>
-        <% }) %>
-      </td>
-      <td>
-        <div class="user-actions">
-        <form method="post" action="/admin/users/assign-dept" class="inline-form">
-          <input type="hidden" name="user_id" value="<%= u.user_id %>">
-          <select name="dept_id" required>
-            <option value="">-- gán bộ phận --</option>
-            <% it.depts.forEach(function(d){ %><option value="<%= d.dept_id %>"><%= d.dept_code %></option><% }) %>
-          </select>
-          <button type="submit">Gán</button>
-        </form>
-        <form method="post" action="/admin/users/active" class="inline-form">
-          <input type="hidden" name="user_id" value="<%= u.user_id %>">
-          <input type="hidden" name="active" value="<%= u.is_active ? 'false' : 'true' %>">
-          <button type="submit" class="btn-deactivate"><%= u.is_active ? 'Ngừng' : 'Bật lại' %></button>
-        </form>
-        <% if (u.is_active) { %>
-        <form method="post" action="/admin/users/delete" class="inline-form">
-          <input type="hidden" name="user_id" value="<%= u.user_id %>">
-          <button type="submit" class="btn--danger" onclick="return confirm('Xoá mềm user này? Họ sẽ không đăng nhập được nhưng dữ liệu giữ nguyên.')">Xoá</button>
-        </form>
-        <% } %>
-        </div>
-      </td>
-    </tr>
-    <% }) %>
-  </tbody>
-</table>
+<div class="admin-layout">
+  <aside class="admin-panel">
+    <h2 class="admin-panel__title">Thêm người dùng</h2>
+    <form method="post" action="/admin/users" class="admin-form">
+      <label>Họ tên <input name="full_name" placeholder="Nguyễn Văn A" required></label>
+      <label>Email <input name="email" type="email" placeholder="email@mml.masangroup.com" required></label>
+      <label>Mật khẩu <input name="password" type="password" placeholder="Tối thiểu 8 ký tự" required></label>
+      <button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Tạo người dùng</button>
+    </form>
+  </aside>
 
-<div class="add-user-card" id="add-user">
-<h2 class="add-user-card__title">Thêm người dùng</h2>
-<form method="post" action="/admin/users" class="inline-form add-user-form">
-  <input name="full_name" placeholder="Họ tên" required>
-  <input name="email" type="email" placeholder="Email" required>
-  <input name="password" type="password" placeholder="Mật khẩu (≥8)" required>
-  <button type="submit">Tạo</button>
-</form>
+  <div class="admin-data">
+    <p class="admin-data__subtitle">Danh sách người dùng (<%= it.users.length %>)</p>
+    <table class="data-table responsive-table">
+      <thead><tr><th>Họ tên</th><th>Email</th><th>Trạng thái</th><th>Bộ phận</th><th>Thao tác</th></tr></thead>
+      <tbody>
+        <% it.users.forEach(function(u){ %>
+        <tr>
+          <td data-label="Họ tên"><%= u.full_name %></td>
+          <td data-label="Email"><%= u.email %></td>
+          <td data-label="Trạng thái"><% if (u.is_active) { %><span class="status-pill--active">Hoạt động</span><% } else { %>Ngừng<% } %></td>
+          <td data-label="Bộ phận">
+            <% var ds = (it.deptsByUser[u.user_id] || []); ds.forEach(function(did){
+                 var d = it.depts.find(function(x){return x.dept_id===did}); %>
+              <span class="chip"><%= d ? d.dept_code : did %>
+                <form method="post" action="/admin/users/remove-dept" style="display:inline">
+                  <input type="hidden" name="user_id" value="<%= u.user_id %>">
+                  <input type="hidden" name="dept_id" value="<%= did %>">
+                  <button type="submit" class="chip-x" title="Xóa phòng ban này">×</button>
+                </form>
+              </span>
+            <% }) %>
+          </td>
+          <td data-label="Thao tác">
+            <div class="user-actions">
+            <form method="post" action="/admin/users/assign-dept" class="inline-form">
+              <input type="hidden" name="user_id" value="<%= u.user_id %>">
+              <select name="dept_id" required>
+                <option value="">-- gán bộ phận --</option>
+                <% it.depts.forEach(function(d){ %><option value="<%= d.dept_id %>"><%= d.dept_code %></option><% }) %>
+              </select>
+              <button type="submit">Gán</button>
+            </form>
+            <form method="post" action="/admin/users/active" class="inline-form">
+              <input type="hidden" name="user_id" value="<%= u.user_id %>">
+              <input type="hidden" name="active" value="<%= u.is_active ? 'false' : 'true' %>">
+              <button type="submit" class="btn-deactivate"><%= u.is_active ? 'Ngừng' : 'Bật lại' %></button>
+            </form>
+            <% if (u.is_active) { %>
+            <form method="post" action="/admin/users/delete" class="inline-form">
+              <input type="hidden" name="user_id" value="<%= u.user_id %>">
+              <button type="submit" class="btn--danger" onclick="return confirm('Xoá mềm user này? Họ sẽ không đăng nhập được nhưng dữ liệu giữ nguyên.')">Xoá</button>
+            </form>
+            <% } %>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 </div>

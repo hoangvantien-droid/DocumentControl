@@ -12,57 +12,63 @@
 </div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
-<table class="data-table responsive-table">
-  <thead><tr><th>Tên</th><th>Email</th><th>Vai trò hiện có</th></tr></thead>
-  <tbody>
-    <% it.users.forEach(function(u){ %>
-    <tr>
-      <td data-label="Tên"><%= u.full_name || '' %></td>
-      <td data-label="Email"><%= u.email || '' %></td>
-      <td>
-        <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
-          <span class="chip"><%= it.roleLabel(r.role_code) %><% if (r.scope_site_id) { %> · site<% } %></span>
-        <% }) %>
-        <% if (rs.length === 0) { %><span class="muted">—</span><% } %>
-      </td>
-    </tr>
-    <% }) %>
-  </tbody>
-</table>
+<div class="admin-layout">
+  <aside class="admin-panel">
+    <h2 class="admin-panel__title">Gán vai trò</h2>
+    <form method="post" action="/admin/roles" class="admin-form">
+      <label>Tìm người dùng (tên hoặc email)
+        <input type="search" id="user_filter" placeholder="Gõ để lọc…" autocomplete="off">
+      </label>
+      <label>Người dùng
+        <select name="user_id" id="user_select" required size="6">
+          <% it.users.forEach(function(u){ %>
+            <option value="<%= u.user_id %>" data-search="<%= ((u.full_name || '') + ' ' + (u.email || '')).toLowerCase() %>"><%= u.full_name || '(chưa có tên)' %> — <%= u.email || '(chưa có email)' %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Vai trò
+        <select name="role_code" id="role_code" required>
+          <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
+          <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
+          <option value="DC_SITE_DOC_CONTROL">Kiểm soát tài liệu site — Nhận &amp; phản hồi</option>
+          <option value="DC_READER">Người đọc</option>
+        </select>
+      </label>
+      <input type="hidden" name="scope_level" id="scope_level" value="group">
+      <label id="site_field" style="display:none">Site phụ trách
+        <select name="scope_site_id" id="scope_site_id">
+          <option value="">-- chọn site --</option>
+          <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %> — <%= s.name %></option><% }) %>
+        </select>
+      </label>
+      <button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'check' }) %> Gán vai trò</button>
+    </form>
+  </aside>
 
-<h2>Gán vai trò</h2>
-<form method="post" action="/admin/roles" class="role-form">
-  <label>Tìm người dùng (theo tên hoặc email)
-    <input type="search" id="user_filter" placeholder="Gõ tên hoặc email để lọc…" autocomplete="off">
-  </label>
-  <label>Người dùng
-    <select name="user_id" id="user_select" required size="6">
-      <% it.users.forEach(function(u){ %>
-        <option value="<%= u.user_id %>" data-search="<%= ((u.full_name || '') + ' ' + (u.email || '')).toLowerCase() %>"><%= u.full_name || '(chưa có tên)' %> — <%= u.email || '(chưa có email)' %></option>
-      <% }) %>
-    </select>
-  </label>
-  <label>Vai trò
-    <select name="role_code" id="role_code" required>
-      <option value="DC_ADMIN">Admin — Quản trị hệ thống</option>
-      <option value="DC_AUTHOR">Biên soạn — Đăng ký tài liệu</option>
-      <option value="DC_SITE_DOC_CONTROL">Kiểm soát tài liệu site — Nhận &amp; phản hồi</option>
-      <option value="DC_READER">Người đọc</option>
-    </select>
-  </label>
-  <input type="hidden" name="scope_level" id="scope_level" value="group">
-  <label id="site_field" style="display:none">Site phụ trách
-    <select name="scope_site_id" id="scope_site_id">
-      <option value="">-- chọn site --</option>
-      <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %> — <%= s.name %></option><% }) %>
-    </select>
-  </label>
-  <button type="submit">Gán</button>
-</form>
+  <div class="admin-data">
+    <p class="admin-data__subtitle">Người dùng &amp; vai trò hiện có (<%= it.users.length %>)</p>
+    <table class="data-table responsive-table">
+      <thead><tr><th>Tên</th><th>Email</th><th>Vai trò hiện có</th></tr></thead>
+      <tbody>
+        <% it.users.forEach(function(u){ %>
+        <tr>
+          <td data-label="Tên"><%= u.full_name || '' %></td>
+          <td data-label="Email"><%= u.email || '' %></td>
+          <td data-label="Vai trò hiện có">
+            <% var rs = (it.rolesByUser[u.user_id] || []); rs.forEach(function(r){ %>
+              <span class="chip"><%= it.roleLabel(r.role_code) %><% if (r.scope_site_id) { %> · site<% } %></span>
+            <% }) %>
+            <% if (rs.length === 0) { %><span class="muted">—</span><% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 <script>
 (function(){
-  // Lọc danh sách người dùng theo tên HOẶC email.
   var filter = document.getElementById('user_filter');
   var select = document.getElementById('user_select');
   if (filter && select) {
@@ -73,19 +79,17 @@
         var hit = !q || (o.getAttribute('data-search') || '').indexOf(q) >= 0;
         o.hidden = !hit;
       });
-      // tự chọn option khớp đầu tiên cho tiện
       var firstVisible = opts.filter(function(o){ return !o.hidden; })[0];
       if (firstVisible) select.value = firstVisible.value;
     });
   }
-  // Hiện chọn Site khi vai là Kiểm soát tài liệu site.
   var role = document.getElementById('role_code');
   var level = document.getElementById('scope_level');
   var siteField = document.getElementById('site_field');
   var siteSel = document.getElementById('scope_site_id');
   function sync(){
     var isSite = role.value === 'DC_SITE_DOC_CONTROL';
-    siteField.style.display = isSite ? 'block' : 'none';
+    siteField.style.display = isSite ? 'flex' : 'none';
     level.value = isSite ? 'site' : 'group';
     siteSel.required = isSite;
     if(!isSite) siteSel.value = '';
