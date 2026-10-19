@@ -1,6 +1,5 @@
 <% layout('/layout.eta', { title: 'Quản trị tổ chức — DCS', user: it.user }) %>
 
-<!-- DCS là nguồn sở hữu tổ chức. Mỗi thay đổi phải được rà soát trong dashboard sức khoẻ tổ chức. -->
 <div class="warn-banner">
   DCS sở hữu cây tổ chức. Site có thể phục vụ nhiều BU; hãy duy trì quan hệ này khi tổ chức thay đổi.
 </div>
@@ -17,56 +16,67 @@
 <section class="org-grid">
   <div class="org-col">
     <h2>Ngành hàng (BU)</h2>
+    <form method="post" action="/admin/org/bu" class="admin-form">
+      <label>Mã BU <input name="code" placeholder="VD: CPI" required></label>
+      <label>Tên <input name="name" placeholder="Tên ngành hàng" required></label>
+      <button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Thêm BU</button>
+    </form>
+    <p class="org-col__count">Hiện có (<%= it.bus.length %>)</p>
     <ul>
       <% it.bus.forEach(function(b){ %><li><b><%= b.bu_code %></b> — <%= b.name %></li><% }) %>
     </ul>
-    <form method="post" action="/admin/org/bu" class="inline-form">
-      <input name="code" placeholder="Mã BU" required>
-      <input name="name" placeholder="Tên" required>
-      <button type="submit">Thêm BU</button>
-    </form>
   </div>
 
   <div class="org-col">
     <h2>Nhà máy (Site)</h2>
+    <form method="post" action="/admin/org/site" class="admin-form">
+      <label>Mã Site <input name="code" placeholder="VD: MML" required></label>
+      <label>Tên <input name="name" placeholder="Tên nhà máy" required></label>
+      <label>Thuộc BU
+        <select name="bu_id" required>
+          <option value="">-- chọn BU --</option>
+          <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %> — <%= b.name %></option><% }) %>
+        </select>
+      </label>
+      <button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Thêm Site</button>
+    </form>
+    <form method="post" action="/admin/org/site-bu" class="admin-form org-col__subform">
+      <label>Gán thêm BU cho Site
+        <select name="site_id" required>
+          <option value="">-- chọn Site --</option>
+          <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %> — <%= s.name %></option><% }) %>
+        </select>
+      </label>
+      <label>BU
+        <select name="bu_id" required>
+          <option value="">-- chọn BU --</option>
+          <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %> — <%= b.name %></option><% }) %>
+        </select>
+      </label>
+      <button type="submit" class="btn-action btn-action--info"><%~ include('/components/action-icon.eta', { name: 'share' }) %> Gán BU cho Site</button>
+    </form>
+    <p class="org-col__count">Hiện có (<%= it.sites.length %>)</p>
     <ul>
       <% it.sites.forEach(function(s){ %><li><b><%= s.site_code %></b> — <%= s.name %></li><% }) %>
     </ul>
-    <form method="post" action="/admin/org/site" class="inline-form">
-      <input name="code" placeholder="Mã Site" required>
-      <input name="name" placeholder="Tên" required>
-      <select name="bu_id" required>
-        <option value="">-- BU --</option>
-        <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %></option><% }) %>
-      </select>
-      <button type="submit">Thêm Site</button>
-    </form>
-    <form method="post" action="/admin/org/site-bu" class="inline-form">
-      <select name="site_id" required>
-        <option value="">-- Site --</option>
-        <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %></option><% }) %>
-      </select>
-      <select name="bu_id" required>
-        <option value="">-- Gán thêm BU --</option>
-        <% it.bus.forEach(function(b){ %><option value="<%= b.bu_id %>"><%= b.bu_code %></option><% }) %>
-      </select>
-      <button type="submit">Gán BU cho Site</button>
-    </form>
   </div>
 
   <div class="org-col">
     <h2>Phòng ban (Department)</h2>
+    <form method="post" action="/admin/org/dept" class="admin-form">
+      <label>Mã Dept <input name="code" placeholder="VD: QA" required></label>
+      <label>Tên <input name="name" placeholder="Tên phòng ban" required></label>
+      <label>Thuộc Site
+        <select name="site_id" required>
+          <option value="">-- chọn Site --</option>
+          <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %> — <%= s.name %></option><% }) %>
+        </select>
+      </label>
+      <button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Thêm Dept</button>
+    </form>
+    <p class="org-col__count">Hiện có (<%= it.depts.length %>)</p>
     <ul>
       <% it.depts.forEach(function(d){ %><li><b><%= d.dept_code %></b> — <%= d.name %></li><% }) %>
     </ul>
-    <form method="post" action="/admin/org/dept" class="inline-form">
-      <input name="code" placeholder="Mã Dept" required>
-      <input name="name" placeholder="Tên" required>
-      <select name="site_id" required>
-        <option value="">-- Site --</option>
-        <% it.sites.forEach(function(s){ %><option value="<%= s.site_id %>"><%= s.site_code %></option><% }) %>
-      </select>
-      <button type="submit">Thêm Dept</button>
-    </form>
   </div>
 </section>
