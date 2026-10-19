@@ -149,13 +149,15 @@ phải ra kết quả.
 - [x] Gỡ link /confirm cũ ở trang chủ (đổi sang dashboard receipt).
 - [x] Gỡ TOÀN BỘ vai DC_DEPT_HEAD + lớp duyệt-trước cũ (xem mục 9).
 - [x] 2 bug 500 (recall body rỗng, issuance thiếu receiptStatusLabel) + 22P02 uuid rỗng.
+- [x] Gỡ TOÀN BỘ tàn dư rollout cũ (document_site_rollout) khỏi runtime: xóa
+  src/domain/rollout.ts, 2 route /documents/:id/rollout/{add,status}, panel
+  "Phân phối có kiểm soát theo site" trong detail.eta. Phân phối giờ hoàn toàn
+  là receipt theo site (document_receipt). Giữ migration 011/014 làm lịch sử;
+  bảng document_site_rollout còn trong DB nhưng KHÔNG code nào dùng.
 
 CÒN LẠI (tùy chọn, chưa chặn):
 - Route guard 403 cứng cho /my-documents, /site-receipts, /issue-reports — hiện
   an toàn (lọc rỗng / trang "chưa được gán"), thêm nếu muốn nhất quán tuyệt đối.
-- Tính năng rollout cũ (document_site_rollout) còn trong detail.eta — trùng vai
-  trò với receipt theo site; cân nhắc gỡ ở đợt sau (nút "Thêm site" có thể 403
-  với người không thuộc bộ phận soạn — là luật đúng, chỉ là UX).
 - Test DB cũ (skip-domain, constraints, receipt-model.integration) cần rà/cập
   nhật khi chạy npm test trên target; nhiều ca sẽ xanh lại sau fix 22P02.
 
@@ -195,7 +197,7 @@ Trạng thái: ĐÃ CODE (spec iso-terminology-mobile-ui), CHỜ KIỂM THỊ GI
 
 Ngôn từ (đã đổi): "Xác nhận tiếp nhận" (thay chấp nhận nhận), "Từ chối tiếp
 nhận", "In bản sao có kiểm soát", "Xem xét định kỳ" (thay rà soát), "Ngày có
-hiệu lực", "Số hiệu tài liệu", "Phân phối có kiểm soát theo site", menu "Xem
+hiệu lực", "Số hiệu tài liệu", menu "Xem
 xét định kỳ". Chỉ đổi chữ — không đổi enum/mã.
 
 Responsive: thêm class dùng chung .responsive-table (bảng -> thẻ ở <=768px) +
