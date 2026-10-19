@@ -43,7 +43,7 @@ const has = (arr, v) => (arr||[]).indexOf(v) !== -1;
         <legend>Nguồn</legend>
         <label class="filter-check"><input type="radio" name="origin" value="" <%= !f.origin ? "checked" : "" %>> Tất cả</label>
         <label class="filter-check"><input type="radio" name="origin" value="noi_bo" <%= f.origin==="noi_bo" ? "checked" : "" %>> Nội bộ</label>
-        <label class="filter-check"><input type="radio" name="origin" value="ben_ngoai" <%= f.origin==="ben_ngoai" ? "checked" : "" %>> Bên ngoài</label>
+        <label class="filter-check"><input type="radio" name="origin" value="ngoai_bo" <%= f.origin==="ngoai_bo" ? "checked" : "" %>> Bên ngoài</label>
       </fieldset>
 
       <fieldset>
