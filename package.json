@@ -15,7 +15,8 @@
     "test": "node --import tsx --test test/**/*.test.ts",
     "test:unit": "node --import tsx --test test/domain/**/*.test.ts",
     "test:uat": "node --import tsx --test test/domain/permission-matrix.uat.test.ts test/uat/**/*.test.ts",
-    "test:constraints": "node --import tsx --test test/constraints.test.ts"
+    "test:constraints": "node --import tsx --test test/constraints.test.ts",
+    "gen:docs": "node scripts/gen-doc-features.mjs && node scripts/gen-doc-uat.mjs"
   },
   "dependencies": {
     "@cfworker/json-schema": "4.1.1",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/node": "20.14.0",
     "@types/qrcode": "^1.5.6",
+    "docx": "^9.5.1",
     "pino-pretty": "^11.2.2",
     "tsx": "4.19.2",
     "typescript": "5.6.3"
