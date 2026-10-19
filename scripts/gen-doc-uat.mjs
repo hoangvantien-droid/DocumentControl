@@ -1,206 +1,200 @@
 ﻿import {
   Document, Packer, Paragraph, R, P, H1, H2, LI, TABLE, COVER, PageBreak,
-  numbering, styles, pageMargin, writeFileSync, MUTED, OK,
+  numbering, styles, pageMargin, writeFileSync, MUTED,
 } from "./gen-uat-docs.mjs";
 
 const children = [];
 const add = (...x) => children.push(...x);
 
-add(...COVER("Kich ban UAT", "Quy trinh Ban hanh - Tu choi - Soat xet"));
-add(new Paragraph({ spacing: { before: 200 }, children: [R("Pham vi: kiem thu chap nhan nguoi dung cho luong tai lieu chinh. Thuc hien tren moi truong UAT sau khi migrate + seed.", { italics: true, color: MUTED, size: 20 })] }));
+add(...COVER("Kịch bản UAT", "Quy trình Ban hành — Từ chối — Soát xét"));
+add(new Paragraph({ spacing: { before: 200 }, children: [R("Phạm vi: kiểm thử chấp nhận người dùng cho luồng tài liệu chính. Thực hiện trên môi trường UAT sau khi migrate + seed.", { italics: true, color: MUTED, size: 20 })] }));
 add(new Paragraph({ children: [new PageBreak()] }));
 
-// Chuan bi
-add(H1("A. Chuan bi & tai khoan"));
-add(P("Truoc khi test: pull code moi, npm run build, npm run migrate, seed du lieu UAT, restart dich vu. Can it nhat 2 site de kiem lech pha tiep nhan."));
+add(H1("A. Chuẩn bị & tài khoản"));
+add(P("Trước khi test: pull code mới, npm run build, npm run migrate, seed dữ liệu UAT, restart dịch vụ. Cần ít nhất 2 site để kiểm lệch pha tiếp nhận."));
 add(TABLE(
-  ["Tai khoan", "Vai tro", "Dung cho"],
+  ["Tài khoản", "Vai trò", "Dùng cho"],
   [
-    ["author@mml.io", "Bien soan", "Dang ky, ban hanh, sua/thu hoi/xoa, xem xet"],
-    ["dc_mml@mml.io", "Kiem soat tai lieu site MML", "Tiep nhan / tu choi receipt site MML"],
-    ["dc_hcm@mml.io", "Kiem soat tai lieu site HCM", "Tiep nhan / tu choi receipt site HCM"],
-    ["reader@mml.io", "Nguoi doc", "Tra cuu, bao bat thuong, xac nhan doc"],
-    ["admin@mml.io", "Quan tri", "Kiem chan route ngoai luong"],
+    ["author@mml.io", "Biên soạn", "Đăng ký, ban hành, sửa/thu hồi/xóa, xem xét"],
+    ["dc_mml@mml.io", "Kiểm soát tài liệu site MML", "Tiếp nhận / từ chối receipt site MML"],
+    ["dc_hcm@mml.io", "Kiểm soát tài liệu site HCM", "Tiếp nhận / từ chối receipt site HCM"],
+    ["reader@mml.io", "Người đọc", "Tra cứu, báo bất thường, xác nhận đọc"],
+    ["admin@mml.io", "Quản trị", "Kiểm chặn route ngoài luồng"],
   ],
   [30, 30, 40],
 ));
-add(new Paragraph({ spacing: { before: 80 }, children: [R("Mat khau seed theo tai lieu trien khai. Ket qua moi buoc: ghi Dat / Khong dat + ghi chu.", { italics: true, color: MUTED, size: 20 })] }));
+add(new Paragraph({ spacing: { before: 80 }, children: [R("Mật khẩu seed theo tài liệu triển khai. Kết quả mỗi bước: ghi Đạt / Không đạt + ghi chú.", { italics: true, color: MUTED, size: 20 })] }));
 
-// Case builder
 function caseBlock(id, title, pre, steps, expected) {
   add(H2(id + ". " + title));
-  if (pre) add(P([R("Dieu kien: ", { bold: true }), R(pre)]));
-  add(P([R("Cac buoc:", { bold: true })]));
-  steps.forEach((s, i) => add(LI(s)));
-  add(TABLE(["Ket qua mong doi", "Dat / Khong dat"], expected.map(e => [e, ""]), [78, 22]));
+  if (pre) add(P([R("Điều kiện: ", { bold: true }), R(pre)]));
+  add(P([R("Các bước:", { bold: true })]));
+  steps.forEach((s) => add(LI(s)));
+  add(TABLE(["Kết quả mong đợi", "Đạt / Không đạt"], expected.map(e => [e, ""]), [78, 22]));
 }
 
-// B. Ban hanh
 add(new Paragraph({ children: [new PageBreak()] }));
-add(H1("B. Quy trinh ban hanh"));
+add(H1("B. Quy trình ban hành"));
 
-caseBlock("UAT-01", "Ban hanh tai lieu toi nhieu site",
-  "Dang nhap author@mml.io. Co san site MML va HCM.",
+caseBlock("UAT-01", "Ban hành tài liệu tới nhiều site",
+  "Đăng nhập author@mml.io. Có sẵn site MML và HCM.",
   [
-    "Mo Danh muc -> bam 'Dang ky tai lieu'.",
-    "Tai len mot tep PDF; khai so hieu, loai, tieu de, pham vi, ngay hieu luc.",
-    "Chon ca hai site MML va HCM lam site nhan.",
-    "Bam nut dang ky (ban hanh).",
+    "Mở Danh mục → bấm 'Đăng ký tài liệu'.",
+    "Tải lên một tệp PDF; khai số hiệu, loại, tiêu đề, phạm vi, ngày hiệu lực.",
+    "Chọn cả hai site MML và HCM làm site nhận.",
+    "Bấm nút đăng ký (ban hành).",
   ],
   [
-    "Chuyen ve 'Tai lieu cua toi'; tai lieu trang thai 'Da ban hanh'.",
-    "Moi site (MML, HCM) sinh mot receipt 'Cho phan hoi'.",
-    "Trang thai tong hop hien 'Dang cho'.",
-    "DC Site MML va HCM thay tai lieu trong hang cho cua minh.",
+    "Chuyển về 'Tài liệu của tôi'; tài liệu trạng thái 'Đã ban hành'.",
+    "Mỗi site (MML, HCM) sinh một receipt 'Chờ phản hồi'.",
+    "Trạng thái tổng hợp hiển thị 'Đang chờ'.",
+    "DC Site MML và HCM thấy tài liệu trong hàng chờ của mình.",
   ]);
 
-caseBlock("UAT-02", "Khong chon site thi bao loi",
-  "Dang nhap author@mml.io.",
+caseBlock("UAT-02", "Không chọn site thì báo lỗi",
+  "Đăng nhập author@mml.io.",
   [
-    "Mo form dang ky, dien du thong tin + tai PDF.",
-    "KHONG tick site nhan nao.",
-    "Bam dang ky.",
+    "Mở form đăng ký, điền đủ thông tin + tải PDF.",
+    "KHÔNG tick site nhận nào.",
+    "Bấm đăng ký.",
   ],
   [
-    "He thong chan, bao phai chon it nhat mot site nhan.",
-    "Khong tao tai lieu/receipt nao.",
+    "Hệ thống chặn, báo phải chọn ít nhất một site nhận.",
+    "Không tạo tài liệu/receipt nào.",
   ]);
 
-caseBlock("UAT-03", "Luu nhap roi hoan thien sau",
-  "Dang nhap author@mml.io.",
+caseBlock("UAT-03", "Lưu nháp rồi hoàn thiện sau",
+  "Đăng nhập author@mml.io.",
   [
-    "Mo form dang ky, dien mot phan thong tin.",
-    "Bam 'Luu nhap'.",
-    "Vao 'Tai lieu cua toi', mo lai ban nhap bang 'Sua nhap'.",
+    "Mở form đăng ký, điền một phần thông tin.",
+    "Bấm 'Lưu nháp'.",
+    "Vào 'Tài liệu của tôi', mở lại bản nháp bằng 'Sửa nháp'.",
   ],
   [
-    "Ban nhap luu voi trang thai 'Cho hoan thien'.",
-    "Mo lai dien tiep duoc; chi khi ban hanh that moi validate day du.",
+    "Bản nháp lưu với trạng thái 'Chờ hoàn thiện'.",
+    "Mở lại điền tiếp được; chỉ khi ban hành thật mới validate đầy đủ.",
   ]);
 
-// C. Tiep nhan / tu choi
 add(new Paragraph({ children: [new PageBreak()] }));
-add(H1("C. Quy trinh tiep nhan & tu choi (DC Site)"));
+add(H1("C. Quy trình tiếp nhận & từ chối (DC Site)"));
 
-caseBlock("UAT-04", "Site xac nhan tiep nhan",
-  "Da co UAT-01. Dang nhap dc_mml@mml.io.",
+caseBlock("UAT-04", "Site xác nhận tiếp nhận",
+  "Đã có UAT-01. Đăng nhập dc_mml@mml.io.",
   [
-    "Mo 'Cho site phan hoi' -> chon tai lieu vua ban hanh.",
-    "Doc noi dung PDF hien thi truc tiep trong trang.",
-    "Bam 'Xac nhan tiep nhan'.",
+    "Mở 'Chờ site phản hồi' → chọn tài liệu vừa ban hành.",
+    "Đọc nội dung PDF hiển thị trực tiếp trong trang.",
+    "Bấm 'Xác nhận tiếp nhận'.",
   ],
   [
-    "Receipt site MML chuyen 'Da chap nhan', ghi ngay ap dung.",
-    "Ve lai hang cho; tai lieu da xu ly khong con trong hang cho MML.",
-    "Ben Author: trang thai tong hop chuyen 'Mot phan' (MML xong, HCM con cho).",
+    "Receipt site MML chuyển 'Đã chấp nhận', ghi ngày áp dụng.",
+    "Về lại hàng chờ; tài liệu đã xử lý không còn trong hàng chờ MML.",
+    "Bên Author: trạng thái tổng hợp chuyển 'Một phần' (MML xong, HCM còn chờ).",
   ]);
 
-caseBlock("UAT-05", "Site tu choi - chon loai sai sot",
-  "Con receipt 'Cho phan hoi' cua HCM (tu UAT-01). Dang nhap dc_hcm@mml.io.",
+caseBlock("UAT-05", "Site từ chối — chọn loại sai sót",
+  "Còn receipt 'Chờ phản hồi' của HCM (từ UAT-01). Đăng nhập dc_hcm@mml.io.",
   [
-    "Mo 'Cho site phan hoi' -> chon tai lieu.",
-    "Trong o ben phai, chon 'Loai sai sot' (Sai thong tin dang ky HOAC Sai noi dung tai lieu).",
-    "Nhap 'Mo ta sai sot' (bat buoc).",
-    "Bam nut 'Tu choi tiep nhan'.",
+    "Mở 'Chờ site phản hồi' → chọn tài liệu.",
+    "Trong khung bên phải, chọn 'Loại sai sót' (Sai thông tin đăng ký HOẶC Sai nội dung tài liệu).",
+    "Nhập 'Mô tả sai sót' (bắt buộc).",
+    "Bấm nút 'Từ chối tiếp nhận'.",
   ],
   [
-    "Nut 'Tu choi tiep nhan' hien ro o cuoi khung, ngay duoi o mo ta.",
-    "Neu bo trong mo ta -> bi chan, bao phai nhap ly do.",
-    "Receipt HCM chuyen 'Da tu choi' kem loai + ly do.",
-    "Trang thai tong hop chuyen 'Tranh chap'; Author thay canh bao.",
-    "Site khac mo cung phien ban thay canh bao 'co site bao sai ...'.",
+    "Nút 'Từ chối tiếp nhận' hiện rõ ở cuối khung, ngay dưới ô mô tả.",
+    "Nếu bỏ trống mô tả → bị chặn, báo phải nhập lý do.",
+    "Receipt HCM chuyển 'Đã từ chối' kèm loại + lý do.",
+    "Trạng thái tổng hợp chuyển 'Tranh chấp'; Author thấy cảnh báo.",
+    "Site khác mở cùng phiên bản thấy cảnh báo 'có site báo sai ...'.",
   ]);
 
-caseBlock("UAT-06", "Canh bao khi tu phan hoi tai lieu cua minh",
-  "Author dong thoi co vai DC Site (hiem). Dang nhap tai khoan do.",
+caseBlock("UAT-06", "Cảnh báo khi tự phản hồi tài liệu của mình",
+  "Author đồng thời có vai DC Site (hiếm). Đăng nhập tài khoản đó.",
   [
-    "Mo phan hoi mot receipt cua tai lieu CHINH MINH dang ky.",
+    "Mở phản hồi một receipt của tài liệu CHÍNH MÌNH đăng ký.",
   ],
   [
-    "Hien canh bao tach vai o dau trang.",
-    "Van cho phan hoi nhung ghi vet dam trong nhat ky.",
+    "Hiện cảnh báo tách vai ở đầu trang.",
+    "Vẫn cho phản hồi nhưng ghi vết đậm trong nhật ký.",
   ]);
 
-caseBlock("UAT-07", "Nguoi doc bao bat thuong -> DC Site tham dinh",
-  "Reader co pham vi thay tai lieu. Dang nhap reader@mml.io.",
+caseBlock("UAT-07", "Người đọc báo bất thường → DC Site thẩm định",
+  "Reader có phạm vi thấy tài liệu. Đăng nhập reader@mml.io.",
   [
-    "Mo chi tiet mot tai lieu hien hanh -> bam 'Bao bat thuong', nhap mo ta, gui.",
-    "Dang nhap DC Site phu trach -> mo 'Bao bat thuong (site)'.",
-    "Chon mot report: Chuyen thanh tu choi (chon loai + ly do) HOAC Bac bo.",
+    "Mở chi tiết một tài liệu hiện hành → bấm 'Báo bất thường', nhập mô tả, gửi.",
+    "Đăng nhập DC Site phụ trách → mở 'Báo bất thường (site)'.",
+    "Chọn một report: Chuyển thành từ chối (chọn loại + lý do) HOẶC Bác bỏ.",
   ],
   [
-    "Report cua Reader vao hop 'Bao bat thuong (site)'.",
-    "Chuyen -> sinh tu choi receipt tuong ung; Bac bo -> dong report kem ghi chu.",
+    "Report của Reader vào hộp 'Báo bất thường (site)'.",
+    "Chuyển → sinh từ chối receipt tương ứng; Bác bỏ → đóng report kèm ghi chú.",
   ]);
 
-// D. Author xu ly sau tu choi
 add(new Paragraph({ children: [new PageBreak()] }));
-add(H1("D. Author xu ly sau phan hoi"));
+add(H1("D. Author xử lý sau phản hồi"));
 
-caseBlock("UAT-08", "Sua metadata khi chua ai chap nhan",
-  "Tai lieu CHUA co site nao chap nhan. Dang nhap author@mml.io.",
+caseBlock("UAT-08", "Sửa metadata khi chưa ai chấp nhận",
+  "Tài liệu CHƯA có site nào chấp nhận. Đăng nhập author@mml.io.",
   [
-    "Vao 'Tai lieu cua toi' -> 'Tinh trang ban hanh' cua tai lieu.",
-    "Bam sua metadata; doi tieu de / ngay / bo phan so huu; luu.",
+    "Vào 'Tài liệu của tôi' → 'Tình trạng ban hành' của tài liệu.",
+    "Bấm sửa metadata; đổi tiêu đề / ngày / bộ phận sở hữu; lưu.",
   ],
   [
-    "Sua duoc (so hieu va tep bi khoa).",
-    "Neu DA co site chap nhan -> bi khoa, bao phai ra phien ban moi.",
+    "Sửa được (số hiệu và tệp bị khóa).",
+    "Nếu ĐÃ có site chấp nhận → bị khóa, báo phải ra phiên bản mới.",
   ]);
 
-caseBlock("UAT-09", "Thu hoi tai lieu",
-  "Tai lieu chua ai chap nhan HOAC co it nhat mot tu choi. Dang nhap author@mml.io.",
+caseBlock("UAT-09", "Thu hồi tài liệu",
+  "Tài liệu chưa ai chấp nhận HOẶC có ít nhất một từ chối. Đăng nhập author@mml.io.",
   [
-    "Vao 'Tinh trang ban hanh' -> bam thu hoi.",
-    "Nhap ly do (bat buoc) -> xac nhan.",
+    "Vào 'Tình trạng ban hành' → bấm thu hồi.",
+    "Nhập lý do (bắt buộc) → xác nhận.",
   ],
   [
-    "Tai lieu chuyen 'Da thu hoi'.",
-    "Neu da co site chap nhan va KHONG co tu choi -> khong thuoc dien tu thu hoi (bi chan).",
+    "Tài liệu chuyển 'Đã thu hồi'.",
+    "Nếu đã có site chấp nhận và KHÔNG có từ chối → không thuộc diện tự thu hồi (bị chặn).",
   ]);
 
-caseBlock("UAT-10", "Xoa ban chua ai chap nhan",
-  "Tai lieu chua co chap nhan nao. Dang nhap author@mml.io.",
+caseBlock("UAT-10", "Xóa bản chưa ai chấp nhận",
+  "Tài liệu chưa có chấp nhận nào. Đăng nhập author@mml.io.",
   [
-    "Vao 'Tinh trang ban hanh' -> bam xoa.",
+    "Vào 'Tình trạng ban hành' → bấm xóa.",
   ],
   [
-    "Xoa duoc khi chua co chap nhan nao.",
-    "Neu da co chap nhan -> khong xoa duoc, phai thu hoi.",
+    "Xóa được khi chưa có chấp nhận nào.",
+    "Nếu đã có chấp nhận → không xóa được, phải thu hồi.",
   ]);
 
-// E. Soat xet
 add(new Paragraph({ children: [new PageBreak()] }));
-add(H1("E. Xem xet dinh ky (soat xet)"));
+add(H1("E. Xem xét định kỳ (soát xét)"));
 
-caseBlock("UAT-11", "Ket luan xem xet dinh ky",
-  "Co tai lieu toi han xem xet thuoc bo phan Author so huu. Dang nhap author@mml.io.",
+caseBlock("UAT-11", "Kết luận xem xét định kỳ",
+  "Có tài liệu tới hạn xem xét thuộc bộ phận Author sở hữu. Đăng nhập author@mml.io.",
   [
-    "Mo 'Xem xet dinh ky'.",
-    "Chon mot tai lieu dang xem xet, ghi ket luan: Giu nguyen / Can sua / Huy bo.",
-    "Voi Can sua / Huy bo: nhap giai trinh (bat buoc).",
+    "Mở 'Xem xét định kỳ'.",
+    "Chọn một tài liệu đang xem xét, ghi kết luận: Giữ nguyên / Cần sửa / Hủy bỏ.",
+    "Với Cần sửa / Hủy bỏ: nhập giải trình (bắt buộc).",
   ],
   [
-    "Giu nguyen -> dat lai dong ho chu ky, dong ban ghi.",
-    "Can sua -> treo cho ban moi (tu dong dong khi ban moi hieu luc).",
-    "Huy bo -> dong ban ghi.",
-    "Nguoi NGOAI bo phan so huu -> khong ket luan duoc (403).",
+    "Giữ nguyên → đặt lại đồng hồ chu kỳ, đóng bản ghi.",
+    "Cần sửa → treo chờ bản mới (tự động đóng khi bản mới hiệu lực).",
+    "Hủy bỏ → đóng bản ghi.",
+    "Người NGOÀI bộ phận sở hữu → không kết luận được (403).",
   ]);
 
-caseBlock("UAT-12", "Phan quyen menu & route (phong thu)",
-  "Lan luot dang nhap tung vai.",
+caseBlock("UAT-12", "Phân quyền menu & route (phòng thủ)",
+  "Lần lượt đăng nhập từng vai.",
   [
-    "Admin: go thang URL /documents va /reviews.",
-    "DC Site: go thang URL /packages.",
-    "Reader: kiem menu chi co Trang chu + Danh muc.",
+    "Admin: gõ thẳng URL /documents và /reviews.",
+    "DC Site: gõ thẳng URL /packages.",
+    "Reader: kiểm menu chỉ có Trang chủ + Danh mục.",
   ],
   [
-    "Admin bi tu choi (403) o trang nghiep vu; chi thay khu Quan tri + Ghi vet.",
-    "DC Site bi tu choi (403) o /packages.",
-    "Menu an han muc khong co quyen cho moi vai.",
+    "Admin bị từ chối (403) ở trang nghiệp vụ; chỉ thấy khu Quản trị + Ghi vết.",
+    "DC Site bị từ chối (403) ở /packages.",
+    "Menu ẩn hẳn mục không có quyền cho mọi vai.",
   ]);
 
 const doc = new Document({ styles, numbering, sections: [{ properties: { page: pageMargin }, children }] });
 const buf = await Packer.toBuffer(doc);
 writeFileSync("docs/uat/DCS-UAT-BanHanh-TuChoi-SoatXet.docx", buf);
-console.log("WROTE docs/uat/DCS-UAT-BanHanh-TuChoi-SoatXet.docx");
+console.log("WROTE uat doc");
