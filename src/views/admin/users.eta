@@ -9,6 +9,9 @@
     <h1>Quản trị người dùng</h1>
     <p class="page-header__desc">Tài khoản và gán bộ phận. Khai tay tạm thời khi L1 chưa vận hành.</p>
   </div>
+  <div class="toolbar">
+    <a href="#add-user" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Thêm người dùng</a>
+  </div>
 </div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
@@ -60,7 +63,7 @@
   </tbody>
 </table>
 
-<div class="add-user-card">
+<div class="add-user-card" id="add-user">
 <h2 class="add-user-card__title">Thêm người dùng</h2>
 <form method="post" action="/admin/users" class="inline-form add-user-form">
   <input name="full_name" placeholder="Họ tên" required>

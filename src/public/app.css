@@ -1431,3 +1431,8 @@ button.danger { background: var(--status-error-fg); }
   .filter-bar__actions { flex-direction: column; }
   .filter-bar__actions .btn-action { width: 100%; justify-content: center; min-height: 40px; }
 }
+
+/* Mục tiêu neo (anchor) từ nút toolbar: chừa khoảng dưới topbar dính + cuộn mượt. */
+html { scroll-behavior: smooth; }
+#add-user, #tao-goi { scroll-margin-top: calc(var(--topbar-h) + var(--sp-4)); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
