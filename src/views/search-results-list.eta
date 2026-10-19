@@ -20,7 +20,7 @@ function buildHref(omit, omitVal){
   if (f.sort && omit!=='sort') parts.push('sort=' + enc(f.sort));
   return '/search?' + parts.join('&');
 }
-const originLabel = { noi_bo: 'Nội bộ', ben_ngoai: 'Bên ngoài' };
+const originLabel = { noi_bo: 'Nội bộ', ngoai_bo: 'Bên ngoài' };
 const scopeLabelMap = { group: 'Toàn hệ thống', bu: 'Khối (BU)', site: 'Nhà máy/Site', dept: 'Bộ phận' };
 const matchLabelMap = { doc_id: 'Số hiệu', document: 'Tiêu đề', section: 'Nội dung mục', fulltext: 'Toàn văn' };
 const chips = [];

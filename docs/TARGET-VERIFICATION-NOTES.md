@@ -17,7 +17,9 @@ Log trên target: journalctl -u dcs -f   (hoặc --since "10 min ago").
    (áp 017 receipt model, 018 vai DC_SITE_DOC_CONTROL, 019 audit events,
     020 fn_search/v_current_documents coi da_ban_hanh là hiện hành,
     023 search: mở rộng fn_search/fn_search_limited thêm bộ lọc đa chiều
-        + cột làm giàu kết quả — BẮT BUỘC cho trang tìm kiếm mới)
+        + cột làm giàu kết quả — BẮT BUỘC cho trang tìm kiếm mới,
+    024 search: sửa lỗi 42703 'si.origin' — JOIN documents lấy origin;
+        BẮT BUỘC chạy cùng/sau 023 để trang tìm kiếm không lỗi 500)
 5. Seed dữ liệu thử (nếu môi trường mới):   node scripts/uat/seed_uat.js
 6. Khởi động lại dịch vụ:   sudo systemctl restart dcs
 7. Chạy test DB đầy đủ (tùy chọn):   npm test
