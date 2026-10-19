@@ -4,7 +4,12 @@
   Mô hình 4 vai: Admin (quản trị + master data) · Biên soạn (đăng ký) · Kiểm soát tài liệu site (nhận &amp; phản hồi theo site) · Người đọc. Admin đứng ngoài luồng tài liệu.
 </div>
 
-<h1>Vai trò</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Vai trò</h1>
+    <p class="page-header__desc">Gán vai cho người dùng: Admin · Biên soạn · Kiểm soát tài liệu site · Người đọc.</p>
+  </div>
+</div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <table class="data-table responsive-table">

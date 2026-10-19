@@ -2,7 +2,12 @@
 
 <!-- Trang chủ: hôm nay tôi cần làm gì. Khối không có việc thì ẩn hẳn. -->
 <section class="home">
-  <h1>Xin chào<%= it.user && it.user.full_name ? ', ' + it.user.full_name : '' %></h1>
+  <div class="page-header">
+    <div class="page-header__titles">
+      <h1>Xin chào<%= it.user && it.user.full_name ? ', ' + it.user.full_name : '' %></h1>
+      <p class="page-header__desc">Hôm nay bạn cần làm gì. Các khối việc không có sẽ tự ẩn.</p>
+    </div>
+  </div>
 
   <div class="quick-search">
     <form action="/documents" method="get" role="search">

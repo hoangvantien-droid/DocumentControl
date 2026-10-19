@@ -1,6 +1,10 @@
 <% layout('layout.eta', { title: 'Chờ site phản hồi — DCS', user: it.user }) %>
 
-<h1>Chờ site phản hồi</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Chờ site phản hồi</h1>
+  </div>
+</div>
 <% if (it.notControl) { %>
 <div class="alert-banner alert-banner--info"><strong>Thông tin:</strong> Bạn chưa được gán vai Kiểm soát tài liệu cho site nào. Liên hệ quản trị để được cấp quyền.</div>
 <% } else { %>

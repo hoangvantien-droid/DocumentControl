@@ -5,7 +5,12 @@
   DCS sở hữu cây tổ chức. Site có thể phục vụ nhiều BU; hãy duy trì quan hệ này khi tổ chức thay đổi.
 </div>
 
-<h1>Quản trị tổ chức</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Quản trị tổ chức</h1>
+    <p class="page-header__desc">Cây tổ chức: khối (BU), nhà máy/site, bộ phận. DCS là nguồn sở hữu.</p>
+  </div>
+</div>
 
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 

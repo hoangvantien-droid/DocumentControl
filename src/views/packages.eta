@@ -1,6 +1,11 @@
 <% layout('layout.eta', { title: 'Gói ban hành — DCS', user: it.user }) %>
 
-<h1>Gói ban hành</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Gói ban hành</h1>
+    <p class="page-header__desc">Gom nhiều tài liệu vào một gói để ban hành đồng loạt tới các site.</p>
+  </div>
+</div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <% it.packages.forEach(function(p){ %>

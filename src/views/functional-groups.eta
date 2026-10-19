@@ -1,6 +1,11 @@
 <% layout('layout.eta', { title: 'Nhóm chức năng — DCS', user: it.user }) %>
 
-<h1>Nhóm chức năng</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Nhóm chức năng</h1>
+    <p class="page-header__desc">Nhóm người theo chức năng để cấp quyền xem tài liệu phạm vi group.</p>
+  </div>
+</div>
 <% if (it.error) { %><div class="login-error"><%= it.error %></div><% } %>
 
 <!-- Cảnh báo nhóm lạc hậu (T-068): hiện NGAY khi mở trang, không giấu tab phụ -->
