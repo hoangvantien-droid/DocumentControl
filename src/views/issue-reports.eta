@@ -24,7 +24,7 @@
       <blockquote class="report-card__note"><%= r.note %></blockquote>
 
       <div class="report-card__actions">
-        <form method="post" action="/issue-reports/<%= r.report_id %>/convert" class="report-form">
+        <form method="post" action="/issue-reports/<%= r.report_id %>/convert" class="report-form" hx-post="/issue-reports/<%= r.report_id %>/convert" hx-target="#toast-zone" hx-swap="beforeend">
           <div class="report-form__title">Chuyển thành phản hồi từ chối</div>
           <label>Loại sai sót
             <select name="reject_type" required>
@@ -38,7 +38,7 @@
           <button type="submit" class="primary">Chuyển thành từ chối</button>
         </form>
 
-        <form method="post" action="/issue-reports/<%= r.report_id %>/dismiss" class="report-form">
+        <form method="post" action="/issue-reports/<%= r.report_id %>/dismiss" class="report-form" hx-post="/issue-reports/<%= r.report_id %>/dismiss" hx-target="#toast-zone" hx-swap="beforeend">
           <div class="report-form__title">Bác bỏ report</div>
           <label>Lý do bác bỏ <span class="req">*</span>
             <input name="review_note" required placeholder="Vì sao không chuyển">

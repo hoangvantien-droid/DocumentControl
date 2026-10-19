@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError, BusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import {
   submitRegistration, saveDraft,
   type DocType, type Origin, type ChangeSignificance,
@@ -319,7 +320,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       });
       return reply.redirect(`/my-documents/${req.params.id}/issuance`);
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -344,7 +345,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       await recallByAuthor(sql, { versionId: req.params.id, userId: user.user_id, reason: (req.body ?? {}).reason ?? '' });
       return reply.redirect('/my-documents');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -357,7 +358,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       await deleteUnacceptedVersion(sql, { versionId: req.params.id, userId: user.user_id });
       return reply.redirect('/my-documents');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });

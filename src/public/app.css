@@ -1309,3 +1309,8 @@ button.danger { background: var(--status-error-fg); }
   /* Khoảng cách link hành động trong một ô (tránh chạm nhầm). */
   .row-actions a { display: inline-block; padding: 6px 0; }
 }
+
+/* ===== Vùng toast cảnh báo tại chỗ (friendly-error-messages) ===== */
+.toast-zone { position: fixed; right: 16px; bottom: 16px; z-index: 1000;
+  display: flex; flex-direction: column; gap: 8px; max-width: min(92vw, 420px); }
+@media (max-width: 768px) { .toast-zone { left: 12px; right: 12px; bottom: 12px; max-width: none; } }

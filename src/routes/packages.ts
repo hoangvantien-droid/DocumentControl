@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import { canRegisterDocuments } from '../domain/permissions.js';
 import {
   listPackages, packageMembers, createPackage, attachToPackage, movePackageDate, detachMember,
@@ -56,7 +57,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
       });
       return reply.redirect('/packages');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -70,7 +71,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
       });
       return reply.redirect('/packages');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -84,7 +85,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
       });
       return reply.redirect('/packages');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -98,7 +99,7 @@ export function registerPackageRoutes(app: FastifyInstance, sql: Sql): void {
       });
       return reply.redirect('/packages');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });

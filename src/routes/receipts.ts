@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError, sendOk } from '../lib/http-errors.js';
 import { siteIdsWithDocControl } from '../domain/permissions.js';
 import {
   pendingReceiptsForSites, loadReceiptForView,
@@ -51,9 +52,9 @@ export function registerReceiptRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     try {
       await acceptReceipt(sql, { receiptId: req.params.id, userId: user.user_id });
-      return reply.redirect('/site-receipts');
+      return sendOk(req, reply, '/site-receipts');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });
@@ -73,9 +74,9 @@ export function registerReceiptRoutes(app: FastifyInstance, sql: Sql): void {
           receiptId: req.params.id, userId: user.user_id,
           rejectType, note: (req.body ?? {}).note ?? '',
         });
-        return reply.redirect('/site-receipts');
+        return sendOk(req, reply, '/site-receipts');
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },

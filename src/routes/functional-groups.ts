@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import {
   listGroups, createGroup, addMember, removeMember, membersOf, staleMembers,
 } from '../domain/functional-groups.js';
@@ -47,7 +48,7 @@ export function registerFunctionalGroupRoutes(app: FastifyInstance, sql: Sql): v
       });
       return reply.redirect('/functional-groups');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });

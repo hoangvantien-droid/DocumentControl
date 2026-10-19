@@ -6,6 +6,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError, BusinessError } from '../lib/errors.js';
+import { sendBusinessError } from '../lib/http-errors.js';
 import {
   listBu, listSites, listDepartments, createBu, createSite, addSiteBu, createDepartment,
 } from '../domain/org.js';
@@ -162,7 +163,7 @@ export function registerAdminRoutes(app: FastifyInstance, sql: Sql): void {
       });
       return reply.redirect('/admin/roles');
     } catch (err) {
-      if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
     }
   });

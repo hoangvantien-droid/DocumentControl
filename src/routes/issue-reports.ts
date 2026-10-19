@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Sql } from 'postgres';
 import { requireUser } from '../middleware/auth.js';
 import { isBusinessError } from '../lib/errors.js';
+import { sendBusinessError, sendOk } from '../lib/http-errors.js';
 import { siteIdsWithDocControl } from '../domain/permissions.js';
 import {
   createIssueReport, pendingReportsForSites,
@@ -26,9 +27,9 @@ export function registerIssueReportRoutes(app: FastifyInstance, sql: Sql): void 
         await createIssueReport(sql, {
           versionId: req.params.id, userId: user.user_id, note: (req.body ?? {}).note ?? '',
         });
-        return reply.redirect(`/documents/${req.params.id}`);
+        return sendOk(req, reply, `/documents/${req.params.id}`);
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },
@@ -61,9 +62,9 @@ export function registerIssueReportRoutes(app: FastifyInstance, sql: Sql): void 
           reportId: req.params.id, userId: user.user_id,
           rejectType, note: (req.body ?? {}).note ?? '',
         });
-        return reply.redirect('/issue-reports');
+        return sendOk(req, reply, '/issue-reports');
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },
@@ -79,9 +80,9 @@ export function registerIssueReportRoutes(app: FastifyInstance, sql: Sql): void 
         await dismissReport(sql, {
           reportId: req.params.id, userId: user.user_id, reviewNote: (req.body ?? {}).review_note ?? '',
         });
-        return reply.redirect('/issue-reports');
+        return sendOk(req, reply, '/issue-reports');
       } catch (err) {
-        if (isBusinessError(err)) { reply.code(err.httpStatus); return reply.send(err.message); }
+        if (isBusinessError(err)) return sendBusinessError(req, reply, err);
         throw err;
       }
     },
