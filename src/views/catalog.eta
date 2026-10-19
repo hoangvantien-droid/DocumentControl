@@ -1,16 +1,26 @@
 <% layout('layout.eta', { title: 'Danh mục tài liệu — DCS', user: it.user }) %>
 
-<h1>Danh mục tài liệu</h1>
+<div class="page-header">
+  <div class="page-header__titles">
+    <h1>Danh mục tài liệu</h1>
+    <p class="page-header__desc">Tra cứu tài liệu trong phạm vi của bạn. Lọc theo trạng thái, loại, site và ngày hiệu lực.</p>
+  </div>
+  <div class="toolbar">
+    <% if (it.nav && it.nav.canRegister) { %>
+      <a href="/register" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Đăng ký tài liệu</a>
+    <% } %>
+  </div>
+</div>
 
 <% var ff = it.filters || {}; %>
-<div style="margin-bottom:8px">
+<div class="quick-filters">
   <a href="/documents?preset=hieu_luc">Đang hiệu lực</a> ·
   <a href="/documents?preset=new30">Mới ban hành 30 ngày</a> ·
   <a href="/documents?preset=expiring30">Sắp hết hạn 30 ngày</a> ·
   <a href="/documents?preset=overdue">Quá hạn rà soát</a> ·
   <a href="/documents">Xóa lọc</a>
 </div>
-<form method="get" action="/documents" class="inline-form catalog-filters" style="margin-bottom:12px">
+<form method="get" action="/documents" class="filter-bar catalog-filters">
   <label>Tìm: <input name="q" value="<%= ff.q || '' %>" placeholder="số hiệu / tiêu đề"></label>
   <label>Preset:
     <select name="preset">
@@ -71,7 +81,7 @@
       <option value="so_hieu" <%= ff.sort==='so_hieu'?'selected':'' %>>Số hiệu A-Z</option>
     </select>
   </label>
-  <button type="submit">Lọc</button>
+  <div class="filter-bar__actions"><button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'filter' }) %> Lọc</button> <a href="/documents" class="btn-action btn-action--neutral"><%~ include('/components/action-icon.eta', { name: 'x' }) %> Xóa lọc</a></div>
 </form>
 
 <table class="data-table responsive-table catalog-table">
