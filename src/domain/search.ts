@@ -35,6 +35,9 @@ export interface SearchFilters {
   effTo?: string | null;
   matchLevels?: string[] | null;
   sort?: string | null;
+  buId?: string | null;
+  siteId?: string | null;
+  deptId?: string | null;
 }
 
 /** Chuẩn hoá mảng filter: rỗng -> null (bỏ lọc). */
@@ -65,11 +68,15 @@ export async function search(
   const effFrom = strOrNull(filters.effFrom);
   const effTo = strOrNull(filters.effTo);
   const sort = strOrNull(filters.sort);
+  const buId = strOrNull(filters.buId);
+  const siteId = strOrNull(filters.siteId);
+  const deptId = strOrNull(filters.deptId);
   return sql<SearchHit[]>`
     SELECT * FROM fn_search_limited(
       ${userId}, ${q}, ${includeHistorical}, ${limit},
       ${docTypes}::text[], ${origin}::text, ${scopeLevel}::text,
-      ${effFrom}::date, ${effTo}::date, ${matchLevels}::text[], ${sort}::text)`;
+      ${effFrom}::date, ${effTo}::date, ${matchLevels}::text[], ${sort}::text,
+      ${buId}::uuid, ${siteId}::uuid, ${deptId}::uuid)`;
 }
 
 /** Gợi ý nhanh cho ô tìm (sau 2 ký tự, tối đa 5). Khớp số hiệu lên đầu. */
