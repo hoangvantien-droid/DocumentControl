@@ -11,7 +11,7 @@ import { isBusinessError } from '../lib/errors.js';
 import { sendBusinessError, sendOk } from '../lib/http-errors.js';
 import { siteIdsWithDocControl } from '../domain/permissions.js';
 import {
-  pendingReceiptsForSites, loadReceiptForView,
+  pendingReceiptsForSites, recalledDocsForSites, loadReceiptForView,
   acceptReceipt, rejectReceipt, type RejectType,
 } from '../domain/receipt.js';
 import { loadDetail, loadSections } from '../domain/catalog.js';
@@ -23,10 +23,13 @@ export function registerReceiptRoutes(app: FastifyInstance, sql: Sql): void {
     if (!user) return reply;
     const siteIds = [...await siteIdsWithDocControl(sql, user.user_id)];
     if (siteIds.length === 0) {
-      return reply.view('site-receipts.eta', { rows: [], notControl: true });
+      return reply.view('site-receipts.eta', { rows: [], notControl: true, recalledDocs: [] });
     }
-    const rows = await pendingReceiptsForSites(sql, siteIds);
-    return reply.view('site-receipts.eta', { rows, notControl: false });
+    const [rows, recalledDocs] = await Promise.all([
+      pendingReceiptsForSites(sql, siteIds),
+      recalledDocsForSites(sql, siteIds),
+    ]);
+    return reply.view('site-receipts.eta', { rows, notControl: false, recalledDocs });
   });
 
   // Màn phản hồi một receipt.

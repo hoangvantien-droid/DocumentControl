@@ -200,6 +200,33 @@ export interface PendingReceiptRow extends ReceiptRow {
  * Hàng chờ phản hồi của một DC Site: các receipt cho_phan_hoi thuộc các site
  * người dùng phụ trách. Kèm cờ cảnh báo nếu cùng version đã có site khác từ chối.
  */
+/** Một dòng tài liệu bị thu hồi có liên quan tới site (nhắc DC Site). */
+export interface RecalledDocRow {
+  version_id: string;
+  doc_id: string;
+  version_no: string;
+  title: string;
+  recall_reason: string | null;
+  recalled_at: string | null;
+}
+
+/**
+ * Tài liệu ĐÃ THU HỒI có receipt tới các site người dùng phụ trách (nhắc Mức A,
+ * chỉ đọc). Mọi site có receipt — bất kể trạng thái receipt. Dẫn xuất, không bảng
+ * mới, không kênh notification.
+ */
+export async function recalledDocsForSites(sql: Sql, siteIds: string[]): Promise<RecalledDocRow[]> {
+  if (siteIds.length === 0) return [];
+  return sql<RecalledDocRow[]>`
+    SELECT DISTINCT v.version_id, v.doc_id, v.version_no, v.title,
+           v.recall_reason, v.updated_at::text AS recalled_at
+      FROM document_versions v
+      JOIN document_receipt r ON r.version_id = v.version_id
+     WHERE v.status = 'thu_hoi'
+       AND r.site_id = ANY(${siteIds}::uuid[])
+     ORDER BY v.updated_at DESC`;
+}
+
 /** Đếm nhanh số receipt đang chờ phản hồi của các site (cho badge sidebar). */
 export async function pendingReceiptCountForSites(sql: Sql, siteIds: string[]): Promise<number> {
   if (siteIds.length === 0) return 0;
@@ -511,22 +538,28 @@ export async function recallByAuthor(
     if (v.status !== 'da_ban_hanh') {
       throw new BusinessError('recall.bad_status', `Không thu hồi được từ trạng thái ${v.status}`);
     }
-    const [row] = await tx<{ accepted: number; rejected: number }[]>`
+    // MỞ quyền: Author thu hồi được KỂ CẢ khi mọi site đã chấp nhận (bỏ chặn
+    // recall.locked). Vẫn bắt buộc lý do + status da_ban_hanh + registrant.
+    const [row] = await tx<{ accepted: number; rejected: number; pending: number; total: number }[]>`
       SELECT count(*) FILTER (WHERE status = 'chap_nhan')::int AS accepted,
-             count(*) FILTER (WHERE status = 'tu_choi')::int AS rejected
+             count(*) FILTER (WHERE status = 'tu_choi')::int AS rejected,
+             count(*) FILTER (WHERE status = 'cho_phan_hoi')::int AS pending,
+             count(*)::int AS total
         FROM document_receipt WHERE version_id = ${input.versionId}`;
-    const accepted = row?.accepted ?? 0;
-    const rejected = row?.rejected ?? 0;
-    if (accepted > 0 && rejected === 0) {
-      throw new BusinessError('recall.locked', 'Đã có site chấp nhận và không có từ chối — không thuộc diện Author tự thu hồi');
-    }
+    const tally = {
+      accepted: row?.accepted ?? 0, rejected: row?.rejected ?? 0,
+      pending: row?.pending ?? 0, total: row?.total ?? 0,
+    };
+    const siteRows = await tx<{ site_id: string }[]>`
+      SELECT site_id FROM document_receipt WHERE version_id = ${input.versionId}`;
+    const affectedSiteIds = siteRows.map((r) => r.site_id);
     await tx`
       UPDATE document_versions SET status = 'thu_hoi', recall_reason = ${input.reason.trim()}, updated_at = now()
        WHERE version_id = ${input.versionId}`;
     await writeAudit(tx as TransactionSql, {
       eventType: 'thu_hoi', actorUserId: input.userId,
       objectType: 'document_versions', objectId: input.versionId,
-      afterState: { status: 'thu_hoi', reason: input.reason.trim() },
+      afterState: { status: 'thu_hoi', reason: input.reason.trim(), tally, affected_site_ids: affectedSiteIds },
     });
   });
 }

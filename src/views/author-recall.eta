@@ -6,6 +6,12 @@
 
 <div class="alert-banner alert-banner--warning"><strong>Thu hồi phiên bản:</strong> Dùng khi sai nội dung hoặc cần làm lại. Sau khi thu hồi, đăng ký lại phiên bản mới (chọn bản này làm bản gốc ở màn Đăng ký) để ban hành thay thế.</div>
 
+<% var t = it.tally || { accepted:0, rejected:0, pending:0, total:0 }; %>
+<p class="muted">Tác động: Chấp nhận <%= t.accepted %> · Từ chối <%= t.rejected %> · Chờ <%= t.pending %> · Tổng <%= t.total %> site.</p>
+<% if (t.accepted > 0) { %>
+  <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'CÓ ' + t.accepted + ' SITE ĐÃ CHẤP NHẬN/ÁP DỤNG. Thu hồi sẽ làm tài liệu mất hiệu lực tại các site đó — cân nhắc ra phiên bản mới thay thế thay vì thu hồi trống.' }) %>
+<% } %>
+
 <form method="post" action="/my-documents/<%= v.version_id %>/recall" class="reg-form">
   <fieldset>
     <legend>Lý do thu hồi</legend>
