@@ -75,6 +75,22 @@
   --shadow-card: 0 1px 3px 0 rgba(0,43,84,.06), 0 1px 2px -1px rgba(0,43,84,.04);
 
   /* ================================================================
+   * FROSTED-GLASS — token kính mờ (chỉ BỔ SUNG, không đổi tên token cũ).
+   * Áp cho các lớp mặt phẳng dùng chung; giữ nguyên tông xanh Masan.
+   * Mỗi mặt kính luôn có fallback đặc (--glass-bg-solid) khai báo TRƯỚC
+   * lớp trong mờ, để trình duyệt không hỗ trợ backdrop-filter vẫn đọc rõ.
+   * ================================================================ */
+  --glass-bg:            rgba(255, 255, 255, 0.62);   /* mặt sáng trong mờ chuẩn */
+  --glass-bg-strong:     rgba(255, 255, 255, 0.78);   /* mặt cần tương phản chữ cao (login, bảng, dropdown) */
+  --glass-bg-solid:      #FBFDFF;                       /* FALLBACK đặc (gần trắng, ánh xanh Masan) */
+  --glass-border:        rgba(255, 255, 255, 0.55);   /* viền sáng 1px trong mờ */
+  --glass-blur:          14px;                          /* bán kính blur chuẩn */
+  --glass-shadow:        0 8px 30px rgba(0, 43, 84, 0.10), 0 2px 8px rgba(0, 43, 84, 0.06);  /* bóng lớp ánh navy Masan */
+  --glass-sidebar-bg:        rgba(0, 43, 84, 0.72);    /* navy thương hiệu trong mờ cho sidebar */
+  --glass-sidebar-bg-solid:  var(--masan-900);         /* FALLBACK đặc cho sidebar */
+  --page-gradient:       linear-gradient(160deg, #EAF3FC 0%, #F4F8FC 45%, #FDFEFF 100%);  /* nền trang dốc xanh Masan nhạt */
+
+  /* ================================================================
    * ALIAS TƯƠNG THÍCH NGƯỢC — token cũ trỏ sang token DCS-12 mới.
    * Giữ mọi view chưa di trú đổi sang tông hải quân mà KHÔNG đổi
    * tên lớp hay markup. Gỡ dần sau khi view đã dùng token mới.
@@ -99,7 +115,10 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   color: var(--color-text);
-  background: var(--color-bg);
+  /* Nền trang: dốc xanh Masan nhạt, gắn fixed để đọc được sau mọi panel kính.
+   * background-color là fallback đặc, giữ nền phẳng --color-bg cũ nếu gradient lỗi. */
+  background-color: var(--color-bg);
+  background: var(--page-gradient) fixed;
 }
 
 /* Tiêu đề toàn cục theo thang chữ DCS-12 (Yêu cầu 1.5, 1.6, 2.4).
@@ -110,6 +129,34 @@ h3 { font-size: var(--fs-subtle);  font-weight: var(--fw-subtle); }
 
 a { color: var(--brand); text-decoration: none; }
 a:hover { text-decoration: underline; }
+
+/* ================================================================
+ * FROSTED-GLASS — mặt kính dùng chung (chỉ BỔ SUNG; không đổi markup/class).
+ * Gom các lớp mặt phẳng sáng hiện có vào một bộ khai báo "kính mờ".
+ * Thứ tự khai báo nền CỐ Ý: fallback đặc TRƯỚC, lớp trong mờ SAU, để
+ * trình duyệt thiếu backdrop-filter rơi về nền đặc gần trắng (đọc rõ).
+ * Mỗi lớp vẫn giữ border-radius/padding riêng khai báo ở khối gốc bên dưới;
+ * ở đây chỉ phủ nền kính, blur, viền sáng và bóng lớp.
+ * ================================================================ */
+.topbar, .login-card, .home-block, .pkg-card, .org-col, .detail-main, .detail-side,
+.add-user-card, .metric-card, .qa-answer, .no-results, .data-table, .suggest-list,
+.suggest-empty, .card, .report-card, .detail-footer__block, .detail-info-bar, .detail-panel,
+.filter-bar, .admin-panel, .empty-state, .confirm-file, .detail-meta, .report-form {
+  background-color: var(--glass-bg-solid);           /* FALLBACK đặc (khai báo trước) */
+  background-color: var(--glass-bg);                  /* lớp trong mờ */
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+/* Mặt cần tương phản chữ cao hơn: login, bảng dữ liệu, dropdown gợi ý. */
+.login-card, .data-table, .suggest-list, .suggest-empty {
+  background-color: var(--glass-bg-solid);           /* FALLBACK đặc (khai báo trước) */
+  background-color: var(--glass-bg-strong);
+}
+/* .topbar có sẵn border-bottom riêng — không nhân đôi: bỏ viền kính, giữ
+ * đường kẻ dưới gốc; vẫn hưởng nền kính + blur + bóng ở trên. */
+.topbar { border: 0; border-bottom: 1px solid var(--masan-100); }
 
 /* ---- Thanh điều hướng ---- */
 .topbar {
@@ -200,7 +247,12 @@ a:hover { text-decoration: underline; }
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: var(--masan-900);
+  /* Kính mờ navy thương hiệu: fallback đặc TRƯỚC, lớp trong mờ SAU.
+   * Giữ nguyên toàn bộ quy tắc chữ/icon/active bên dưới để nhãn luôn rõ. */
+  background-color: var(--glass-sidebar-bg-solid);
+  background-color: var(--glass-sidebar-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border-right: none;
   padding: 12px 0;
   display: flex;
@@ -579,6 +631,13 @@ button.danger { padding: 8px 16px; border: none; border-radius: 8px; background:
 .verify-ok { background: var(--status-success-fg); color: #fff; }
 .verify-bad { background: var(--status-error-fg); color: #fff; }
 .verify-unknown { background: var(--color-surface-alt); color: var(--color-text); }
+/* GUARD: trang tra cứu QR công khai PHẢI đặc, tương phản cao (đọc cách 1m) —
+ * KHÔNG bao giờ kính mờ. Dù không nằm trong nhóm kính, vẫn chặn mọi cascade
+ * backdrop-filter để chắc chắn không bị làm mờ. */
+.verify-page, .verify-card, .verify-ok, .verify-bad, .verify-unknown {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 
 /* ---- Hỏi đáp (T-088) ---- */
 .qa-answer { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; white-space: pre-wrap; }
@@ -1495,3 +1554,38 @@ html { scroll-behavior: smooth; }
 .org-col__subform { padding-top: var(--sp-3); border-top: 1px dashed var(--color-border); }
 .org-col__count { font-size: var(--fs-aux); color: var(--muted); margin: var(--sp-3) 0 var(--sp-1); font-weight: 600; }
 .org-col h2 { color: var(--masan-900); }
+
+/* ================================================================
+ * FROSTED-GLASS — FALLBACK khả truy cập.
+ * (1) Người dùng chọn giảm trong suốt: ép mặt kính về nền ĐẶC, bỏ blur.
+ * (2) Trình duyệt KHÔNG hỗ trợ backdrop-filter: ép về nền đặc (nền đặc đã
+ *     khai báo trước ở nhóm kính phủ phần lớn; khối này làm tường minh và
+ *     còn dẹp cả trường hợp "trong mờ nhưng không blur" về nền đặc).
+ * Giữ danh sách lớp đồng bộ với nhóm kính ở đầu file + .sidebar.
+ * ================================================================ */
+@media (prefers-reduced-transparency: reduce) {
+  .topbar, .login-card, .home-block, .pkg-card, .org-col, .detail-main, .detail-side,
+  .add-user-card, .metric-card, .qa-answer, .no-results, .data-table, .suggest-list,
+  .suggest-empty, .card, .report-card, .detail-footer__block, .detail-info-bar, .detail-panel,
+  .filter-bar, .admin-panel, .empty-state, .confirm-file, .detail-meta, .report-form {
+    background-color: var(--glass-bg-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .sidebar {
+    background-color: var(--glass-sidebar-bg-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar, .login-card, .home-block, .pkg-card, .org-col, .detail-main, .detail-side,
+  .add-user-card, .metric-card, .qa-answer, .no-results, .data-table, .suggest-list,
+  .suggest-empty, .card, .report-card, .detail-footer__block, .detail-info-bar, .detail-panel,
+  .filter-bar, .admin-panel, .empty-state, .confirm-file, .detail-meta, .report-form {
+    background-color: var(--glass-bg-solid);
+  }
+  .sidebar {
+    background-color: var(--glass-sidebar-bg-solid);
+  }
+}
