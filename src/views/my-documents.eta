@@ -36,8 +36,8 @@
       </td>
       <td data-label="Tình trạng ban hành">
         <% if (d.total > 0) { %>
-          <% var cls = d.aggregate === 'tranh_chap' ? 'status-thu_hoi' : (d.aggregate === 'toan_bo' ? 'status-hieu_luc' : 'status-da_ban_hanh'); %>
-          <span class="status <%= cls %>"><%= it.aggregateStatusLabel(d.aggregate) %></span>
+          <% var disp = it.aggregateDisplay(d.aggregate, d.hasContentReject); %>
+          <span class="status <%= disp.cls %>"><%= disp.label %></span>
         <% } else { %><span class="muted">Chưa phát hành</span><% } %>
       </td>
       <td class="row-actions" data-label="Thao tác">

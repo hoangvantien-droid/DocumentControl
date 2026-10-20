@@ -9,6 +9,7 @@ import type { Eta } from 'eta';
 import {
   docStatusLabel, scopeLabel, roleLabel,
   receiptStatusLabel, receiptRejectTypeLabel, issueReportStatusLabel, aggregateStatusLabel,
+  aggregateDisplay,
 } from './labels.js';
 
 /**
@@ -58,6 +59,7 @@ export function registerViewLayer(app: FastifyInstance, eta: Eta, basePath: stri
       receiptRejectTypeLabel,
       issueReportStatusLabel,
       aggregateStatusLabel,
+      aggregateDisplay,
       ...data,
     };
     let html = eta.render(template, merged);

@@ -227,6 +227,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       status: string; effective_date: string | null; rejection_reason: string | null;
       parse_status: string | null; parse_note: string | null;
       total: number; accepted: number; rejected: number; pending: number;
+      content_rejected: number;
     }[]>`
       SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
              v.effective_date::text AS effective_date, v.rejection_reason,
@@ -235,6 +236,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
              count(r.*) FILTER (WHERE r.status = 'chap_nhan')::int AS accepted,
              count(r.*) FILTER (WHERE r.status = 'tu_choi')::int AS rejected,
              count(r.*) FILTER (WHERE r.status = 'cho_phan_hoi')::int AS pending
+             , count(r.*) FILTER (WHERE r.status = 'tu_choi' AND r.response_type = 'sai_noi_dung')::int AS content_rejected
         FROM document_versions v
         LEFT JOIN document_receipt r ON r.version_id = v.version_id
        WHERE v.registrant_user_id = ${user.user_id}
@@ -247,6 +249,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       aggregate: aggregateStatusOf({
         total: d.total, accepted: d.accepted, rejected: d.rejected, pending: d.pending,
       }),
+      hasContentReject: d.content_rejected > 0,
     }));
     return reply.view('my-documents.eta', { docs });
   });
