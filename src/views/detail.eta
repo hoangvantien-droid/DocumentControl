@@ -69,6 +69,10 @@ var pdfSrc = '/documents/' + d.version_id + '/' + _pdfPath;
   <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Tài liệu QUÁ HẠN RÀ SOÁT.' }) %>
 <% } %>
 
+<% if (d.qua_han_su_dung) { %>
+  <%~ include('/components/alert-banner.eta', { type: 'error', text: 'Tài liệu ĐÃ QUÁ NGÀY HẾT HẠN (' + (d.expiry_date || '') + '). Kiểm tra trước khi sử dụng.' }) %>
+<% } %>
+
 <% if (it.ackState && it.ackState.show) { %>
   <form method="post" action="/documents/<%= d.version_id %>/acknowledge">
     <button type="submit" class="primary">Xác nhận đã đọc</button>

@@ -18,6 +18,7 @@
   <a href="/documents?preset=new30">Mới ban hành 30 ngày</a> ·
   <a href="/documents?preset=expiring30">Sắp hết hạn 30 ngày</a> ·
   <a href="/documents?preset=overdue">Quá hạn rà soát</a> ·
+  <a href="/documents?preset=expired">Đã hết hạn</a> ·
   <a href="/documents">Xóa lọc</a>
 </div>
 <form method="get" action="/documents" class="filter-bar catalog-filters">
@@ -29,6 +30,7 @@
       <option value="new30" <%= ff.preset==='new30'?'selected':'' %>>Mới 30 ngày</option>
       <option value="expiring30" <%= ff.preset==='expiring30'?'selected':'' %>>Sắp hết hạn</option>
       <option value="overdue" <%= ff.preset==='overdue'?'selected':'' %>>Quá hạn rà soát</option>
+      <option value="expired" <%= ff.preset==='expired'?'selected':'' %>>Đã hết hạn</option>
     </select>
   </label>
   <label>Trạng thái:
