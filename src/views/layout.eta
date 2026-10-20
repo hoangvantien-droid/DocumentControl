@@ -71,7 +71,7 @@ function icon(k){
         <li class="sidebar-group">Quy trình</li>
         <% if (nav.isSiteDocControl) { %><li><a href="/site-receipts"><span class="nav-ic"><%~ icon('pending') %></span><span class="nav-label">Chờ site phản hồi</span><% if (nav.pendingReceipts > 0) { %><span class="nav-badge"><%= nav.pendingReceipts %></span><% } %></a></li><% } %>
         <% if (nav.isSiteDocControl) { %><li><a href="/issue-reports"><span class="nav-ic"><%~ icon('report') %></span><span class="nav-label">Báo bất thường (site)</span></a></li><% } %>
-        <% if (nav.canRegister) { %><li><a href="/reviews"><span class="nav-ic"><%~ icon('review') %></span><span class="nav-label">Xem xét định kỳ</span></a></li><% } %>
+        <% if (nav.canRegister || nav.isSiteDocControl) { %><li><a href="/reviews"><span class="nav-ic"><%~ icon('review') %></span><span class="nav-label">Xem xét định kỳ</span></a></li><% } %>
         <% if (nav.canRegister) { %><li><a href="/packages"><span class="nav-ic"><%~ icon('package') %></span><span class="nav-label">Gói ban hành</span></a></li><% } %>
         <% } %>
         <% if (nav.isAdmin) { %>

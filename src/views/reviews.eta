@@ -3,49 +3,71 @@
 <div class="page-header">
   <div class="page-header__titles">
     <h1>Xem xét định kỳ</h1>
-    <p class="page-header__desc">Tài liệu tới hạn xem xét theo bộ phận sở hữu. Kết luận giữ nguyên, sửa đổi hoặc thu hồi.</p>
+    <p class="page-header__desc">Tài liệu tới hạn xem xét. Bộ phận sở hữu kết luận; kiểm soát tài liệu site theo dõi tài liệu tới hạn ở site mình.</p>
   </div>
 </div>
 
-<h2>Đang xem xét (<%= it.active.length %>)</h2>
-<table class="data-table responsive-table">
-  <thead><tr><th>Số hiệu tài liệu</th><th>Tiêu đề</th><th>Hạn</th><th>Quá hạn</th><th>Kết luận</th></tr></thead>
-  <tbody>
-    <% it.active.forEach(function(r){ %>
-    <tr>
-      <td data-label="Số hiệu tài liệu"><%= r.doc_id %> v<%= r.version_no %></td>
-      <td data-label="Tiêu đề"><%= r.title %></td>
-      <td data-label="Hạn"><%= r.due_date %></td>
-      <td data-label="Quá hạn"><%= r.so_ngay_qua_han > 0 ? r.so_ngay_qua_han + ' ngày' : '' %></td>
-      <td data-label="Kết luận">
-        <form method="post" action="/reviews/<%= r.review_id %>/verdict" class="verdict-form">
-          <select name="verdict" required>
-            <option value="giu_nguyen">Giữ nguyên</option>
-            <option value="can_sua">Cần sửa</option>
-            <option value="huy_bo">Huỷ bỏ</option>
-          </select>
-          <input name="note" placeholder="Giải trình (bắt buộc nếu không giữ nguyên)">
-          <button type="submit">Ghi kết luận</button>
-        </form>
-      </td>
-    </tr>
-    <% }) %>
-    <% if (it.active.length === 0) { %><tr><td colspan="5" data-label="">Không có tài liệu đang xem xét.</td></tr><% } %>
-  </tbody>
-</table>
+<% if (it.canRegister) { %>
+  <h2>Đang xem xét (<%= it.active.length %>)</h2>
+  <table class="data-table responsive-table">
+    <thead><tr><th>Số hiệu tài liệu</th><th>Tiêu đề</th><th>Hạn</th><th>Quá hạn</th><th>Kết luận</th></tr></thead>
+    <tbody>
+      <% it.active.forEach(function(r){ %>
+      <tr>
+        <td data-label="Số hiệu tài liệu"><%= r.doc_id %> v<%= r.version_no %></td>
+        <td data-label="Tiêu đề"><%= r.title %></td>
+        <td data-label="Hạn"><%= r.due_date %></td>
+        <td data-label="Quá hạn"><%= r.so_ngay_qua_han > 0 ? r.so_ngay_qua_han + ' ngày' : '' %></td>
+        <td data-label="Kết luận">
+          <form method="post" action="/reviews/<%= r.review_id %>/verdict" class="verdict-form">
+            <select name="verdict" required>
+              <option value="giu_nguyen">Giữ nguyên</option>
+              <option value="can_sua">Cần sửa</option>
+              <option value="huy_bo">Huỷ bỏ</option>
+            </select>
+            <input name="note" placeholder="Giải trình (bắt buộc nếu không giữ nguyên)">
+            <button type="submit">Ghi kết luận</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+      <% if (it.active.length === 0) { %><tr><td colspan="5" data-label="">Không có tài liệu đang xem xét.</td></tr><% } %>
+    </tbody>
+  </table>
 
-<h2>Treo chờ bản mới (<%= it.pending.length %>)</h2>
-<table class="data-table responsive-table">
-  <thead><tr><th>Số hiệu tài liệu</th><th>Tiêu đề</th><th>Kết luận</th><th>Giải trình</th></tr></thead>
-  <tbody>
-    <% it.pending.forEach(function(r){ %>
-    <tr>
-      <td data-label="Số hiệu tài liệu"><%= r.doc_id %> v<%= r.version_no %></td>
-      <td data-label="Tiêu đề"><%= r.title %></td>
-      <td data-label="Kết luận">cần sửa</td>
-      <td data-label="Giải trình"><%= r.verdict_note %></td>
-    </tr>
-    <% }) %>
-    <% if (it.pending.length === 0) { %><tr><td colspan="4" data-label="">Không có tài liệu nào đang treo.</td></tr><% } %>
-  </tbody>
-</table>
+  <h2>Treo chờ bản mới (<%= it.pending.length %>)</h2>
+  <table class="data-table responsive-table">
+    <thead><tr><th>Số hiệu tài liệu</th><th>Tiêu đề</th><th>Kết luận</th><th>Giải trình</th></tr></thead>
+    <tbody>
+      <% it.pending.forEach(function(r){ %>
+      <tr>
+        <td data-label="Số hiệu tài liệu"><%= r.doc_id %> v<%= r.version_no %></td>
+        <td data-label="Tiêu đề"><%= r.title %></td>
+        <td data-label="Kết luận">cần sửa</td>
+        <td data-label="Giải trình"><%= r.verdict_note %></td>
+      </tr>
+      <% }) %>
+      <% if (it.pending.length === 0) { %><tr><td colspan="4" data-label="">Không có tài liệu nào đang treo.</td></tr><% } %>
+    </tbody>
+  </table>
+<% } %>
+
+<% if (it.isSiteDocControl) { %>
+  <% var _rem = it.siteReminders || []; %>
+  <h2>Theo dõi xem xét (site bạn phụ trách) (<%= _rem.length %>)</h2>
+  <p class="muted">Tài liệu đã phát hành tới site bạn phụ trách và tới hạn xem xét. Chỉ theo dõi; kết luận do bộ phận sở hữu thực hiện.</p>
+  <table class="data-table responsive-table">
+    <thead><tr><th>Số hiệu tài liệu</th><th>Tiêu đề</th><th>Hạn</th><th>Quá hạn</th></tr></thead>
+    <tbody>
+      <% _rem.forEach(function(r){ %>
+      <tr>
+        <td data-label="Số hiệu tài liệu"><%= r.doc_id %> v<%= r.version_no %></td>
+        <td data-label="Tiêu đề"><%= r.title %></td>
+        <td data-label="Hạn"><%= r.due_date %></td>
+        <td data-label="Quá hạn"><%= r.so_ngay_qua_han > 0 ? r.so_ngay_qua_han + ' ngày' : '' %></td>
+      </tr>
+      <% }) %>
+      <% if (_rem.length === 0) { %><tr><td colspan="4" data-label="">Không có tài liệu nào tới hạn xem xét ở site bạn phụ trách.</td></tr><% } %>
+    </tbody>
+  </table>
+<% } %>
