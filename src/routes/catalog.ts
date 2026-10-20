@@ -17,6 +17,7 @@ import { canViewVersion as canViewDoc } from '../domain/catalog.js';
 import { processVersionContent } from '../domain/content.js';
 import { listPrintedCopies } from '../domain/printing.js';
 import { acknowledge, mustAcknowledge, hasAcknowledged } from '../domain/acknowledgement.js';
+import { listReceiptsForVersion } from '../domain/receipt.js';
 import { listDepartments } from '../domain/org.js';
 import { listGroups } from '../domain/functional-groups.js';
 import type { Config } from '../config.js';
@@ -140,8 +141,9 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       reply.code(404);
       return reply.send('Không tìm thấy tài liệu');
     }
-    const [sections, links] = await Promise.all([
+    const [sections, links, receipts] = await Promise.all([
       loadSections(sql, req.params.id), loadLinks(sql, req.params.id),
+      listReceiptsForVersion(sql, req.params.id),
     ]);
     // Nếu đang xem bản hết hiệu lực, trỏ tới bản đang áp dụng.
     const current = detail.status !== 'hieu_luc' ? await currentVersionOf(sql, detail.doc_id) : null;
@@ -155,7 +157,7 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       }
     }
     const isRegistrant = detail.registrant_user_id === user.user_id;
-    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, isRegistrant });
+    return reply.view('detail.eta', { d: detail, sections, links, current, ackState, isRegistrant, receipts });
   });
 
   // Thu hồi: hiện tác động trước, rồi xác nhận.
