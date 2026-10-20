@@ -109,7 +109,8 @@ export async function listVisibleDocuments(
        AND ((${preset}::varchar IS NULL OR ${preset} = 'hieu_luc')
          OR (${preset} = 'new30' AND v.effective_date >= CURRENT_DATE - INTERVAL '30 days')
          OR (${preset} = 'expiring30' AND v.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days')
-         OR (${preset} = 'overdue' AND v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE))
+         OR (${preset} = 'overdue' AND v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE)
+         OR (${preset} = 'expired' AND v.expiry_date IS NOT NULL AND v.expiry_date < CURRENT_DATE))
        AND (${siteId}::uuid IS NULL OR EXISTS (SELECT 1 FROM document_receipt rc WHERE rc.version_id = v.version_id AND rc.site_id = ${siteId}::uuid))
        AND (${rolloutStatus}::varchar IS NULL OR EXISTS (SELECT 1 FROM document_receipt rc WHERE rc.version_id = v.version_id AND (${siteId}::uuid IS NULL OR rc.site_id = ${siteId}::uuid) AND rc.status = CASE ${rolloutStatus} WHEN 'chua_ap_dung' THEN 'cho_phan_hoi' WHEN 'da_ap_dung' THEN 'chap_nhan' WHEN 'tam_hoan' THEN 'tu_choi' ELSE ${rolloutStatus} END))
      ORDER BY
@@ -137,6 +138,7 @@ export interface DocumentDetail extends CatalogRow {
   rejection_reason: string | null;
   recall_reason: string | null;
   qua_han_xem_xet: boolean;
+  qua_han_su_dung: boolean;
 }
 
 /** Chi tiết một phiên bản. */
@@ -152,7 +154,8 @@ export async function loadDetail(sql: Sql, versionId: string): Promise<DocumentD
            v.issued_date::text AS issued_date,
            v.expiry_date::text AS expiry_date,
            v.rejection_reason, v.recall_reason,
-           (v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE) AS qua_han_xem_xet
+           (v.next_review_date IS NOT NULL AND v.next_review_date < CURRENT_DATE) AS qua_han_xem_xet,
+           (v.expiry_date IS NOT NULL AND v.expiry_date < CURRENT_DATE) AS qua_han_su_dung
       FROM document_versions v
       JOIN documents d ON d.doc_id = v.doc_id
      WHERE v.version_id = ${versionId}`;
