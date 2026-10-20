@@ -83,7 +83,7 @@ var pdfSrc = '/documents/' + d.version_id + '/' + _pdfPath;
 <dl class="detail-info-bar">
   <div><dt>Loại</dt><dd><%= d.doc_type %> (<%= d.origin %>)</dd></div>
   <div><dt>Phạm vi</dt><dd><%= it.scopeLabel(d.scope_level) %></dd></div>
-  <div><dt>Ngày áp dụng dự kiến</dt><dd><%= d.issued_date || '' %></dd></div>
+  <div><dt>Ngày ban hành</dt><dd><%= d.issued_date || '' %></dd></div>
   <div><dt>Ngày có hiệu lực</dt><dd><%= d.effective_date || '' %></dd></div>
   <div><dt>Xem xét tới</dt><dd><%= d.next_review_date || '' %></dd></div>
 </dl>
@@ -98,6 +98,16 @@ var pdfSrc = '/documents/' + d.version_id + '/' + _pdfPath;
   <summary>Nhãn liên kết</summary>
   <% if (it.links.length === 0) { %><p class="muted">Chưa có.</p><% } else { %>
     <% it.links.forEach(function(l){ %><span class="chip"><%= l.link_type %>: <%= l.link_code %></span><% }) %>
+  <% } %>
+</details>
+
+<details class="detail-panel">
+  <summary>Áp dụng theo site</summary>
+  <% var _receipts = it.receipts || []; %>
+  <% if (_receipts.length === 0) { %>
+    <p class="muted">Chưa phát hành tới site nào.</p>
+  <% } else { %>
+    <%~ include('/components/site-response-matrix.eta', { receipts: it.receipts, receiptStatusLabel: it.receiptStatusLabel, receiptRejectTypeLabel: it.receiptRejectTypeLabel }) %>
   <% } %>
 </details>
 
