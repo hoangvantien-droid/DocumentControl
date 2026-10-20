@@ -351,7 +351,8 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const v = rows[0];
     if (!v) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
     if (v.registrant_user_id !== user.user_id) { reply.code(403); return reply.send('Chỉ người đăng ký được thu hồi'); }
-    return reply.view('author-recall.eta', { v, error: null });
+    const tally = await receiptTally(sql, v.version_id);
+    return reply.view('author-recall.eta', { v, tally, error: null });
   });
 
   app.post<{ Params: { id: string }; Body: { reason?: string } }>('/my-documents/:id/recall', async (req, reply) => {

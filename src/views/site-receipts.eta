@@ -32,4 +32,22 @@
     <% if (it.rows.length === 0) { %><tr><td colspan="6" data-label="">Không có tài liệu nào chờ site bạn phản hồi.</td></tr><% } %>
   </tbody>
 </table>
+
+<% var _recalled = it.recalledDocs || []; %>
+<h2>Tài liệu bị thu hồi (<%= _recalled.length %>)</h2>
+<p class="muted">Tài liệu đã phát hành tới site bạn phụ trách và bị người đăng ký thu hồi. Ngừng sử dụng và thu hồi bản in nếu có.</p>
+<table class="data-table responsive-table">
+  <thead><tr><th>Số hiệu tài liệu</th><th>Tiêu đề</th><th>Lý do thu hồi</th><th>Thu hồi lúc</th></tr></thead>
+  <tbody>
+    <% _recalled.forEach(function(d){ %>
+    <tr>
+      <td data-label="Số hiệu tài liệu"><%= d.doc_id %> v<%= d.version_no %></td>
+      <td data-label="Tiêu đề"><%= d.title %></td>
+      <td data-label="Lý do thu hồi"><%= d.recall_reason || '' %></td>
+      <td data-label="Thu hồi lúc"><%= (d.recalled_at || '').slice(0, 16).replace('T', ' ') %></td>
+    </tr>
+    <% }) %>
+    <% if (_recalled.length === 0) { %><tr><td colspan="4" data-label="">Không có tài liệu nào bị thu hồi ở site bạn phụ trách.</td></tr><% } %>
+  </tbody>
+</table>
 <% } %>
