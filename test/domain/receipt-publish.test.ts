@@ -8,7 +8,7 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeSiteIds } from '../../src/domain/receipt.js';
+import { normalizeSiteIds, classifySitesForRepublish } from '../../src/domain/receipt.js';
 
 describe('normalizeSiteIds', () => {
   test('undefined/null -> rỗng', () => {
@@ -26,5 +26,77 @@ describe('normalizeSiteIds', () => {
   });
   test('chuỗi rỗng -> rỗng', () => {
     assert.deepEqual(normalizeSiteIds(''), []);
+  });
+});
+
+describe('classifySitesForRepublish — phân loại site phát hành thêm/lại', () => {
+  const rc = (site_id, status, response_type = null) => ({ site_id, status, response_type });
+
+  test('site ngoài scope -> invalid, không tạo receipt', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a', 'b'], existingReceipts: [], requestedSiteIds: ['a', 'x'],
+    });
+    assert.deepEqual(r.invalid, ['x']);
+    assert.deepEqual(r.newOnes, ['a']);
+  });
+
+  test('có từ chối sai_noi_dung -> blockedByContentReject = true', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a', 'b'],
+      existingReceipts: [rc('b', 'tu_choi', 'sai_noi_dung')],
+      requestedSiteIds: ['a'],
+    });
+    assert.equal(r.blockedByContentReject, true);
+  });
+
+  test('không có sai_noi_dung -> blockedByContentReject = false', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a', 'b'],
+      existingReceipts: [rc('b', 'tu_choi', 'sai_dang_ky'), rc('a', 'chap_nhan')],
+      requestedSiteIds: ['a'],
+    });
+    assert.equal(r.blockedByContentReject, false);
+  });
+
+  test('tu_choi sai_dang_ky -> republish', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a'], existingReceipts: [rc('a', 'tu_choi', 'sai_dang_ky')], requestedSiteIds: ['a'],
+    });
+    assert.deepEqual(r.republish, ['a']);
+    assert.deepEqual(r.newOnes, []);
+  });
+
+  test('chap_nhan và cho_phan_hoi -> skipped (idempotent)', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a', 'b'],
+      existingReceipts: [rc('a', 'chap_nhan'), rc('b', 'cho_phan_hoi')],
+      requestedSiteIds: ['a', 'b'],
+    });
+    assert.deepEqual(r.skipped.sort(), ['a', 'b']);
+    assert.deepEqual(r.newOnes, []);
+    assert.deepEqual(r.republish, []);
+  });
+
+  test('chưa có receipt -> newOnes', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a', 'b'], existingReceipts: [], requestedSiteIds: ['a', 'b'],
+    });
+    assert.deepEqual(r.newOnes.sort(), ['a', 'b']);
+  });
+
+  test('tu_choi sai_noi_dung của site requested -> skipped (và cũng gây blocked)', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a'], existingReceipts: [rc('a', 'tu_choi', 'sai_noi_dung')], requestedSiteIds: ['a'],
+    });
+    assert.deepEqual(r.skipped, ['a']);
+    assert.deepEqual(r.republish, []);
+    assert.equal(r.blockedByContentReject, true);
+  });
+
+  test('loại trùng lặp site requested', () => {
+    const r = classifySitesForRepublish({
+      candidateSiteIds: ['a'], existingReceipts: [], requestedSiteIds: ['a', 'a'],
+    });
+    assert.deepEqual(r.newOnes, ['a']);
   });
 });

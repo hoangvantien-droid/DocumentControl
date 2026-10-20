@@ -40,4 +40,36 @@
   <% } %>
 </section>
 
+<section class="issuance-publish">
+  <h2>Phát hành thêm site</h2>
+  <% if (it.blockedByContentReject) { %>
+    <%~ include('/components/alert-banner.eta', { type: 'warning', text: 'Có site báo SAI NỘI DUNG — phải thu hồi và ban hành phiên bản mới; không phát hành thêm site.' }) %>
+  <% } else { %>
+    <% var _addable = it.addableNew || []; var _repub = it.republishable || []; %>
+    <% if (_addable.length === 0 && _repub.length === 0) { %>
+      <p class="muted">Đã phát hành tới mọi site trong phạm vi.</p>
+    <% } else { %>
+      <form method="post" action="/my-documents/<%= v.version_id %>/publish-sites" class="publish-sites-form">
+        <% if (_addable.length > 0) { %>
+          <fieldset>
+            <legend>Thêm site mới</legend>
+            <% _addable.forEach(function(sopt){ %>
+              <label class="filter-check"><input type="checkbox" name="site_ids" value="<%= sopt.site_id %>"> <%= sopt.site_code %> — <%= sopt.name %></label>
+            <% }) %>
+          </fieldset>
+        <% } %>
+        <% if (_repub.length > 0) { %>
+          <fieldset>
+            <legend>Phát hành lại (đã từ chối sai đăng ký)</legend>
+            <% _repub.forEach(function(r){ %>
+              <label class="filter-check"><input type="checkbox" name="site_ids" value="<%= r.site_id %>"> <%= r.site_code %> — <%= r.site_name %></label>
+            <% }) %>
+          </fieldset>
+        <% } %>
+        <button type="submit" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Phát hành</button>
+      </form>
+    <% } %>
+  <% } %>
+</section>
+
 <p><a href="/my-documents">← Về Tài liệu của tôi</a></p>

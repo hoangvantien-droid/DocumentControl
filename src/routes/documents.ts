@@ -18,6 +18,7 @@ import { processVersionContent } from '../domain/content.js';
 import {
   normalizeSiteIds, listReceiptsForVersion, receiptTally, hasAnyAcceptance,
   editVersionMetadata, deleteUnacceptedVersion, recallByAuthor,
+  candidateSitesForScope, publishAdditionalSites,
 } from '../domain/receipt.js';
 import { aggregateStatusOf } from '../domain/lifecycle-status.js';
 import { canRegisterDocuments } from '../domain/permissions.js';
@@ -254,9 +255,11 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   app.get<{ Params: { id: string } }>('/my-documents/:id/issuance', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
-    const ver = await sql<{ version_id: string; doc_id: string; version_no: string; title: string; status: string; registrant_user_id: string }[]>`
-      SELECT version_id, doc_id, version_no, title, status, registrant_user_id
-        FROM document_versions WHERE version_id = ${req.params.id}`;
+    const ver = await sql<{ version_id: string; doc_id: string; version_no: string; title: string; status: string; registrant_user_id: string; scope_level: 'group'|'bu'|'site'|'dept'; scope_bu_id: string|null; scope_site_id: string|null; scope_dept_id: string|null }[]>`
+      SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status, v.registrant_user_id,
+             d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+        FROM document_versions v JOIN documents d ON d.doc_id = v.doc_id
+       WHERE v.version_id = ${req.params.id}`;
     const v = ver[0];
     if (!v) { reply.code(404); return reply.send('Không tìm thấy tài liệu'); }
     if (v.registrant_user_id !== user.user_id) {
@@ -273,9 +276,19 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const canDelete = tally.accepted === 0;
     const hasContentReject = receipts.some((r) => r.status === 'tu_choi' && r.response_type === 'sai_noi_dung');
     const hasMetaReject = receipts.some((r) => r.status === 'tu_choi' && r.response_type === 'sai_dang_ky');
+    // Phát hành thêm site (trong scope, chưa có receipt) + phát hành lại (từ chối sai đăng ký).
+    const candidates = await candidateSitesForScope(sql, {
+      scope_level: v.scope_level, scope_bu_id: v.scope_bu_id,
+      scope_site_id: v.scope_site_id, scope_dept_id: v.scope_dept_id,
+    });
+    const existingSiteIds = new Set(receipts.map((r) => r.site_id));
+    const addableNew = candidates.filter((siteOpt) => !existingSiteIds.has(siteOpt.site_id));
+    const republishable = receipts.filter((r) => r.status === 'tu_choi' && r.response_type === 'sai_dang_ky');
+    const blockedByContentReject = hasContentReject;
     return reply.view('issuance-status.eta', {
       v, receipts, tally, aggregate, anyAccepted,
       canEditOrRecall, canDelete, hasContentReject, hasMetaReject,
+      addableNew, republishable, blockedByContentReject,
     });
   });
 
@@ -344,6 +357,22 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     try {
       await recallByAuthor(sql, { versionId: req.params.id, userId: user.user_id, reason: (req.body ?? {}).reason ?? '' });
       return reply.redirect('/my-documents');
+    } catch (err) {
+      if (isBusinessError(err)) return sendBusinessError(req, reply, err);
+      throw err;
+    }
+  });
+
+  // Phát hành thêm site (trong scope) + phát hành lại site từ chối sai đăng ký.
+  app.post<{ Params: { id: string }; Body: { site_ids?: string | string[] } }>('/my-documents/:id/publish-sites', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    try {
+      await publishAdditionalSites(sql, {
+        versionId: req.params.id, userId: user.user_id,
+        siteIds: normalizeSiteIds((req.body ?? {}).site_ids),
+      });
+      return reply.redirect(`/my-documents/${req.params.id}/issuance`);
     } catch (err) {
       if (isBusinessError(err)) return sendBusinessError(req, reply, err);
       throw err;
