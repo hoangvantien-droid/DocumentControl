@@ -112,6 +112,50 @@ export async function publishToSites(
   return created;
 }
 
+/**
+ * Phân loại site cho thao tác 'phát hành thêm / phát hành lại' (Task 1).
+ * THUẦN: không chạm DB, không async — để unit-test trực tiếp.
+ *   - invalid: site requested KHÔNG thuộc candidate (ngoài scope).
+ *   - blockedByContentReject: có BẤT KỲ receipt tu_choi + sai_noi_dung (toàn version).
+ *   - newOnes: hợp lệ + chưa có receipt.
+ *   - republish: hợp lệ + receipt tu_choi loại sai_dang_ky.
+ *   - skipped: hợp lệ nhưng chap_nhan / cho_phan_hoi / tu_choi+sai_noi_dung.
+ */
+export interface SiteClassifyInput {
+  candidateSiteIds: string[];
+  existingReceipts: { site_id: string; status: string; response_type: string | null }[];
+  requestedSiteIds: string[];
+}
+export interface SiteClassifyResult {
+  newOnes: string[];
+  republish: string[];
+  skipped: string[];
+  invalid: string[];
+  blockedByContentReject: boolean;
+}
+export function classifySitesForRepublish(input: SiteClassifyInput): SiteClassifyResult {
+  const candidate = new Set(input.candidateSiteIds);
+  const bySite = new Map(input.existingReceipts.map((r) => [r.site_id, r]));
+  const blockedByContentReject = input.existingReceipts.some(
+    (r) => r.status === 'tu_choi' && r.response_type === 'sai_noi_dung',
+  );
+  const newOnes: string[] = [];
+  const republish: string[] = [];
+  const skipped: string[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  for (const siteId of input.requestedSiteIds) {
+    if (seen.has(siteId)) continue;
+    seen.add(siteId);
+    if (!candidate.has(siteId)) { invalid.push(siteId); continue; }
+    const rc = bySite.get(siteId);
+    if (!rc) { newOnes.push(siteId); continue; }
+    if (rc.status === 'tu_choi' && rc.response_type === 'sai_dang_ky') { republish.push(siteId); continue; }
+    skipped.push(siteId);
+  }
+  return { newOnes, republish, skipped, invalid, blockedByContentReject };
+}
+
 /** Đếm receipt theo trạng thái cho một version (để suy trạng thái tổng hợp). */
 export async function receiptTally(sql: Sql, versionId: string): Promise<ReceiptTally> {
   const [row] = await sql<{ total: number; accepted: number; rejected: number; pending: number }[]>`
@@ -485,6 +529,77 @@ export async function recallByAuthor(
       afterState: { status: 'thu_hoi', reason: input.reason.trim() },
     });
   });
+}
+
+/**
+ * Phát hành THÊM site (Author) cho tài liệu đã ban hành — Task publish-additional-sites.
+ * Chỉ site TRONG scope; chặn khi có từ chối sai_noi_dung; phát hành lại site
+ * từ chối sai_dang_ky (đưa receipt về cho_phan_hoi). Idempotent với site đã có
+ * receipt chờ/chấp nhận. Không migration; tái dùng publishToSites + candidateSitesForScope.
+ */
+export async function publishAdditionalSites(
+  sql: Sql,
+  input: { versionId: string; userId: string; siteIds: string[] },
+): Promise<{ added: number; republished: number }> {
+  return (await sql.begin(async (tx) => {
+    const v = await loadOwnedVersion(tx as TransactionSql, input.versionId, input.userId);
+    if (v.status !== 'da_ban_hanh') {
+      throw new BusinessError('publish.bad_status', 'Chỉ phát hành thêm khi tài liệu đang ở trạng thái đã ban hành');
+    }
+    // Scope nằm ở documents; lấy để xác định site hợp lệ + dept đích (nếu scope=dept).
+    const [doc] = await tx<{ doc_id: string; scope_level: 'group'|'bu'|'site'|'dept'; scope_bu_id: string|null; scope_site_id: string|null; scope_dept_id: string|null }[]>`
+      SELECT d.doc_id, d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+        FROM document_versions ver JOIN documents d ON d.doc_id = ver.doc_id
+       WHERE ver.version_id = ${input.versionId}`;
+    if (!doc) throw new BusinessError('publish.not_found', 'Không tìm thấy tài liệu');
+
+    const candidates = await candidateSitesForScope(tx as unknown as Sql, {
+      scope_level: doc.scope_level, scope_bu_id: doc.scope_bu_id,
+      scope_site_id: doc.scope_site_id, scope_dept_id: doc.scope_dept_id,
+    });
+    const existing = await tx<{ site_id: string; status: string; response_type: string | null }[]>`
+      SELECT site_id, status, response_type FROM document_receipt WHERE version_id = ${input.versionId}`;
+
+    const cls = classifySitesForRepublish({
+      candidateSiteIds: candidates.map((c) => c.site_id),
+      existingReceipts: existing,
+      requestedSiteIds: input.siteIds,
+    });
+
+    if (cls.blockedByContentReject) {
+      throw new BusinessError('publish.content_reject', 'Có site báo sai nội dung — phải thu hồi và ban hành phiên bản mới, không phát hành thêm');
+    }
+    if (cls.invalid.length > 0) {
+      throw new BusinessError('publish.out_of_scope', 'Có site không thuộc phạm vi của tài liệu');
+    }
+    if (cls.newOnes.length === 0 && cls.republish.length === 0) {
+      throw new BusinessError('publish.nothing', 'Không có site hợp lệ để phát hành thêm');
+    }
+
+    const targetDeptId = doc.scope_level === 'dept' ? (doc.scope_dept_id ?? null) : null;
+    let added = 0;
+    if (cls.newOnes.length > 0) {
+      added = await publishToSites(tx as TransactionSql, {
+        versionId: input.versionId, siteIds: cls.newOnes, targetDeptId, actorUserId: input.userId,
+      });
+    }
+
+    let republished = 0;
+    if (cls.republish.length > 0) {
+      await tx`
+        UPDATE document_receipt
+           SET status = 'cho_phan_hoi', response_type = NULL, response_note = NULL,
+               responded_by = NULL, responded_at = NULL, apply_date = NULL, updated_at = now()
+         WHERE version_id = ${input.versionId} AND site_id = ANY(${cls.republish}::uuid[])`;
+      republished = cls.republish.length;
+      await writeAudit(tx as TransactionSql, {
+        eventType: 'ban_hanh', actorUserId: input.userId,
+        objectType: 'document_versions', objectId: input.versionId,
+        afterState: { action: 're_publish', site_ids: cls.republish, prev_reject: 'sai_dang_ky' },
+      });
+    }
+    return { added, republished };
+  })) as { added: number; republished: number };
 }
 
 function today(): string {
