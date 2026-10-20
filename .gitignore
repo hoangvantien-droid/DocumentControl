@@ -1,4 +1,4 @@
-node_modules/
+﻿node_modules/
 dist/
 *.log
 .env
@@ -8,3 +8,8 @@ files/
 *.tsbuildinfo
 preview/
 .agents/
+
+# Ảnh thả vào thư mục spec (không phải nội dung spec cần theo dõi)
+.kiro/specs/**/*.png
+.kiro/specs/**/*.jpg
+.kiro/specs/**/*.jpeg
