@@ -130,33 +130,11 @@ h3 { font-size: var(--fs-subtle);  font-weight: var(--fw-subtle); }
 a { color: var(--brand); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ================================================================
- * FROSTED-GLASS — mặt kính dùng chung (chỉ BỔ SUNG; không đổi markup/class).
- * Gom các lớp mặt phẳng sáng hiện có vào một bộ khai báo "kính mờ".
- * Thứ tự khai báo nền CỐ Ý: fallback đặc TRƯỚC, lớp trong mờ SAU, để
- * trình duyệt thiếu backdrop-filter rơi về nền đặc gần trắng (đọc rõ).
- * Mỗi lớp vẫn giữ border-radius/padding riêng khai báo ở khối gốc bên dưới;
- * ở đây chỉ phủ nền kính, blur, viền sáng và bóng lớp.
- * ================================================================ */
-.topbar, .login-card, .home-block, .pkg-card, .org-col, .detail-main, .detail-side,
-.add-user-card, .metric-card, .qa-answer, .no-results, .data-table, .suggest-list,
-.suggest-empty, .card, .report-card, .detail-footer__block, .detail-info-bar, .detail-panel,
-.filter-bar, .admin-panel, .empty-state, .confirm-file, .detail-meta, .report-form {
-  background-color: var(--glass-bg-solid);           /* FALLBACK đặc (khai báo trước) */
-  background-color: var(--glass-bg);                  /* lớp trong mờ */
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-}
-/* Mặt cần tương phản chữ cao hơn: login, bảng dữ liệu, dropdown gợi ý. */
-.login-card, .data-table, .suggest-list, .suggest-empty {
-  background-color: var(--glass-bg-solid);           /* FALLBACK đặc (khai báo trước) */
-  background-color: var(--glass-bg-strong);
-}
-/* .topbar có sẵn border-bottom riêng — không nhân đôi: bỏ viền kính, giữ
- * đường kẻ dưới gốc; vẫn hưởng nền kính + blur + bóng ở trên. */
-.topbar { border: 0; border-bottom: 1px solid var(--masan-100); }
+/* FROSTED-GLASS — mặt kính dùng chung: khối quy tắc đã DỜI xuống CUỐI FILE
+ * (ngay trên khối FALLBACK) để thắng theo thứ tự nguồn các quy tắc nền
+ * per-component bên dưới (vd .topbar, .login-card, .data-table, .detail-*
+ * đặt background shorthand sau khối này). Xem "FROSTED-GLASS — mặt kính
+ * dùng chung (áp dụng cuối)" ở cuối file. */
 
 /* ---- Thanh điều hướng ---- */
 .topbar {
@@ -1554,6 +1532,38 @@ html { scroll-behavior: smooth; }
 .org-col__subform { padding-top: var(--sp-3); border-top: 1px dashed var(--color-border); }
 .org-col__count { font-size: var(--fs-aux); color: var(--muted); margin: var(--sp-3) 0 var(--sp-1); font-weight: 600; }
 .org-col h2 { color: var(--masan-900); }
+
+/* ================================================================
+ * FROSTED-GLASS — mặt kính dùng chung (ÁP DỤNG CUỐI; chỉ BỔ SUNG, không đổi markup/class).
+ * Khối này ĐẶT Ở CUỐI FILE — SAU mọi quy tắc nền per-component của các lớp
+ * mặt phẳng (vd .topbar/.login-card/.data-table/.detail-* đặt `background:
+ * var(--surface)` phía trên) — nên theo thứ tự nguồn (cùng độ đặc hiệu 0,0,1,0)
+ * nó THẮNG và nền trong mờ + blur + viền + bóng kính mới thực sự hiển thị.
+ * Thứ tự khai báo nền CỐ Ý: fallback đặc TRƯỚC, lớp trong mờ SAU, để
+ * trình duyệt thiếu backdrop-filter rơi về nền đặc gần trắng (đọc rõ).
+ * Mỗi lớp vẫn giữ border-radius/padding riêng ở khối gốc; ở đây phủ nền
+ * kính, blur, viền sáng và bóng lớp (ghi đè border/box-shadow per-component).
+ * ================================================================ */
+.topbar, .login-card, .home-block, .pkg-card, .org-col, .detail-main, .detail-side,
+.add-user-card, .metric-card, .qa-answer, .no-results, .data-table, .suggest-list,
+.suggest-empty, .card, .report-card, .detail-footer__block, .detail-info-bar, .detail-panel,
+.filter-bar, .admin-panel, .empty-state, .confirm-file, .detail-meta, .report-form {
+  background-color: var(--glass-bg-solid);           /* FALLBACK đặc (khai báo trước) */
+  background-color: var(--glass-bg);                  /* lớp trong mờ */
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+/* Mặt cần tương phản chữ cao hơn: login, bảng dữ liệu, dropdown gợi ý. */
+.login-card, .data-table, .suggest-list, .suggest-empty {
+  background-color: var(--glass-bg-solid);           /* FALLBACK đặc (khai báo trước) */
+  background-color: var(--glass-bg-strong);
+}
+/* .topbar có sẵn border-bottom riêng — không nhân đôi: bỏ viền kính vòng quanh,
+ * giữ đường kẻ dưới; vẫn hưởng nền kính + blur + bóng ở trên. Đặt SAU nhóm kính
+ * để thắng viền, và SAU quy tắc .topbar gốc để giữ border-bottom nhất quán. */
+.topbar { border: 0; border-bottom: 1px solid var(--masan-100); }
 
 /* ================================================================
  * FROSTED-GLASS — FALLBACK khả truy cập.
