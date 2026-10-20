@@ -11,8 +11,8 @@
 <% } %>
 
 <section class="issuance-summary">
-  <% var aggCls = it.aggregate === 'tranh_chap' ? 'status-thu_hoi' : (it.aggregate === 'toan_bo' ? 'status-hieu_luc' : 'status-da_ban_hanh'); %>
-  <p>Trạng thái tổng hợp: <span class="status <%= aggCls %>"><%= it.aggregateStatusLabel(it.aggregate) %></span></p>
+  <% var disp = it.aggregateDisplay(it.aggregate, it.hasContentReject); %>
+  <p>Trạng thái tổng hợp: <span class="status <%= disp.cls %>"><%= disp.label %></span></p>
   <p class="muted">Chấp nhận <%= t.accepted %> · Từ chối <%= t.rejected %> · Chờ <%= t.pending %> · Tổng <%= t.total %> site</p>
 </section>
 

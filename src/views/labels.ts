@@ -122,3 +122,28 @@ export function aggregateStatusLabel(code: string | null | undefined): string {
   if (!code) return '';
   return AGGREGATE_STATUS_LABELS[code] ?? code;
 }
+
+/**
+ * Nhãn + lớp màu cho trạng thái tổng hợp, TÁCH tranh_chap theo loại từ chối:
+ *   - hasContentReject=true  -> 'Có site báo sai nội dung' (đỏ, nặng).
+ *   - hasContentReject=false -> 'Có site báo sai đăng ký' (amber, nhẹ).
+ * Các trạng thái khác: nhãn như aggregateStatusLabel, bỏ qua cờ. GIỮ nguyên
+ * aggregateStatusLabel/aggregateStatusOf (nguồn sự thật cho logic).
+ */
+export function aggregateDisplay(
+  aggregate: string | null | undefined,
+  hasContentReject = false,
+): { label: string; cls: string } {
+  switch (aggregate) {
+    case 'chua_phat_hanh': return { label: 'Chưa phát hành', cls: 'status-da_ban_hanh' };
+    case 'dang_cho':       return { label: 'Đang chờ phản hồi', cls: 'status-da_ban_hanh' };
+    case 'mot_phan':       return { label: 'Một phần đã áp dụng', cls: 'status-da_ban_hanh' };
+    case 'toan_bo':        return { label: 'Toàn bộ đã áp dụng', cls: 'status-hieu_luc' };
+    case 'tranh_chap':
+      return hasContentReject
+        ? { label: 'Có site báo sai nội dung', cls: 'status-thu_hoi' }
+        : { label: 'Có site báo sai đăng ký', cls: 'status-cho_xac_nhan' };
+    default:
+      return { label: aggregateStatusLabel(aggregate), cls: 'status-da_ban_hanh' };
+  }
+}

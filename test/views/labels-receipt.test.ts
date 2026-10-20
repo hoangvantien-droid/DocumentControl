@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {
   docStatusLabel, roleLabel,
   receiptStatusLabel, receiptRejectTypeLabel,
-  issueReportStatusLabel, aggregateStatusLabel,
+  issueReportStatusLabel, aggregateStatusLabel, aggregateDisplay,
 } from '../../src/views/labels.js';
 
 describe('docStatusLabel — trạng thái vòng đời mới', () => {
@@ -71,5 +71,33 @@ describe('aggregateStatusLabel', () => {
     assert.equal(aggregateStatusLabel('mot_phan'), 'Một phần đã áp dụng');
     assert.equal(aggregateStatusLabel('tranh_chap'), 'Có site báo sai sót');
     assert.equal(aggregateStatusLabel('toan_bo'), 'Toàn bộ đã áp dụng');
+  });
+});
+
+describe('aggregateDisplay — tách nhãn tranh_chap theo loại từ chối', () => {
+  test('tranh_chap + sai nội dung -> nhãn nội dung + màu đỏ', () => {
+    const d = aggregateDisplay('tranh_chap', true);
+    assert.equal(d.label, 'Có site báo sai nội dung');
+    assert.equal(d.cls, 'status-thu_hoi');
+  });
+  test('tranh_chap + chỉ sai đăng ký -> nhãn đăng ký + màu amber', () => {
+    const d = aggregateDisplay('tranh_chap', false);
+    assert.equal(d.label, 'Có site báo sai đăng ký');
+    assert.equal(d.cls, 'status-cho_xac_nhan');
+  });
+  test('toan_bo -> nhãn cũ + xanh, bỏ qua cờ', () => {
+    const a = aggregateDisplay('toan_bo', true);
+    const b = aggregateDisplay('toan_bo', false);
+    assert.equal(a.label, 'Toàn bộ đã áp dụng');
+    assert.equal(a.cls, 'status-hieu_luc');
+    assert.deepEqual(a, b);
+  });
+  test('mot_phan / dang_cho / chua_phat_hanh -> nhãn cũ, không phụ thuộc cờ', () => {
+    assert.equal(aggregateDisplay('mot_phan', true).label, 'Một phần đã áp dụng');
+    assert.equal(aggregateDisplay('dang_cho', true).label, 'Đang chờ phản hồi');
+    assert.equal(aggregateDisplay('chua_phat_hanh', true).label, 'Chưa phát hành');
+  });
+  test('aggregateStatusLabel cũ KHÔNG đổi (tương thích ngược)', () => {
+    assert.equal(aggregateStatusLabel('tranh_chap'), 'Có site báo sai sót');
   });
 });
