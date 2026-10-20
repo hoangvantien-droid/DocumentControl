@@ -59,6 +59,28 @@ export async function reviewBacklogForOwner(sql: Sql, userId: string): Promise<R
      ORDER BY b.so_ngay_qua_han DESC`;
 }
 
+/**
+ * Tồn đọng rà soát của các SITE người dùng phụ trách (DC Site) — CHỈ ĐỌC để
+ * theo dõi. Lọc tài liệu có receipt phát hành tới một trong các site. KHÔNG
+ * dùng cho kết luận (verdict giữ cho bộ phận sở hữu).
+ */
+export async function reviewBacklogForSites(sql: Sql, siteIds: string[]): Promise<ReviewRow[]> {
+  if (siteIds.length === 0) return [];
+  return sql<ReviewRow[]>`
+    SELECT b.review_id, b.doc_id, b.version_no, b.title, b.due_date::text AS due_date,
+           b.status, b.verdict, b.verdict_note, b.department_name, b.so_ngay_qua_han,
+           d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+      FROM v_review_backlog b
+      JOIN documents d ON d.doc_id = b.doc_id
+      JOIN periodic_reviews p ON p.review_id = b.review_id
+     WHERE EXISTS (
+       SELECT 1 FROM document_receipt r
+        WHERE r.version_id = p.version_id
+          AND r.site_id = ANY(${siteIds}::uuid[])
+     )
+     ORDER BY b.so_ngay_qua_han DESC`;
+}
+
 /** Ghi kết luận rà soát. giu_nguyen/huy_bo không cần note; can_sua/huy_bo cần giải trình. */
 export async function recordVerdict(
   sql: Sql,
