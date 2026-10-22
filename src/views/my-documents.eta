@@ -7,6 +7,7 @@
   </div>
   <div class="toolbar">
     <% if (it.nav && it.nav.canRegister) { %>
+      <a href="/my-documents/export.xlsx" class="btn-action btn-action--neutral"><%~ include('/components/action-icon.eta', { name: 'download' }) %> Xuất Excel</a>
       <a href="/register" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Đăng ký tài liệu</a>
     <% } %>
   </div>

@@ -1,0 +1,417 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Thêm dependency exceljs và cài đặt": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681647862
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681664840
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681872718
+      }
+    ],
+    "2.1 Tạo `src/domain/doc-types.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681649250
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681666005
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681873666
+      }
+    ],
+    "2.3 Nối `register.eta` và `catalog.eta` vào DOC_TYPES": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652128
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681881561
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682225777
+      }
+    ],
+    "3.1 Tạo `src/lib/xlsx.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652325
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681882460
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682232912
+      }
+    ],
+    "4.1 Thêm `canExportCatalog` vào `src/domain/permissions.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652529
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681667045
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681874666
+      }
+    ],
+    "5.1 Bổ sung `origin`/`issued_date`/`expiry_date` trong `src/domain/catalog.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652627
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681883980
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682224455
+      }
+    ],
+    "6. Checkpoint — Đảm bảo các test thuần đều xanh": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652766
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683100312
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683108254
+      }
+    ],
+    "7.1 Tách `parseCatalogFilters` trong `src/routes/catalog.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652848
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683115403
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683303786
+      }
+    ],
+    "7.2 Thêm route `GET /documents/export.xlsx`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681652926
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683319845
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683684798
+      }
+    ],
+    "7.3 Thêm nút export + querystring lọc vào `catalog.eta`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681653057
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683693420
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683858478
+      }
+    ],
+    "8.1 Tách `assembleMyDocuments` trong `src/routes/documents.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681653160
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683116332
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683304367
+      }
+    ],
+    "8.2 Thêm route `GET /my-documents/export.xlsx`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681653251
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683320536
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683685591
+      }
+    ],
+    "8.3 Thêm nút export vào `my-documents.eta`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681653338
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683692649
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683857352
+      }
+    ],
+    "9. Checkpoint cuối — Xác minh biên dịch, build và test thuần": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681653496
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792684136272
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792684219846
+      }
+    ],
+    "4. Hàm quyền export danh mục": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681874772
+      }
+    ],
+    "2.2 Viết unit test cho `doc-types.ts`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681884859
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682227296
+      }
+    ],
+    "4.2 Viết unit test bảng vai cho `canExportCatalog`": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792681885829
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682232165
+      }
+    ],
+    "5. Mở rộng CatalogRow và SELECT": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682224664
+      }
+    ],
+    "2. Nguồn loại tài liệu dùng chung (DocType_Source)": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682225882
+      }
+    ],
+    "3. Bộ dựng workbook dùng chung": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682233133
+      }
+    ],
+    "3.2 Property test: bảo toàn số dòng và nội dung ô (danh mục)": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682256562
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682768511
+      }
+    ],
+    "3.3 Property test: bất biến hàng tiêu đề danh mục và loại trừ cột File PDF": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682257631
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682770310
+      }
+    ],
+    "3.4 Property test: tiêu đề và nội dung workbook \"tài liệu của tôi\"": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682258571
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682771246
+      }
+    ],
+    "3.5 Property test: định dạng ô \"Site xác nhận\"": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682260033
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682772660
+      }
+    ],
+    "3.6 Property test: quy ước tên tệp xuất": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682260699
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682773429
+      }
+    ],
+    "2.4 Viết test render template cho bộ chọn \"Loại\"": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682782266
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683091384
+      }
+    ],
+    "5.2 Viết integration test `origin` cho `listVisibleDocuments` (cần Postgres)": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792682783391
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683092376
+      }
+    ],
+    "8. MyDocs_Export: tách lắp dữ liệu + route export + nút view": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683857451
+      }
+    ],
+    "7. Catalog_Export: parse filter + route export + nút view": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683858606
+      }
+    ],
+    "7.4 Viết integration test phạm vi + Applied_Filters cho Catalog_Export (cần Postgres)": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683865483
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792684129029
+      }
+    ],
+    "8.4 Viết integration test phạm vi cho MyDocs_Export (cần Postgres)": [
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792683866223
+      },
+      {
+        "executionId": "dad3166c-a6fc-4368-a0fb-889924e433fe",
+        "chatSessionId": "sess_759fcf35-b8e9-4e73-a508-cd4756c8aa92",
+        "timestamp": 1792684129613
+      }
+    ]
+  }
+}

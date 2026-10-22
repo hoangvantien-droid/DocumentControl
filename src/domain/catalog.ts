@@ -15,8 +15,11 @@ export interface CatalogRow {
   status: string;
   doc_type: string;
   scope_level: string;
+  origin: string;
   effective_date: string | null;
   next_review_date: string | null;
+  issued_date: string | null;
+  expiry_date: string | null;
   owner_department_id: string | null;
 }
 
@@ -67,7 +70,7 @@ export async function listVisibleDocuments(
   const effStatus = status ?? presetStatus;
   return sql<CatalogRow[]>`
     SELECT v.doc_id, v.version_id, v.version_no, v.title, v.status,
-           d.doc_type, d.scope_level,
+           d.doc_type, d.scope_level, d.origin,
            v.effective_date::text AS effective_date,
            v.next_review_date::text AS next_review_date,
            v.owner_department_id,

@@ -9,6 +9,9 @@
     <% if (it.nav && it.nav.canRegister) { %>
       <a href="/register" class="btn-action btn-action--primary"><%~ include('/components/action-icon.eta', { name: 'plus' }) %> Đăng ký tài liệu</a>
     <% } %>
+    <% if (it.nav && (it.nav.canRegister || it.nav.isSiteDocControl)) { %>
+      <a href="/documents/export.xlsx<%= it.exportQuery || '' %>" class="btn-action btn-action--neutral"><%~ include('/components/action-icon.eta', { name: 'download' }) %> Xuất danh mục Excel</a>
+    <% } %>
   </div>
 </div>
 
@@ -45,11 +48,9 @@
   <label>Loại:
     <select name="doc_type">
       <option value="">--</option>
-      <option value="SOP" <%= ff.doc_type==='SOP'?'selected':'' %>>SOP</option>
-      <option value="WI" <%= ff.doc_type==='WI'?'selected':'' %>>WI</option>
-      <option value="Form" <%= ff.doc_type==='Form'?'selected':'' %>>Form</option>
-      <option value="Policy" <%= ff.doc_type==='Policy'?'selected':'' %>>Policy</option>
-      <option value="External" <%= ff.doc_type==='External'?'selected':'' %>>External</option>
+      <% var docTypes = it.docTypes || []; docTypes.forEach(function(t){ %>
+      <option value="<%= t.code %>" <%= ff.doc_type===t.code?'selected':'' %>><%= t.label %></option>
+      <% }) %>
     </select>
   </label>
   <label>Nguồn:

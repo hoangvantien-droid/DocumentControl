@@ -15,13 +15,16 @@ import {
   type DocType, type Origin, type ChangeSignificance,
 } from '../domain/registration.js';
 import { processVersionContent } from '../domain/content.js';
+import { DOC_TYPES } from '../domain/doc-types.js';
 import {
   normalizeSiteIds, listReceiptsForVersion, receiptTally, hasAnyAcceptance,
   editVersionMetadata, deleteUnacceptedVersion, recallByAuthor,
   candidateSitesForScope, publishAdditionalSites,
 } from '../domain/receipt.js';
-import { aggregateStatusOf } from '../domain/lifecycle-status.js';
+import { aggregateStatusOf, type AggregateStatus } from '../domain/lifecycle-status.js';
 import { canRegisterDocuments } from '../domain/permissions.js';
+import { buildWorkbook, streamXlsx, exportFileName, type ColumnDef } from '../lib/xlsx.js';
+import { docStatusLabel, aggregateDisplay } from '../views/labels.js';
 import type { ScopeLevel } from '../domain/roles.js';
 import { listBu, listSites, listDepartments } from '../domain/org.js';
 import { storeFile } from '../domain/file-store.js';
@@ -41,6 +44,88 @@ interface RegBody {
   file?: Buffer;
 }
 
+/**
+ * Một dòng "tài liệu của tôi": các cột lấy từ truy vấn gộp receipt, cộng thêm
+ * `aggregate` (trạng thái tổng hợp suy từ số liệu receipt) và `hasContentReject`
+ * (có ≥1 site từ chối vì sai nội dung). Dùng chung cho handler `/my-documents`
+ * và route export `.xlsx`.
+ */
+export interface MyDocRow {
+  version_id: string;
+  doc_id: string;
+  version_no: string;
+  title: string;
+  status: string;
+  effective_date: string | null;
+  rejection_reason: string | null;
+  parse_status: string | null;
+  parse_note: string | null;
+  total: number;
+  accepted: number;
+  rejected: number;
+  pending: number;
+  content_rejected: number;
+  aggregate: AggregateStatus;
+  hasContentReject: boolean;
+}
+
+/**
+ * Lắp danh sách "tài liệu của tôi" cho một người biên soạn: chạy truy vấn gộp
+ * receipt theo site (lọc `registrant_user_id = userId`) rồi map thêm `aggregate`
+ * qua `aggregateStatusOf` và `hasContentReject`. Nguồn dữ liệu duy nhất cho cả
+ * trang `/my-documents` lẫn export Excel — bảo đảm hai nơi luôn khớp.
+ */
+export async function assembleMyDocuments(sql: Sql, userId: string): Promise<MyDocRow[]> {
+  // Kèm số liệu receipt theo site để hiển thị trạng thái tổng hợp (Task 5).
+  const rows = await sql<{
+    version_id: string; doc_id: string; version_no: string; title: string;
+    status: string; effective_date: string | null; rejection_reason: string | null;
+    parse_status: string | null; parse_note: string | null;
+    total: number; accepted: number; rejected: number; pending: number;
+    content_rejected: number;
+  }[]>`
+    SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
+           v.effective_date::text AS effective_date, v.rejection_reason,
+           v.parse_status, v.parse_note,
+           count(r.*)::int AS total,
+           count(r.*) FILTER (WHERE r.status = 'chap_nhan')::int AS accepted,
+           count(r.*) FILTER (WHERE r.status = 'tu_choi')::int AS rejected,
+           count(r.*) FILTER (WHERE r.status = 'cho_phan_hoi')::int AS pending
+           , count(r.*) FILTER (WHERE r.status = 'tu_choi' AND r.response_type = 'sai_noi_dung')::int AS content_rejected
+      FROM document_versions v
+      LEFT JOIN document_receipt r ON r.version_id = v.version_id
+     WHERE v.registrant_user_id = ${userId}
+     GROUP BY v.version_id, v.doc_id, v.version_no, v.title, v.status,
+              v.effective_date, v.rejection_reason, v.parse_status, v.parse_note,
+              v.submitted_at, v.updated_at
+     ORDER BY v.submitted_at DESC NULLS LAST, v.updated_at DESC`;
+  return rows.map((d) => ({
+    ...d,
+    aggregate: aggregateStatusOf({
+      total: d.total, accepted: d.accepted, rejected: d.rejected, pending: d.pending,
+    }),
+    hasContentReject: d.content_rejected > 0,
+  }));
+}
+
+/**
+ * Cột cho export Excel "tài liệu của tôi" (7 cột, thứ tự cố định — design.md §6).
+ * Dùng chung nguồn nhãn với `my-documents.eta` (docStatusLabel / aggregateDisplay)
+ * để export khớp đúng những gì người dùng thấy trên trang.
+ */
+const MY_DOCS_COLUMNS: ColumnDef<MyDocRow>[] = [
+  { header: 'Số hiệu',             value: (d) => d.doc_id },
+  { header: 'Phiên bản',           value: (d) => d.version_no },
+  { header: 'Tiêu đề',             value: (d) => d.title },
+  { header: 'Trạng thái',          value: (d) => docStatusLabel(d.status) },
+  { header: 'Site xác nhận',       value: (d) => (d.total > 0 ? `${d.accepted}/${d.total}` : '') },
+  {
+    header: 'Tình trạng ban hành',
+    value: (d) => (d.total > 0 ? aggregateDisplay(d.aggregate, d.hasContentReject).label : 'Chưa phát hành'),
+  },
+  { header: 'Lý do từ chối',       value: (d) => d.rejection_reason ?? '' },
+];
+
 export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
   // Form đăng ký — 3 vai: chỉ Biên soạn (có DC_AUTHOR) được mở.
   app.get('/register', async (req, reply) => {
@@ -55,7 +140,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const supersedeOptions = supersedeable.map((vv) =>
       `<option value="${esc(vv.version_id)}">${esc(vv.doc_id)} v${esc(vv.version_no)} (${esc(vv.status)})</option>`).join('');
-    return reply.view('register.eta', { bus, sites, depts, error: null, values: {}, supersedeOptions, selectedSiteIds: [] });
+    return reply.view('register.eta', { bus, sites, depts, error: null, values: {}, supersedeOptions, selectedSiteIds: [], docTypes: DOC_TYPES });
   });
 
   /** Bản đang hiệu lực / đã đăng ký có thể làm bản gốc cho update (C.2.6). */
@@ -135,7 +220,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
         reply.code(err.httpStatus);
         return reply.view('register.eta', {
           bus, sites, depts, error: err.message, values: b, supersedeOptions,
-          selectedSiteIds: normalizeSiteIds(b.site_ids),
+          selectedSiteIds: normalizeSiteIds(b.site_ids), docTypes: DOC_TYPES,
         });
       }
       throw err;
@@ -196,7 +281,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
         const supersedeOptions = supersedeable.map((vv) =>
           `<option value="${esc2(vv.version_id)}">${esc2(vv.doc_id)} v${esc2(vv.version_no)} (${esc2(vv.status)})</option>`).join('');
         reply.code(err.httpStatus);
-        return reply.view('register.eta', { bus, sites, depts, error: err.message, values: b, supersedeOptions });
+        return reply.view('register.eta', { bus, sites, depts, error: err.message, values: b, supersedeOptions, docTypes: DOC_TYPES });
       }
       throw err;
     }
@@ -221,37 +306,24 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     if (!await canRegisterDocuments(sql, user.user_id)) {
       reply.code(403); return reply.send('Chỉ người biên soạn có mục Tài liệu của tôi');
     }
-    // Kèm số liệu receipt theo site để hiển thị trạng thái tổng hợp (Task 5).
-    const rows = await sql<{
-      version_id: string; doc_id: string; version_no: string; title: string;
-      status: string; effective_date: string | null; rejection_reason: string | null;
-      parse_status: string | null; parse_note: string | null;
-      total: number; accepted: number; rejected: number; pending: number;
-      content_rejected: number;
-    }[]>`
-      SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
-             v.effective_date::text AS effective_date, v.rejection_reason,
-             v.parse_status, v.parse_note,
-             count(r.*)::int AS total,
-             count(r.*) FILTER (WHERE r.status = 'chap_nhan')::int AS accepted,
-             count(r.*) FILTER (WHERE r.status = 'tu_choi')::int AS rejected,
-             count(r.*) FILTER (WHERE r.status = 'cho_phan_hoi')::int AS pending
-             , count(r.*) FILTER (WHERE r.status = 'tu_choi' AND r.response_type = 'sai_noi_dung')::int AS content_rejected
-        FROM document_versions v
-        LEFT JOIN document_receipt r ON r.version_id = v.version_id
-       WHERE v.registrant_user_id = ${user.user_id}
-       GROUP BY v.version_id, v.doc_id, v.version_no, v.title, v.status,
-                v.effective_date, v.rejection_reason, v.parse_status, v.parse_note,
-                v.submitted_at, v.updated_at
-       ORDER BY v.submitted_at DESC NULLS LAST, v.updated_at DESC`;
-    const docs = rows.map((d) => ({
-      ...d,
-      aggregate: aggregateStatusOf({
-        total: d.total, accepted: d.accepted, rejected: d.rejected, pending: d.pending,
-      }),
-      hasContentReject: d.content_rejected > 0,
-    }));
+    const docs = await assembleMyDocuments(sql, user.user_id);
     return reply.view('my-documents.eta', { docs });
+  });
+
+  // Xuất Excel "tài liệu của tôi" (catalog-excel-export §6). Route tĩnh đặt gần
+  // GET /my-documents; Fastify ưu tiên route tĩnh hơn các route tham số
+  // /my-documents/:id/... nên không bị che. Thẩm quyền thực thi phía máy chủ.
+  app.get('/my-documents/export.xlsx', async (req, reply) => {
+    const user = requireUser(req, reply);
+    if (!user) return reply;
+    if (!await canRegisterDocuments(sql, user.user_id)) {
+      reply.code(403);
+      return reply.send('Chỉ người biên soạn được xuất Excel tài liệu của mình');
+    }
+    const docs = await assembleMyDocuments(sql, user.user_id);
+    const wb = buildWorkbook(MY_DOCS_COLUMNS, docs, 'Tài liệu của tôi');
+    await streamXlsx(reply, wb, exportFileName('my-documents', new Date()));
+    return reply;
   });
 
   // Tình trạng ban hành theo site (Task 5): ma trận phản hồi + hành động Author.
@@ -428,6 +500,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
       values: draft,
       editVersionId: draft.version_id,
       supersedeOptions,
+      docTypes: DOC_TYPES,
     });
   });
 
@@ -491,7 +564,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
         reply.code(err.httpStatus);
         return reply.view('register.eta', {
           bus, sites, depts, error: err.message, values: b, editVersionId: req.params.id,
-          supersedeOptions,
+          supersedeOptions, docTypes: DOC_TYPES,
         });
       }
       throw err;

@@ -22,8 +22,8 @@
     </label>
     <label>Loại
       <select name="doc_type">
-        <% var docTypes = ['SOP','WI','Form','Policy','External']; docTypes.forEach(function(t){ %>
-          <option value="<%= t %>" <%= val.doc_type===t?'selected':'' %>><%= t %></option>
+        <% var docTypes = it.docTypes || []; docTypes.forEach(function(t){ %>
+          <option value="<%= t.code %>" <%= val.doc_type===t.code?'selected':'' %>><%= t.label %></option>
         <% }) %>
       </select>
     </label>

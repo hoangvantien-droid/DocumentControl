@@ -69,6 +69,12 @@ export const ROLE_LABELS: Record<string, string> = {
   DC_GROUP_OWNER: 'Phê duyệt (vai cũ: Chủ Group)',
 };
 
+/** Nguồn tài liệu (mã enum -> nhãn người dùng thấy). */
+export const ORIGIN_LABELS: Record<string, string> = {
+  noi_bo: 'Nội bộ',
+  ngoai_bo: 'Ngoại bộ',
+};
+
 /** Cấp phạm vi (mã enum -> nhãn người dùng thấy). */
 export const SCOPE_LABELS: Record<string, string> = {
   group: 'Toàn Tập đoàn',
@@ -91,6 +97,12 @@ export function docStatusLabel(code: string | null | undefined): string {
 export function scopeLabel(level: string | null | undefined): string {
   if (!level) return '';
   return SCOPE_LABELS[level] ?? level;
+}
+
+/** Nhãn nguồn tài liệu. Mã lạ/thiếu thì trả về chính mã. */
+export function originLabel(code: string | null | undefined): string {
+  if (!code) return '';
+  return ORIGIN_LABELS[code] ?? code;
 }
 
 /** Nhãn vai trò. Mã lạ/thiếu thì trả về chính mã. */

@@ -64,6 +64,11 @@ export function isSiteDocControl(roleCodes: Set<string>): boolean {
   return roleCodes.has('DC_SITE_DOC_CONTROL');
 }
 
+/** Được xuất danh mục Excel = vai Author HOẶC SiteDocControl. */
+export function canExportCatalog(roleCodes: Set<string>): boolean {
+  return roleCodes.has('DC_AUTHOR') || isSiteDocControl(roleCodes);
+}
+
 /** Tham gia luồng tài liệu = Author / DC Site / Reader. Admin-thuần đứng ngoài. */
 export function isDocFlowRoles(roleCodes: Set<string>): boolean {
   return roleCodes.has('DC_AUTHOR')

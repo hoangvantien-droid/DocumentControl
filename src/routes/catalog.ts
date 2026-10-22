@@ -6,13 +6,18 @@ import { existsSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import type { Sql } from 'postgres';
 import { requireUser, requireDocFlow } from '../middleware/auth.js';
+import { roleCodesOf, canExportCatalog } from '../domain/permissions.js';
+import { buildWorkbook, streamXlsx, exportFileName, type ColumnDef } from '../lib/xlsx.js';
+import { scopeLabel, docStatusLabel, originLabel } from '../views/labels.js';
 import { isBusinessError } from '../lib/errors.js';
 import { sendBusinessError } from '../lib/http-errors.js';
 import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
   isCurrentStatus,
 } from '../domain/catalog.js';
+import type { CatalogFilters, CatalogRow } from '../domain/catalog.js';
 import { listSites } from '../domain/org.js';
+import { DOC_TYPES } from '../domain/doc-types.js';
 import { canViewVersion as canViewDoc } from '../domain/catalog.js';
 import { processVersionContent } from '../domain/content.js';
 import { listPrintedCopies } from '../domain/printing.js';
@@ -22,29 +27,87 @@ import { listDepartments } from '../domain/org.js';
 import { listGroups } from '../domain/functional-groups.js';
 import type { Config } from '../config.js';
 
+/** Hình dạng querystring của bộ lọc danh mục (trang /documents + export). */
+type CatalogQuery = {
+  status?: string; q?: string; doc_type?: string; origin?: string;
+  eff_from?: string; eff_to?: string; preset?: string; sort?: string;
+  site_id?: string; rollout_status?: string;
+};
+
+/**
+ * Parse querystring của /documents thành CatalogFilters dùng chung cho cả
+ * trang danh mục và route export (bảo đảm Applied_Filters giống hệt).
+ */
+function parseCatalogFilters(query: CatalogQuery): CatalogFilters {
+  return {
+    status: (query.status ?? '').trim() || null,
+    q: (query.q ?? '').trim() || null,
+    doc_type: (query.doc_type ?? '').trim() || null,
+    origin: (query.origin ?? '').trim() || null,
+    eff_from: (query.eff_from ?? '').trim() || null,
+    eff_to: (query.eff_to ?? '').trim() || null,
+    preset: (query.preset ?? '').trim() || null,
+    site_id: (query.site_id ?? '').trim() || null,
+    rollout_status: (query.rollout_status ?? '').trim() || null,
+    sort: (query.sort ?? '').trim() || 'hieu_luc_moi',
+  };
+}
+
+/**
+ * Cột xuất Excel danh mục (Catalog_Export) — thứ tự cố định, KHÔNG có cột
+ * File PDF (Yêu cầu 1.4, 1.5). Nhãn tiếng Việt dùng chung nguồn với view layer.
+ */
+const CATALOG_COLUMNS: ColumnDef<CatalogRow>[] = [
+  { header: 'Số hiệu',              value: (r) => r.doc_id },
+  { header: 'Phiên bản',            value: (r) => r.version_no },
+  { header: 'Tiêu đề',              value: (r) => r.title },
+  { header: 'Loại',                 value: (r) => r.doc_type },
+  { header: 'Phạm vi',              value: (r) => scopeLabel(r.scope_level) },
+  { header: 'Trạng thái',           value: (r) => docStatusLabel(r.status) },
+  { header: 'Nguồn',                value: (r) => originLabel(r.origin) },
+  { header: 'Ngày ban hành',        value: (r) => r.issued_date ?? '' },
+  { header: 'Ngày hiệu lực',        value: (r) => r.effective_date ?? '' },
+  { header: 'Ngày rà soát kế tiếp', value: (r) => r.next_review_date ?? '' },
+  { header: 'Ngày hết hạn',         value: (r) => r.expiry_date ?? '' },
+];
+
 export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Config): void {
-  app.get<{ Querystring: { status?: string; q?: string; doc_type?: string; origin?: string; eff_from?: string; eff_to?: string; preset?: string; sort?: string; site_id?: string; rollout_status?: string } }>('/documents', async (req, reply) => {
+  app.get<{ Querystring: CatalogQuery }>('/documents', async (req, reply) => {
     const user = await requireDocFlow(sql, req, reply);
     if (!user) return reply;
-    const f = {
-      status: (req.query.status ?? '').trim() || null,
-      q: (req.query.q ?? '').trim() || null,
-      doc_type: (req.query.doc_type ?? '').trim() || null,
-      origin: (req.query.origin ?? '').trim() || null,
-      eff_from: (req.query.eff_from ?? '').trim() || null,
-      eff_to: (req.query.eff_to ?? '').trim() || null,
-      preset: (req.query.preset ?? '').trim() || null,
-      site_id: (req.query.site_id ?? '').trim() || null,
-      rollout_status: (req.query.rollout_status ?? '').trim() || null,
-      sort: (req.query.sort ?? '').trim() || 'hieu_luc_moi',
-    };
+    const f = parseCatalogFilters(req.query);
     const [docs, sites] = await Promise.all([
       listVisibleDocuments(sql, user.user_id, f, req.nav.isReadOnly),
       listSites(sql),
     ]);
     const escS = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const siteOptions = sites.map((s) => `<option value="${escS(s.site_id)}"${f.site_id === s.site_id ? ' selected' : ''}>${escS(s.site_code)} — ${escS(s.name)}</option>`).join('');
-    return reply.view('catalog.eta', { docs, statusFilter: f.status ?? '', filters: f, sites, siteOptions });
+    // Querystring lọc hiện tại để nút export khớp đúng tập đang hiển thị. Dựng
+    // từ CatalogFilters đã parse (chỉ gồm trường có giá trị); keys khớp tên mà
+    // route export.xlsx parse lại. Template chỉ chèn chuỗi, không dựng URL thủ công.
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(f)) { if (v) params.set(k, String(v)); }
+    const exportQuery = params.toString() ? `?${params.toString()}` : '';
+    return reply.view('catalog.eta', { docs, statusFilter: f.status ?? '', filters: f, sites, siteOptions, docTypes: DOC_TYPES, exportQuery });
+  });
+
+  // Xuất danh mục Excel (Catalog_Export). Route TĨNH — Fastify ưu tiên route
+  // tĩnh hơn route tham số nên /documents/export.xlsx không rơi vào /documents/:id.
+  // Kiểm quyền phía máy chủ (Yêu cầu 1.7, 4.1); tập dữ liệu giới hạn trong
+  // Visible_Scope theo cùng Applied_Filters với trang /documents (Yêu cầu 1.8, 4.2, 4.4).
+  app.get<{ Querystring: CatalogQuery }>('/documents/export.xlsx', async (req, reply) => {
+    const user = await requireDocFlow(sql, req, reply);
+    if (!user) return reply;
+    const roles = await roleCodesOf(sql, user.user_id);
+    if (!canExportCatalog(roles)) {
+      reply.code(403);
+      return reply.send('Chỉ Biên soạn hoặc Kiểm soát tài liệu site được xuất danh mục');
+    }
+    const filters = parseCatalogFilters(req.query);
+    const rows = await listVisibleDocuments(sql, user.user_id, filters, req.nav.isReadOnly);
+    const wb = buildWorkbook(CATALOG_COLUMNS, rows, 'Danh mục');
+    await streamXlsx(reply, wb, exportFileName('catalog', new Date()));
+    return reply;
   });
 
   // Xem trước PDF (inline) — cho người duyệt đọc trước khi duyệt.
