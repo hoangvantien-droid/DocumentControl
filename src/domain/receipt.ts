@@ -224,7 +224,7 @@ export async function recalledDocsForSites(sql: Sql, siteIds: string[]): Promise
       JOIN document_receipt r ON r.version_id = v.version_id
      WHERE v.status = 'thu_hoi'
        AND r.site_id = ANY(${siteIds}::uuid[])
-     ORDER BY v.updated_at DESC`;
+     ORDER BY recalled_at DESC`;
 }
 
 /** Đếm nhanh số receipt đang chờ phản hồi của các site (cho badge sidebar). */
