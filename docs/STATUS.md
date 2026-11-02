@@ -9,7 +9,7 @@ Repo: `git@github.com:hoangvantien-droid/DocumentControl.git`, branch `main`.
 - Source repo: `91fb6ed`, `behind=0 ahead=0` so với `origin/main`
 - Production: `behind=0 ahead=0` (vừa pull xong)
 - Service `dcs.service`: `active`, `healthz` 200
-- DB `dcs_prod`: 16 migration đã chạy (001 → 016, gồm `016_fulltext_markdown.sql`)
+- DB `dcs_prod`: 25 migration trong repo (001 → 025); runner nối thêm, chỉ áp file mới
 - `package.json` version `0.2.0`
 - `npm run test:unit`: 105 pass, 0 fail (chạy 2026-10-18)
 - UAT final report đã có trong repo: `docs/DCS_UAT_Final_Report.pdf` (414 pass, 0 fail, 56 skip)
@@ -79,7 +79,7 @@ Repo: `git@github.com:hoangvantien-droid/DocumentControl.git`, branch `main`.
 
 ### T8. README dòng "Chưa verify" — ĐÃ XONG (2026-10-18)
 - Đã sửa README mục "Trạng thái": thay dòng "Chưa verify" bằng kết quả verify
-  thật (test:unit 105 pass, UAT 414 pass, prod 16 migration) + link `docs/STATUS.md`.
+  thật (test:unit 105 pass, UAT 414 pass, 25 migration) + link `docs/STATUS.md`.
 
 ## 4. Không còn treo
 

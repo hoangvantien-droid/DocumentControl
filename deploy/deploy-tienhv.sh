@@ -19,7 +19,7 @@ ENV_DIR=/etc/dcs
 FILE_DIR=/var/dcs/files
 DB_NAME=dcs_prod
 DB_USER=dcs
-DB_PASS=dcs2026secure
+DB_PASS="${DB_PASS:?set DB_PASS (export DB_PASS=... before running; do NOT commit the value)}"
 NGINX_CONTAINER=tienhv-web
 BASE_PATH=/dcs
 SRC_DIR="$(cd "$(dirname "$0")/.." && pwd)"   # thư mục repo đã clone

@@ -31,6 +31,8 @@ và cài 4 extension.
 
 ## 2. Cấu hình môi trường
 
+> **Bảo mật:** `.env` chứa bí mật thật (mật khẩu DB, `SESSION_SECRET`) — **không bao giờ** commit vào git hoặc đóng vào gói release; chỉ `.env.example` được theo dõi.
+
 ```bash
 sudo -u dcs cp /opt/dcs/.env.example /opt/dcs/.env
 sudo -u dcs nano /opt/dcs/.env
@@ -215,6 +217,7 @@ Trên server (user `tao`), chạy:
 cd /home/tao/webserver-tienhv/www
 git clone https://github.com/hoangvantien-droid/DocumentControl.git dcs-src
 cd dcs-src
+export DB_PASS='<mật khẩu DB thật>'   # script yêu cầu DB_PASS; KHÔNG hard-code vào file
 bash deploy/deploy-tienhv.sh
 ```
 

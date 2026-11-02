@@ -1,8 +1,10 @@
 # DCS — Hệ Quản lý & Phân phối Tài liệu Điện tử
 
-Ứng dụng quản lý vòng đời tài liệu chất lượng sau phê duyệt: đăng ký, xác nhận
-hai lớp, phiên bản, phân phối, xác nhận đọc, dán nhãn nội dung, tìm kiếm và hỏi
-đáp AI có trích dẫn. Tích hợp với QDMS và tầng định danh dùng chung L1.
+Ứng dụng quản lý vòng đời tài liệu chất lượng sau phê duyệt theo mô hình
+**"đăng ký là ban hành luôn"**: Author đăng ký → ban hành thẳng (`da_ban_hanh`),
+sinh phiếu tiếp nhận (receipt) cho từng site, site chấp nhận/từ chối, Reader báo
+sai nội dung, thu hồi, phiên bản, xác nhận đọc, dán nhãn nội dung, tìm kiếm và
+hỏi đáp AI có trích dẫn. Tích hợp với QDMS và tầng định danh dùng chung L1.
 
 Đặc tả đầy đủ: `.kiro/specs/Document control/` (DCS-1 → DCS-10).
 
@@ -22,7 +24,7 @@ hai lớp, phiên bản, phân phối, xác nhận đọc, dán nhãn nội dung
 |---|---|
 | 0 | Nền móng: server, config, CSDL, migration, schema DCS-4, ghi vết, lỗi, khung giao diện, bộ test ràng buộc |
 | 1 | Định danh & phân quyền: đăng nhập argon2id, phiên DB, getCurrentUser, quản trị tổ chức/người dùng/vai trò, canRelease, menu theo vai trò |
-| 2 | Đăng ký & xác nhận: form đăng ký, checklist 12 mục, guard ngày hiệu lực, xác nhận/từ chối |
+| 2 | Đăng ký = ban hành thẳng: form đăng ký, guard ngày hiệu lực, sinh phiếu tiếp nhận cho site |
 | 3 | Vòng đời: lập lịch chuyển hiệu lực, thu hồi, danh mục lọc quyền, chi tiết, trang chủ |
 | 4 | Nội dung & nhãn: đọc PDF, bóc tách mục, OCR rời, phân đoạn (không cắt bảng) |
 | 5 | Tìm kiếm & so sánh phiên bản |
@@ -36,9 +38,9 @@ thành công, server khởi động và mọi route bảo vệ đúng, `npm run 
 phân đoạn/bóc tách) xanh.
 
 **Đã verify trên VPS (2026-10-18):** `npm run test:unit` 105 pass / 0 fail;
-UAT final report trong `docs/DCS_UAT_Final_Report.pdf` (414 pass, 0 fail, 56 skip);
-production đã chạy đủ 16 migration (001 → 016). Xem `docs/STATUS.md` để biết
-trạng thái deploy và task tồn đọng.
+UAT final report trong `docs/DCS_UAT_Final_Report.pdf` (414 pass, 0 fail, 56 skip).
+Lược đồ hiện trải trên **25 migration** (001 → 025, chạy tuần tự bằng runner nối
+thêm). Xem `docs/STATUS.md` để biết trạng thái deploy và task tồn đọng.
 
 ## Chạy dưới máy phát triển
 
@@ -57,7 +59,7 @@ npm install
 # 3. Cấu hình môi trường
 cp .env.example .env    # sửa DATABASE_URL, DATABASE_URL_TEST, SESSION_SECRET...
 
-# 4. Chạy migration (tạo 22 bảng + 8 view; chạy lần hai không lỗi)
+# 4. Chạy migration (25 migration 001 → 025; runner nối thêm, chạy lần hai không lỗi)
 npm run migrate
 
 # 5. Khởi động
