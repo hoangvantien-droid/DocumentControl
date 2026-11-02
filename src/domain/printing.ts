@@ -38,7 +38,7 @@ export async function registerPrint(
     const v = (await tx<{ status: string; doc_id: string; version_no: string }[]>`
       SELECT status, doc_id, version_no FROM document_versions WHERE version_id = ${input.versionId}`)[0];
     if (!v) throw new BusinessError('print.no_version', 'Không tìm thấy phiên bản');
-    if (v.status !== 'hieu_luc') {
+    if (!isCurrentlyEffective(v.status)) {
       throw new BusinessError('print.not_effective', 'Chỉ in được bản đang hiệu lực');
     }
     const row = (await tx<{ print_id: string; verify_token: string; printed_at: string }[]>`

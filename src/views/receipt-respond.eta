@@ -1,5 +1,12 @@
 <% layout('layout.eta', { title: 'Phản hồi tài liệu — DCS', user: it.user }) %>
 <% var r = it.r; var d = it.detail || {}; %>
+<%
+/* Điểm 5: tài liệu đã thu hồi -> không cho chấp nhận. */
+var _recalled = (d.status === 'thu_hoi');
+/* Điểm 4: chưa tới ngày hiệu lực -> không cho chấp nhận. */
+var _today = new Date().toISOString().slice(0, 10);
+var _beforeEffective = (d.effective_date && String(d.effective_date).slice(0, 10) > _today);
+%>
 
 <div class="detail-header">
   <h1>Phản hồi tài liệu cho site <%= r.site_code %></h1>
@@ -47,9 +54,15 @@
       <div><dt>Site nhận</dt><dd><%= r.site_code %> — <%= r.site_name %></dd></div>
     </dl>
 
+    <% if (_recalled) { %>
+      <div class="alert-banner alert-banner--error"><strong>Tài liệu đã bị thu hồi:</strong> Không thể chấp nhận phiếu này. Ngừng sử dụng tài liệu.</div>
+    <% } else if (_beforeEffective) { %>
+      <div class="alert-banner alert-banner--info"><strong>Chưa tới ngày hiệu lực (<%= d.effective_date %>):</strong> Chỉ có thể chấp nhận từ ngày hiệu lực trở đi.</div>
+    <% } else { %>
     <form method="post" action="/site-receipts/<%= r.receipt_id %>/accept" hx-post="/site-receipts/<%= r.receipt_id %>/accept" hx-target="#toast-zone" hx-swap="beforeend">
       <button type="submit" class="primary">Xác nhận tiếp nhận</button>
     </form>
+    <% } %>
 
     <form method="post" action="/site-receipts/<%= r.receipt_id %>/reject" class="reject-form" hx-post="/site-receipts/<%= r.receipt_id %>/reject" hx-target="#toast-zone" hx-swap="beforeend">
       <h2>Từ chối — báo sai sót</h2>

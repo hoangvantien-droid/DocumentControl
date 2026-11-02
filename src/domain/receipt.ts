@@ -227,12 +227,16 @@ export async function recalledDocsForSites(sql: Sql, siteIds: string[]): Promise
      ORDER BY recalled_at DESC`;
 }
 
-/** Đếm nhanh số receipt đang chờ phản hồi của các site (cho badge sidebar). */
+/** Đếm nhanh số receipt đang chờ phản hồi của các site (cho badge sidebar).
+ * Điểm 5: loại phiếu của tài liệu đã thu hồi (JOIN document_versions). */
 export async function pendingReceiptCountForSites(sql: Sql, siteIds: string[]): Promise<number> {
   if (siteIds.length === 0) return 0;
   const rows = await sql<{ n: number }[]>`
-    SELECT count(*)::int AS n FROM document_receipt
-     WHERE status = 'cho_phan_hoi' AND site_id = ANY(${siteIds}::uuid[])`;
+    SELECT count(*)::int AS n FROM document_receipt r
+      JOIN document_versions v ON v.version_id = r.version_id
+     WHERE r.status = 'cho_phan_hoi'
+       AND v.status <> 'thu_hoi'
+       AND r.site_id = ANY(${siteIds}::uuid[])`;
   return rows[0]?.n ?? 0;
 }
 
@@ -256,6 +260,7 @@ export async function pendingReceiptsForSites(
       JOIN org_site s ON s.site_id = r.site_id
       JOIN document_versions v ON v.version_id = r.version_id
      WHERE r.status = 'cho_phan_hoi'
+       AND v.status <> 'thu_hoi'
        AND r.site_id = ANY(${siteIds})
      ORDER BY v.submitted_at DESC NULLS LAST, s.site_code`;
 }
@@ -322,6 +327,9 @@ interface ReceiptContext {
   site_id: string;
   status: string;
   registrant_user_id: string;
+  /** Trạng thái + ngày hiệu lực của phiên bản (điểm 4/5). */
+  version_status: string;
+  effective_date: string | null;
 }
 
 async function loadReceiptForRespond(
@@ -330,7 +338,9 @@ async function loadReceiptForRespond(
 ): Promise<ReceiptContext | null> {
   const rows = await tx<ReceiptContext[]>`
     SELECT r.receipt_id, r.version_id, r.site_id, r.status,
-           v.registrant_user_id
+           v.registrant_user_id,
+           v.status AS version_status,
+           v.effective_date::text AS effective_date
       FROM document_receipt r
       JOIN document_versions v ON v.version_id = r.version_id
      WHERE r.receipt_id = ${receiptId}
@@ -338,14 +348,25 @@ async function loadReceiptForRespond(
   return rows[0] ?? null;
 }
 
-/** Kiểm quyền + phát hiện tự-phản-hồi, dùng chung cho chấp nhận/từ chối. */
+/** Kiểm quyền + phát hiện tự-phản-hồi, dùng chung cho chấp nhận/từ chối.
+ * mode='accept' thêm chặn điểm 4/5: không chấp nhận tài liệu đã thu hồi hoặc
+ * chưa tới ngày hiệu lực (từ chối thì vẫn cho — site cần báo sai sót). */
 async function assertCanRespond(
   tx: TransactionSql,
   rc: ReceiptContext,
   userId: string,
+  mode: 'accept' | 'reject' = 'accept',
 ): Promise<{ selfResponded: boolean }> {
   if (rc.status !== 'cho_phan_hoi') {
     throw new BusinessError('receipt.bad_status', 'Receipt không còn ở trạng thái chờ phản hồi');
+  }
+  // Điểm 5: phiếu của tài liệu đã thu hồi không được chấp nhận.
+  if (rc.version_status === 'thu_hoi') {
+    throw new BusinessError('receipt.recalled', 'Tài liệu đã bị thu hồi — không thể phản hồi phiếu này');
+  }
+  // Điểm 4: site không được chấp nhận trước ngày hiệu lực.
+  if (mode === 'accept' && rc.effective_date && rc.effective_date.slice(0, 10) > today()) {
+    throw new BusinessError('receipt.before_effective', 'Chưa tới ngày hiệu lực — không thể chấp nhận tài liệu này');
   }
   const siteIds = await siteIdsWithDocControl(tx as unknown as Sql, userId);
   if (!siteIds.has(rc.site_id)) {
@@ -398,7 +419,7 @@ export async function rejectReceipt(
   await sql.begin(async (tx) => {
     const rc = await loadReceiptForRespond(tx as TransactionSql, input.receiptId);
     if (!rc) throw new BusinessError('receipt.not_found', 'Không tìm thấy receipt');
-    const { selfResponded } = await assertCanRespond(tx as TransactionSql, rc, input.userId);
+    const { selfResponded } = await assertCanRespond(tx as TransactionSql, rc, input.userId, 'reject');
 
     await tx`
       UPDATE document_receipt

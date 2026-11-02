@@ -22,7 +22,7 @@ var pdfSrc = '/documents/' + d.version_id + '/' + _pdfPath;
   <div class="detail-actions">
     <a href="<%= pdfSrc %>" target="_blank" rel="noopener" class="btn-link">Mở PDF toàn màn hình</a>
     <% if (!_preRelease) { %><a href="/documents/<%= d.version_id %>/download" class="btn-link">Tải PDF</a><% } %>
-    <% if (d.status === 'hieu_luc' || d.status === 'da_ban_hanh') { %>
+    <% if (d.status === 'da_ban_hanh' || d.status === 'hieu_luc' || d.status === 'da_dang_ky') { %>
       <details class="print-box">
         <summary class="btn-diff">In bản sao có kiểm soát</summary>
         <form method="post" action="/documents/<%= d.version_id %>/print" class="inline-form">

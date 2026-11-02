@@ -15,6 +15,7 @@ import {
   listVisibleDocuments, loadDetail, loadSections, loadLinks, currentVersionOf, canViewVersion,
   isCurrentStatus,
 } from '../domain/catalog.js';
+import { isCurrentlyEffective } from '../domain/lifecycle-status.js';
 import type { CatalogFilters, CatalogRow } from '../domain/catalog.js';
 import { listSites } from '../domain/org.js';
 import { DOC_TYPES } from '../domain/doc-types.js';
@@ -208,11 +209,12 @@ export function registerCatalogRoutes(app: FastifyInstance, sql: Sql, config: Co
       loadSections(sql, req.params.id), loadLinks(sql, req.params.id),
       listReceiptsForVersion(sql, req.params.id),
     ]);
-    // Nếu đang xem bản hết hiệu lực, trỏ tới bản đang áp dụng.
-    const current = detail.status !== 'hieu_luc' ? await currentVersionOf(sql, detail.doc_id) : null;
-    // Xác nhận đọc: chỉ hiện nút khi tài liệu hiệu lực + người xem thuộc diện phải đọc + chưa xác nhận.
+    // Nếu đang xem bản KHÔNG hiện hành (mô hình mới da_ban_hanh / cũ hieu_luc),
+    // trỏ tới bản đang áp dụng của cùng doc_id.
+    const current = !isCurrentlyEffective(detail.status) ? await currentVersionOf(sql, detail.doc_id) : null;
+    // Xác nhận đọc: chỉ hiện nút khi tài liệu hiện hành + người xem thuộc diện phải đọc + chưa xác nhận.
     let ackState: { show: boolean; done: boolean; inherited: boolean } = { show: false, done: false, inherited: false };
-    if (detail.status === 'hieu_luc') {
+    if (isCurrentlyEffective(detail.status)) {
       const must = await mustAcknowledge(sql, detail.version_id, user.user_id);
       if (must) {
         const h = await hasAcknowledged(sql, detail.version_id, user.user_id);

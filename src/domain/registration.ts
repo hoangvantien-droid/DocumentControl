@@ -133,8 +133,8 @@ export async function validateForSubmit(
   if (v.supersedesVersionId) {
     const sup = (await tx<{ status: string }[]>`
       SELECT status FROM document_versions WHERE version_id = ${v.supersedesVersionId}`)[0];
-    if (!sup || !['hieu_luc', 'da_dang_ky'].includes(sup.status)) {
-      throw new BusinessError('reg.supersedes', 'Phiên bản gốc phải đang Hiệu lực hoặc Đã đăng ký');
+    if (!sup || !['da_ban_hanh', 'hieu_luc', 'da_dang_ky'].includes(sup.status)) {
+      throw new BusinessError('reg.supersedes', 'Phiên bản gốc phải đang Đã ban hành, Hiệu lực hoặc Đã đăng ký');
     }
     // C.2.9b — mức độ thay đổi bắt buộc, tóm tắt bắt buộc nếu lớn
     if (!v.changeSignificance) {
@@ -176,6 +176,23 @@ export async function submitRegistration(
 
     const versionId = randomUUID();
     const ownerDeptId = (v.ownerDepartmentId ?? '').trim() || null; // '' -> NULL tranh 22P02
+
+    // Điểm 1 (supersede mô hình mới): nếu đây là bản thay thế, chuyển bản gốc
+    // sang 'het_hieu_luc' TRƯỚC khi chèn bản 'da_ban_hanh' mới — nếu không sẽ
+    // vi phạm uq_one_current_per_doc (chỉ 1 bản 'da_ban_hanh' / doc_id). Giữ
+    // liên kết phiên bản qua supersedes_version_id; kế thừa xác nhận đọc xử lý
+    // bên dưới sau khi chèn (thay đổi 'nho' sao chép, 'lon' đặt lại).
+    if (v.supersedesVersionId) {
+      await tx`
+        UPDATE document_versions SET status = 'het_hieu_luc', updated_at = now()
+         WHERE version_id = ${v.supersedesVersionId}
+           AND status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky')`;
+      await writeAudit(tx as TransactionSql, {
+        eventType: 'chuyen_het_hieu_luc', actorUserId: v.registrantUserId,
+        objectType: 'document_versions', objectId: v.supersedesVersionId,
+        afterState: { status: 'het_hieu_luc', superseded_by: versionId },
+      });
+    }
     await tx`
       INSERT INTO document_versions (
         version_id, doc_id, version_no, title,
@@ -202,6 +219,19 @@ export async function submitRegistration(
       actorUserId: v.registrantUserId,
       afterState: { doc_id: v.docId, version_no: v.versionNo, status: 'da_ban_hanh' },
     });
+
+    // Điểm 1: kế thừa xác nhận đọc khi thay đổi NHỎ — sao chép bản ghi của bản
+    // gốc sang bản mới (phản chiếu khối trong fn_activate_due_versions). Thay
+    // đổi LỚN không kế thừa: mọi người phải xác nhận lại.
+    if (v.supersedesVersionId && v.changeSignificance === 'nho') {
+      await tx`
+        INSERT INTO read_acknowledgements
+          (version_id, user_id, department_id, functional_group_id, acknowledged_at, inherited_from_version_id)
+        SELECT ${versionId}, a.user_id, a.department_id, a.functional_group_id, a.acknowledged_at, a.version_id
+          FROM read_acknowledgements a
+         WHERE a.version_id = ${v.supersedesVersionId}
+        ON CONFLICT (version_id, user_id) DO NOTHING`;
+    }
 
     // Sinh receipt cho_phan_hoi cho mỗi site nhận (ban hành thẳng).
     const targetDeptId = doc.scopeLevel === 'dept' ? (doc.scopeDeptId ?? null) : null;

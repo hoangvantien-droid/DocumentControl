@@ -43,6 +43,21 @@ export function isCurrentlyEffective(status: string | null | undefined): boolean
   return (CURRENT_VIEW_STATUSES as readonly string[]).includes(status);
 }
 
+/**
+ * Tài liệu đã THỰC SỰ có hiệu lực TẠI HÔM NAY: trạng thái hiện hành VÀ ngày
+ * hiệu lực đã tới (điểm 4). Reader không được thấy, site không được chấp nhận
+ * tài liệu còn ở tương lai. effectiveDate dạng 'YYYY-MM-DD' so chuỗi được.
+ */
+export function isEffectiveNow(
+  status: string | null | undefined,
+  effectiveDate: string | null | undefined,
+): boolean {
+  if (!isCurrentlyEffective(status)) return false;
+  if (!effectiveDate) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return effectiveDate.slice(0, 10) <= today;
+}
+
 /** Trạng thái receipt của một site đối với một phiên bản. */
 export type ReceiptStatus = 'cho_phan_hoi' | 'chap_nhan' | 'tu_choi';
 

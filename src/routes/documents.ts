@@ -143,11 +143,12 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     return reply.view('register.eta', { bus, sites, depts, error: null, values: {}, supersedeOptions, selectedSiteIds: [], docTypes: DOC_TYPES });
   });
 
-  /** Bản đang hiệu lực / đã đăng ký có thể làm bản gốc cho update (C.2.6). */
+  /** Bản hiện hành (mô hình mới da_ban_hanh / cũ hieu_luc / da_dang_ky) có thể
+   *  làm bản gốc cho update (C.2.6). */
   async function listSupersedeableVersions() {
     return sql<{ version_id: string; doc_id: string; version_no: string; status: string }[]>`
       SELECT version_id, doc_id, version_no, status FROM document_versions
-       WHERE status IN ('hieu_luc', 'da_dang_ky')
+       WHERE status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky')
        ORDER BY doc_id, version_no DESC`;
   }
 

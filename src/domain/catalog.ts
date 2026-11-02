@@ -100,8 +100,10 @@ export async function listVisibleDocuments(
             AND r.role_code = 'DC_ADMIN'
        )
      )
-       -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (hieu_luc / da_dang_ky).
-       AND (${!readOnlyViewer} OR v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky'))
+       -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (da_ban_hanh / hieu_luc
+       -- / da_dang_ky) VÀ đã tới ngày hiệu lực (điểm 4: không thấy bản tương lai).
+       AND (${!readOnlyViewer} OR (v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky')
+                                   AND v.effective_date <= CURRENT_DATE))
        -- Lọc theo trạng thái
        AND (${effStatus}::varchar IS NULL OR v.status = ${effStatus})
        AND (${docType}::varchar IS NULL OR d.doc_type = ${docType})
@@ -177,8 +179,10 @@ export async function canViewVersion(
         FROM document_versions v
         JOIN documents d ON d.doc_id = v.doc_id
        WHERE v.version_id = ${versionId}
-         -- Người chỉ-xem (Reader): chỉ bản hiện hành (hieu_luc / da_dang_ky).
-         AND (${!readOnlyViewer} OR v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky'))
+         -- Người chỉ-xem (Reader): chỉ bản hiện hành (da_ban_hanh / hieu_luc /
+         -- da_dang_ky) VÀ đã tới ngày hiệu lực (điểm 4: chặn bản tương lai).
+         AND (${!readOnlyViewer} OR (v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky')
+                                     AND v.effective_date <= CURRENT_DATE))
          AND (
            v.registrant_user_id = ${userId}
            OR d.scope_level = 'group'
@@ -222,10 +226,11 @@ export async function loadLinks(sql: Sql, versionId: string) {
       FROM document_links WHERE version_id = ${versionId} ORDER BY link_type, link_code`;
 }
 
-/** Phiên bản đang hiệu lực của cùng doc_id (để trỏ khi xem bản hết hiệu lực). */
+/** Phiên bản hiện hành của cùng doc_id (để trỏ khi xem bản hết hiệu lực).
+ * Mô hình mới: bản hiện hành là 'da_ban_hanh'; vẫn nhận 'hieu_luc' cũ. */
 export async function currentVersionOf(sql: Sql, docId: string): Promise<{ version_id: string; version_no: string } | null> {
   const rows = await sql<{ version_id: string; version_no: string }[]>`
     SELECT version_id, version_no FROM document_versions
-     WHERE doc_id = ${docId} AND status = 'hieu_luc' LIMIT 1`;
+     WHERE doc_id = ${docId} AND status IN ('da_ban_hanh', 'hieu_luc') LIMIT 1`;
   return rows[0] ?? null;
 }
