@@ -112,11 +112,45 @@ export async function convertReportToRejection(
     if (r.status !== 'moi') throw new BusinessError('report.bad_status', 'Report đã được thẩm định');
     await assertSiteControl(tx as TransactionSql, input.userId, r.site_id);
 
-    const [receipt] = await tx<{ receipt_id: string }[]>`
-      SELECT receipt_id FROM document_receipt
+    const [receipt] = await tx<{ receipt_id: string; status: string }[]>`
+      SELECT receipt_id, status FROM document_receipt
        WHERE version_id = ${r.version_id} AND site_id = ${r.site_id}`;
     if (!receipt) {
       throw new BusinessError('report.no_receipt', 'Site chưa nhận tài liệu này — không chuyển thành từ chối được');
+    }
+
+    const note = input.note.trim() || 'Chuyển từ report bất thường của người đọc';
+
+    // Điểm 7: không được đóng report thành "từ chối" trong khi receipt vẫn
+    // "chấp nhận" (trước đây UPDATE ... AND status='cho_phan_hoi' là no-op nên
+    // report + nhật ký ghi từ chối còn receipt vẫn chap_nhan — lệch dữ liệu).
+    if (receipt.status === 'chap_nhan') {
+      if (input.rejectType === 'sai_dang_ky') {
+        // Sai đăng ký sau khi đã chấp nhận: CHẶN — phải thu hồi + ra bản mới.
+        throw new BusinessError(
+          'report.already_accepted',
+          'Site đã chấp nhận tài liệu — không thể chuyển report thành từ chối sai đăng ký; phải thu hồi và ban hành phiên bản mới',
+        );
+      }
+      // sai_noi_dung sau khi đã chấp nhận: ĐƯỜNG BÁO SAI NỘI DUNG riêng —
+      // giữ receipt ở chap_nhan (không đảo ngược), đánh dấu report đã xử lý và
+      // ghi một sự kiện audit riêng để quản lý xử lý ở mức phiên bản.
+      await tx`
+        UPDATE document_issue_report
+           SET status = 'bao_sai_noi_dung_sau_chap_nhan', reviewed_by = ${input.userId},
+               reviewed_at = now(), review_note = ${note}
+         WHERE report_id = ${input.reportId}`;
+      await writeAudit(tx as TransactionSql, {
+        eventType: 'bao_sai_noi_dung_sau_chap_nhan', actorUserId: input.userId,
+        objectType: 'document_issue_report', objectId: input.reportId,
+        afterState: { receipt_id: receipt.receipt_id, site_id: r.site_id, note, receipt_status: 'chap_nhan' },
+      });
+      return;
+    }
+
+    if (receipt.status !== 'cho_phan_hoi') {
+      // Đã từ chối/khác — không chuyển lại được.
+      throw new BusinessError('report.receipt_not_pending', 'Receipt của site không còn ở trạng thái chờ phản hồi — không chuyển thành từ chối được');
     }
 
     await tx`
@@ -132,7 +166,6 @@ export async function convertReportToRejection(
     // Ghi từ chối lên receipt trong CÙNG giao dịch (dùng lại domain receipt).
     // Lưu ý: rejectReceipt tự mở giao dịch riêng của nó -> gọi ngoài để tránh
     // lồng giao dịch. Ở đây dùng tx trực tiếp để nguyên tử.
-    const note = input.note.trim() || 'Chuyển từ report bất thường của người đọc';
     await tx`
       UPDATE document_receipt
          SET status = 'tu_choi', response_type = ${input.rejectType},

@@ -40,6 +40,7 @@ export const ISSUE_REPORT_STATUS_LABELS: Record<string, string> = {
   moi: 'Mới — chờ xem xét',
   chuyen_phan_hoi: 'Đã chuyển thành phản hồi',
   bac_bo: 'Đã bác bỏ',
+  bao_sai_noi_dung_sau_chap_nhan: 'Báo sai nội dung sau khi đã chấp nhận',
 };
 
 /** Trạng thái tổng hợp mức phiên bản (mã -> nhãn). */

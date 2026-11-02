@@ -395,6 +395,10 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const user = requireUser(req, reply);
     if (!user) return reply;
     const b = (req.body ?? {}) as typeof req.body;
+    // Điểm 10: phân biệt "không gửi trường expiry" (giữ nguyên) với "gửi rỗng"
+    // (cố ý xóa). Chỉ truyền '' khi field có mặt nhưng rỗng; undefined khi vắng.
+    const expirySubmitted = Object.prototype.hasOwnProperty.call(b, 'expiry_date');
+    const expiryPatch = expirySubmitted ? (b.expiry_date?.trim() || '') : undefined;
     try {
       await editVersionMetadata(sql, {
         versionId: req.params.id, userId: user.user_id,
@@ -403,7 +407,7 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
           issuedDate: b.issued_date || undefined,
           effectiveDate: b.effective_date || undefined,
           reviewCycleMonths: b.review_cycle_months ? Number(b.review_cycle_months) : undefined,
-          expiryDate: b.expiry_date || null,
+          expiryDate: expiryPatch,
           ownerDepartmentId: b.owner_department_id || undefined,
         },
       });

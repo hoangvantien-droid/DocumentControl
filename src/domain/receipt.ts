@@ -386,6 +386,10 @@ export async function acceptReceipt(
     const { selfResponded } = await assertCanRespond(tx as TransactionSql, rc, input.userId);
 
     const applyDate = input.applyDate || today();
+    // Điểm 8: ngày site áp dụng không được sớm hơn ngày có hiệu lực.
+    if (rc.effective_date && applyDate.slice(0, 10) < rc.effective_date.slice(0, 10)) {
+      throw new BusinessError('receipt.apply_before_effective', 'Ngày áp dụng không được sớm hơn ngày có hiệu lực của tài liệu');
+    }
     await tx`
       UPDATE document_receipt
          SET status = 'chap_nhan', apply_date = ${applyDate},
@@ -490,6 +494,17 @@ async function acceptedCount(tx: TransactionSql, versionId: string): Promise<num
 }
 
 /**
+ * Điểm 6 + 7: khóa "đã có site chấp nhận" dùng CHUNG cho sửa metadata và phát
+ * hành lại — một khi có ≥1 site chấp nhận thì không được ghi đè metadata cũ
+ * (sửa tại chỗ hay phát hành lại), phải ra phiên bản mới. Một mã lỗi thống nhất.
+ */
+async function assertNotAcceptedLocked(tx: TransactionSql, versionId: string): Promise<void> {
+  if (await acceptedCount(tx, versionId) > 0) {
+    throw new BusinessError('issue.locked_accepted', 'Đã có site chấp nhận/áp dụng — không sửa hoặc phát hành lại với metadata cũ, phải ra phiên bản mới');
+  }
+}
+
+/**
  * Sửa thông tin đăng ký tại chỗ (Loại 1 — sai_dang_ky). Giữ version_no +
  * file/hash; KHÔNG đụng doc_id (khóa định danh). Chỉ cho khi chưa site nào
  * chấp nhận/áp dụng. Không tự mở lại receipt đã tu_choi — site tự bấm lại.
@@ -503,17 +518,24 @@ export async function editVersionMetadata(
     if (v.status !== 'da_ban_hanh') {
       throw new BusinessError('edit.bad_status', 'Chỉ sửa metadata khi tài liệu đang ở trạng thái đã ban hành');
     }
-    if (await acceptedCount(tx as TransactionSql, input.versionId) > 0) {
-      throw new BusinessError('edit.locked', 'Đã có site chấp nhận/áp dụng — không sửa trực tiếp, phải ra phiên bản mới');
-    }
+    await assertNotAcceptedLocked(tx as TransactionSql, input.versionId);
     const p = input.patch;
+    // Điểm 10: chặn chỉnh ngày hiệu lực về quá khứ.
+    if (p.effectiveDate && p.effectiveDate.slice(0, 10) < today()) {
+      throw new BusinessError('edit.effective_past', 'Không được đặt ngày hiệu lực về quá khứ');
+    }
+    // Điểm 10: giữ nguyên expiry_date khi không nhập lại (undefined);
+    // chỉ xóa khi gửi sentinel rỗng ('' → NULL). Giá trị mới thì ghi đè.
+    const expiryClear = p.expiryDate === '';
+    const expiryNew = p.expiryDate != null && p.expiryDate !== '' ? p.expiryDate : null;
     await tx`
       UPDATE document_versions SET
         title = coalesce(${p.title ?? null}, title),
         issued_date = coalesce(${p.issuedDate ?? null}, issued_date),
         effective_date = coalesce(${p.effectiveDate ?? null}, effective_date),
         review_cycle_months = coalesce(${p.reviewCycleMonths ?? null}, review_cycle_months),
-        expiry_date = ${p.expiryDate === undefined ? null : p.expiryDate},
+        expiry_date = CASE WHEN ${expiryClear} THEN NULL
+                           ELSE coalesce(${expiryNew}, expiry_date) END,
         owner_department_id = coalesce(${p.ownerDepartmentId ?? null}, owner_department_id),
         updated_at = now()
       WHERE version_id = ${input.versionId}`;
@@ -600,6 +622,9 @@ export async function publishAdditionalSites(
     if (v.status !== 'da_ban_hanh') {
       throw new BusinessError('publish.bad_status', 'Chỉ phát hành thêm khi tài liệu đang ở trạng thái đã ban hành');
     }
+    // Điểm 6: tôn trọng khóa metadata — đã có site chấp nhận thì không phát hành
+    // lại metadata cũ (dùng chung guard với editVersionMetadata).
+    await assertNotAcceptedLocked(tx as TransactionSql, input.versionId);
     // Scope nằm ở documents; lấy để xác định site hợp lệ + dept đích (nếu scope=dept).
     const [doc] = await tx<{ doc_id: string; scope_level: 'group'|'bu'|'site'|'dept'; scope_bu_id: string|null; scope_site_id: string|null; scope_dept_id: string|null }[]>`
       SELECT d.doc_id, d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
