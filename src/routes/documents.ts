@@ -445,13 +445,25 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
   });
 
   // Phát hành thêm site (trong scope) + phát hành lại site từ chối sai đăng ký.
-  app.post<{ Params: { id: string }; Body: { site_ids?: string | string[] } }>('/my-documents/:id/publish-sites', async (req, reply) => {
+  // Ngày hiệu lực riêng per-site gửi qua các field eff_<site_id> (để trống =
+  // dùng ngày hiệu lực gốc).
+  app.post<{ Params: { id: string }; Body: Record<string, string | string[]> }>('/my-documents/:id/publish-sites', async (req, reply) => {
     const user = requireUser(req, reply);
     if (!user) return reply;
+    const b = (req.body ?? {}) as Record<string, string | string[]>;
+    // Gom các field eff_<site_id> thành map site_id -> YYYY-MM-DD (bỏ rỗng).
+    const siteEffectiveDates: Record<string, string> = {};
+    for (const [key, val] of Object.entries(b)) {
+      if (!key.startsWith('eff_')) continue;
+      const siteId = key.slice('eff_'.length);
+      const dateStr = String(Array.isArray(val) ? val[0] : val ?? '').trim();
+      if (siteId && dateStr) siteEffectiveDates[siteId] = dateStr;
+    }
     try {
       await publishAdditionalSites(sql, {
         versionId: req.params.id, userId: user.user_id,
-        siteIds: normalizeSiteIds((req.body ?? {}).site_ids),
+        siteIds: normalizeSiteIds(b.site_ids),
+        siteEffectiveDates,
       });
       return reply.redirect(`/my-documents/${req.params.id}/issuance`);
     } catch (err) {

@@ -11,6 +11,7 @@
 import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
+import { todayVN } from '../lib/clock.js';
 import {
   aggregateStatusOf, type AggregateStatus, type ReceiptTally,
 } from './lifecycle-status.js';
@@ -91,13 +92,17 @@ export async function publishToSites(
     siteIds: string[];
     targetDeptId?: string | null;
     actorUserId: string;
+    /** Ngày hiệu lực riêng cho từng site (site_id -> YYYY-MM-DD). Thiếu = NULL
+     *  (coalesce về ngày hiệu lực gốc khi đọc). */
+    siteEffectiveDates?: Record<string, string>;
   },
 ): Promise<number> {
   let created = 0;
   for (const siteId of input.siteIds) {
+    const siteEff = input.siteEffectiveDates?.[siteId] ?? null;
     const rows = await tx<{ receipt_id: string }[]>`
-      INSERT INTO document_receipt (version_id, site_id, target_dept_id, status)
-      VALUES (${input.versionId}, ${siteId}, ${input.targetDeptId ?? null}, 'cho_phan_hoi')
+      INSERT INTO document_receipt (version_id, site_id, target_dept_id, status, site_effective_date)
+      VALUES (${input.versionId}, ${siteId}, ${input.targetDeptId ?? null}, 'cho_phan_hoi', ${siteEff})
       ON CONFLICT (version_id, site_id) DO NOTHING
       RETURNING receipt_id`;
     if (rows.length > 0) created += 1;
@@ -185,6 +190,10 @@ export interface ReceiptRow {
   response_note: string | null;
   responded_by: string | null;
   responded_at: string | null;
+  /** Ngày hiệu lực của site (đã coalesce về ngày gốc khi site không khai riêng). */
+  site_effective_date: string | null;
+  /** Ngày hiệu lực gốc của phiên bản. */
+  effective_date: string | null;
 }
 
 export interface PendingReceiptRow extends ReceiptRow {
@@ -251,6 +260,8 @@ export async function pendingReceiptsForSites(
            r.target_dept_id, r.apply_date::text AS apply_date,
            r.status, r.response_type, r.response_note,
            r.responded_by, r.responded_at::text AS responded_at,
+           coalesce(r.site_effective_date, v.effective_date)::text AS site_effective_date,
+           v.effective_date::text AS effective_date,
            v.doc_id, v.version_no, v.title, v.registrant_user_id,
            (SELECT r2.response_type FROM document_receipt r2
              WHERE r2.version_id = r.version_id AND r2.status = 'tu_choi'
@@ -276,6 +287,8 @@ export async function loadReceiptForView(
            r.target_dept_id, r.apply_date::text AS apply_date,
            r.status, r.response_type, r.response_note,
            r.responded_by, r.responded_at::text AS responded_at,
+           coalesce(r.site_effective_date, v.effective_date)::text AS site_effective_date,
+           v.effective_date::text AS effective_date,
            v.doc_id, v.version_no, v.title, v.registrant_user_id,
            (SELECT r2.response_type FROM document_receipt r2
              WHERE r2.version_id = r.version_id AND r2.status = 'tu_choi' AND r2.receipt_id <> r.receipt_id
@@ -295,9 +308,12 @@ export async function listReceiptsForVersion(sql: Sql, versionId: string): Promi
            s.site_code, s.name AS site_name,
            r.target_dept_id, r.apply_date::text AS apply_date,
            r.status, r.response_type, r.response_note,
-           r.responded_by, r.responded_at::text AS responded_at
+           r.responded_by, r.responded_at::text AS responded_at,
+           coalesce(r.site_effective_date, v.effective_date)::text AS site_effective_date,
+           v.effective_date::text AS effective_date
       FROM document_receipt r
       JOIN org_site s ON s.site_id = r.site_id
+      JOIN document_versions v ON v.version_id = r.version_id
      WHERE r.version_id = ${versionId}
      ORDER BY s.site_code`;
 }
@@ -330,6 +346,8 @@ interface ReceiptContext {
   /** Trạng thái + ngày hiệu lực của phiên bản (điểm 4/5). */
   version_status: string;
   effective_date: string | null;
+  /** Ngày hiệu lực riêng khai cho site này (NULL = dùng effective_date gốc). */
+  site_effective_date: string | null;
 }
 
 async function loadReceiptForRespond(
@@ -340,12 +358,25 @@ async function loadReceiptForRespond(
     SELECT r.receipt_id, r.version_id, r.site_id, r.status,
            v.registrant_user_id,
            v.status AS version_status,
-           v.effective_date::text AS effective_date
+           v.effective_date::text AS effective_date,
+           r.site_effective_date::text AS site_effective_date
       FROM document_receipt r
       JOIN document_versions v ON v.version_id = r.version_id
      WHERE r.receipt_id = ${receiptId}
      FOR UPDATE OF r`;
   return rows[0] ?? null;
+}
+
+/**
+ * Ngày hiệu lực THỰC của một site: ngày riêng khai cho site nếu có, nếu không
+ * thì về ngày hiệu lực gốc của phiên bản. Hàm thuần — tách để unit-test không
+ * cần DB (phương án 2a, điểm quyết định D1-D4).
+ */
+export function effectiveForSite(
+  siteEff: string | null | undefined,
+  versionEff: string | null | undefined,
+): string | null {
+  return (siteEff ?? versionEff) ?? null;
 }
 
 /** Kiểm quyền + phát hiện tự-phản-hồi, dùng chung cho chấp nhận/từ chối.
@@ -364,8 +395,10 @@ async function assertCanRespond(
   if (rc.version_status === 'thu_hoi') {
     throw new BusinessError('receipt.recalled', 'Tài liệu đã bị thu hồi — không thể phản hồi phiếu này');
   }
-  // Điểm 4: site không được chấp nhận trước ngày hiệu lực.
-  if (mode === 'accept' && rc.effective_date && rc.effective_date.slice(0, 10) > today()) {
+  // Điểm 4: site không được chấp nhận trước ngày hiệu lực (riêng của site nếu
+  // có khai, nếu không thì ngày hiệu lực gốc). So với "hôm nay" theo giờ VN.
+  const effForSite = effectiveForSite(rc.site_effective_date, rc.effective_date);
+  if (mode === 'accept' && effForSite && effForSite.slice(0, 10) > todayVN()) {
     throw new BusinessError('receipt.before_effective', 'Chưa tới ngày hiệu lực — không thể chấp nhận tài liệu này');
   }
   const siteIds = await siteIdsWithDocControl(tx as unknown as Sql, userId);
@@ -375,18 +408,25 @@ async function assertCanRespond(
   return { selfResponded: rc.registrant_user_id === userId };
 }
 
-/** DC Site chấp nhận receipt: ghi apply_date = ngày chấp nhận (mỗi site một mốc). */
+/** DC Site chấp nhận receipt: apply_date = NGÀY HIỆU LỰC ĐÃ KHAI cho site đó
+ *  (coalesce(site_effective_date, version.effective_date)), KHÔNG phải ngày
+ *  bấm chấp nhận. Mỗi site một mốc theo ngày hiệu lực của chính site. */
 export async function acceptReceipt(
   sql: Sql,
-  input: { receiptId: string; userId: string; applyDate?: string },
+  input: { receiptId: string; userId: string },
 ): Promise<void> {
   await sql.begin(async (tx) => {
     const rc = await loadReceiptForRespond(tx as TransactionSql, input.receiptId);
     if (!rc) throw new BusinessError('receipt.not_found', 'Không tìm thấy receipt');
     const { selfResponded } = await assertCanRespond(tx as TransactionSql, rc, input.userId);
 
-    const applyDate = input.applyDate || today();
-    // Điểm 8: ngày site áp dụng không được sớm hơn ngày có hiệu lực.
+    // apply_date = ngày hiệu lực đã khai cho site (riêng nếu có, nếu không là
+    // ngày hiệu lực gốc). KHÔNG dùng today(): mốc áp dụng gắn với ngày hiệu lực.
+    const applyDate = effectiveForSite(rc.site_effective_date, rc.effective_date);
+    if (!applyDate) {
+      throw new BusinessError('receipt.no_effective', 'Tài liệu chưa có ngày hiệu lực để chấp nhận');
+    }
+    // Điểm 8: ngày site áp dụng không được sớm hơn ngày có hiệu lực gốc.
     if (rc.effective_date && applyDate.slice(0, 10) < rc.effective_date.slice(0, 10)) {
       throw new BusinessError('receipt.apply_before_effective', 'Ngày áp dụng không được sớm hơn ngày có hiệu lực của tài liệu');
     }
@@ -615,7 +655,11 @@ export async function recallByAuthor(
  */
 export async function publishAdditionalSites(
   sql: Sql,
-  input: { versionId: string; userId: string; siteIds: string[] },
+  input: {
+    versionId: string; userId: string; siteIds: string[];
+    /** Ngày hiệu lực riêng khai khi thêm site (site_id -> YYYY-MM-DD). */
+    siteEffectiveDates?: Record<string, string>;
+  },
 ): Promise<{ added: number; republished: number }> {
   return (await sql.begin(async (tx) => {
     const v = await loadOwnedVersion(tx as TransactionSql, input.versionId, input.userId);
@@ -626,8 +670,10 @@ export async function publishAdditionalSites(
     // lại metadata cũ (dùng chung guard với editVersionMetadata).
     await assertNotAcceptedLocked(tx as TransactionSql, input.versionId);
     // Scope nằm ở documents; lấy để xác định site hợp lệ + dept đích (nếu scope=dept).
-    const [doc] = await tx<{ doc_id: string; scope_level: 'group'|'bu'|'site'|'dept'; scope_bu_id: string|null; scope_site_id: string|null; scope_dept_id: string|null }[]>`
-      SELECT d.doc_id, d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id
+    // issued_date dùng để kiểm ngày hiệu lực riêng không sớm hơn ngày ban hành.
+    const [doc] = await tx<{ doc_id: string; scope_level: 'group'|'bu'|'site'|'dept'; scope_bu_id: string|null; scope_site_id: string|null; scope_dept_id: string|null; issued_date: string | null }[]>`
+      SELECT d.doc_id, d.scope_level, d.scope_bu_id, d.scope_site_id, d.scope_dept_id,
+             ver.issued_date::text AS issued_date
         FROM document_versions ver JOIN documents d ON d.doc_id = ver.doc_id
        WHERE ver.version_id = ${input.versionId}`;
     if (!doc) throw new BusinessError('publish.not_found', 'Không tìm thấy tài liệu');
@@ -655,21 +701,42 @@ export async function publishAdditionalSites(
       throw new BusinessError('publish.nothing', 'Không có site hợp lệ để phát hành thêm');
     }
 
+    // Validate ngày hiệu lực riêng khai cho các site sắp phát hành/phát hành lại:
+    // không về quá khứ (so với hôm nay giờ VN) và không sớm hơn ngày ban hành.
+    const today = todayVN();
+    const issued = doc.issued_date ? doc.issued_date.slice(0, 10) : null;
+    const effDates = input.siteEffectiveDates ?? {};
+    for (const siteId of [...cls.newOnes, ...cls.republish]) {
+      const eff = effDates[siteId];
+      if (!eff) continue;
+      if (eff.slice(0, 10) < today) {
+        throw new BusinessError('publish.effective_past', 'Ngày hiệu lực của site không được đặt về quá khứ');
+      }
+      if (issued && eff.slice(0, 10) < issued) {
+        throw new BusinessError('publish.effective_before_issued', 'Ngày hiệu lực của site không được sớm hơn ngày ban hành');
+      }
+    }
+
     const targetDeptId = doc.scope_level === 'dept' ? (doc.scope_dept_id ?? null) : null;
     let added = 0;
     if (cls.newOnes.length > 0) {
       added = await publishToSites(tx as TransactionSql, {
         versionId: input.versionId, siteIds: cls.newOnes, targetDeptId, actorUserId: input.userId,
+        siteEffectiveDates: input.siteEffectiveDates,
       });
     }
 
     let republished = 0;
     if (cls.republish.length > 0) {
-      await tx`
-        UPDATE document_receipt
-           SET status = 'cho_phan_hoi', response_type = NULL, response_note = NULL,
-               responded_by = NULL, responded_at = NULL, apply_date = NULL, updated_at = now()
-         WHERE version_id = ${input.versionId} AND site_id = ANY(${cls.republish}::uuid[])`;
+      for (const siteId of cls.republish) {
+        const siteEff = effDates[siteId] ?? null;
+        await tx`
+          UPDATE document_receipt
+             SET status = 'cho_phan_hoi', response_type = NULL, response_note = NULL,
+                 responded_by = NULL, responded_at = NULL, apply_date = NULL,
+                 site_effective_date = ${siteEff}, updated_at = now()
+           WHERE version_id = ${input.versionId} AND site_id = ${siteId}`;
+      }
       republished = cls.republish.length;
       await writeAudit(tx as TransactionSql, {
         eventType: 'ban_hanh', actorUserId: input.userId,
