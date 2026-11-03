@@ -96,7 +96,9 @@ jobs:
       # nằm trong đây và giờ CHẠY THẬT (có DATABASE_URL_TEST) thay vì skip —
       # đây là mục tiêu then chốt của CI. Không có lỗi nền nào trong tập này.
       - name: Integration + unit tests (gate)
-        run: node --import tsx --test "test/domain/**/*.test.ts" "test/lib/**/*.test.ts"
+        # bash cần globstar để expand `**`; glob trong nháy kép KHÔNG được expand
+        # (node 20 không có glob built-in), nên gọi qua `bash -O globstar -c`.
+        run: bash -O globstar -c 'node --import tsx --test test/domain/**/*.test.ts test/lib/**/*.test.ts'
 
       # Bộ 16 ràng buộc tầng DB. constraints.test.ts XÓA & DỰNG LẠI schema riêng
       # (DROP SCHEMA public CASCADE) nên chạy TÁCH và SAU bước trên để không phá
