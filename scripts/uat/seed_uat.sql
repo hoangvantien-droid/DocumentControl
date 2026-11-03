@@ -28,11 +28,11 @@ VALUES ('MML/QA/HD-001', 'SOP', 'noi_bo', 'site', '22222222-2222-2222-2222-22222
 
 INSERT INTO document_versions (
   version_id, doc_id, version_no, title, issued_date, effective_date,
-  review_cycle_months, status, approver_name, approval_reference,
+  review_cycle_months, status,
   source_channel, file_path, file_hash, registrant_user_id, owner_department_id
 ) VALUES (
   gen_random_uuid(), 'MML/QA/HD-001', '1.0', 'Huong dan kiem tra mau luu',
   '2026-01-01', '2026-10-01', 12, 'hieu_luc',
-  'QA tap doan', 'KD-2026-0001', 'thu_cong', '/files/hd-001.pdf', 'abc123',
+  'thu_cong', '/files/hd-001.pdf', 'abc123',
   '44444444-4444-4444-4444-444444444444', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 );

@@ -96,11 +96,11 @@ describe('listVisibleDocuments trả về origin (tích hợp DB — Task 5.2)',
       VALUES (${docId}, ${origin === 'noi_bo' ? 'SOP' : 'External'}, ${origin}, 'dept', ${DEPT})`;
     await sql!`
       INSERT INTO document_versions
-        (version_id, doc_id, version_no, title, issued_date, approver_name,
+        (version_id, doc_id, version_no, title, issued_date,
          effective_date, review_cycle_months, source_channel, file_path, file_hash,
          status, registrant_user_id, owner_department_id)
       VALUES (${randomUUID()}, ${docId}, '1.0', ${'Tài liệu ' + origin},
-              '2026-01-01', 'Người phê duyệt', '2026-02-01', 12, 'thu_cong',
+              '2026-01-01', '2026-02-01', 12, 'thu_cong',
               ${'/files/' + docId + '.pdf'}, ${docId + '-hash'}, 'cho_xac_nhan',
               ${USER}, ${DEPT})`;
   }

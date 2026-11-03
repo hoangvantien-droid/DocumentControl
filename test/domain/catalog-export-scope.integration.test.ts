@@ -119,8 +119,8 @@ describe('Catalog_Export phạm vi + Applied_Filters (tích hợp DB — Task 7.
   /**
    * Seed một tài liệu NỘI BỘ phạm vi cấp phòng ban + một phiên bản do USER_B nộp.
    * Trạng thái 'cho_xac_nhan' để tránh trigger yêu cầu nhãn liên kết (chỉ bắt
-   * buộc khi chuyển sang da_dang_ky/hieu_luc). approval_reference đặt sẵn vì
-   * tài liệu nội bộ bắt buộc có theo trigger fn_validate_version.
+   * buộc khi chuyển sang da_dang_ky/hieu_luc). Các cột phê duyệt đã bị bỏ khỏi
+   * schema (migration 010) nên không còn seed ở đây.
    */
   async function seedDeptDoc(docId: string, docType: string, deptId: string): Promise<void> {
     await sql!`
@@ -128,11 +128,11 @@ describe('Catalog_Export phạm vi + Applied_Filters (tích hợp DB — Task 7.
       VALUES (${docId}, ${docType}, 'noi_bo', 'dept', ${deptId})`;
     await sql!`
       INSERT INTO document_versions
-        (version_id, doc_id, version_no, title, issued_date, approver_name,
-         approval_reference, effective_date, review_cycle_months, source_channel,
+        (version_id, doc_id, version_no, title, issued_date,
+         effective_date, review_cycle_months, source_channel,
          file_path, file_hash, status, registrant_user_id, owner_department_id)
       VALUES (${randomUUID()}, ${docId}, '1.0', ${'Tài liệu ' + docId},
-              '2026-01-01', 'Người phê duyệt', ${'HS-' + docId}, '2026-02-01', 12,
+              '2026-01-01', '2026-02-01', 12,
               'thu_cong', ${'/files/' + docId + '.pdf'}, ${docId + '-hash'},
               'cho_xac_nhan', ${USER_B}, ${deptId})`;
   }
