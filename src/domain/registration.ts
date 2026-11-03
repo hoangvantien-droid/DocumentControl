@@ -15,6 +15,7 @@ import { writeAudit } from '../lib/audit.js';
 import type { ScopeLevel } from './roles.js';
 import { canRegisterDocuments } from './permissions.js';
 import { publishToSites } from './receipt.js';
+import { todayVN } from '../lib/clock.js';
 
 export type DocType = 'SOP' | 'WI' | 'Form' | 'Policy' | 'External';
 export type Origin = 'noi_bo' | 'ngoai_bo';
@@ -120,8 +121,8 @@ export async function validateForSubmit(
   }
 
   // C.2.3 — effective_date không nhỏ hơn hôm nay
-  if (v.effectiveDate < today()) {
-    throw new BusinessError('reg.effective_past', `Ngày hiệu lực phải từ ${today()} trở đi`);
+  if (v.effectiveDate < todayVN()) {
+    throw new BusinessError('reg.effective_past', `Ngày hiệu lực phải từ ${todayVN()} trở đi`);
   }
 
   // C.2.4 — expiry > effective nếu có
@@ -270,8 +271,8 @@ export async function saveDraft(
         status, registrant_user_id, owner_department_id
       ) VALUES (
         ${versionId}, ${v.docId ?? doc.docId}, ${v.versionNo}, ${v.title},
-        ${v.issuedDate ?? today()},
-        ${v.effectiveDate ?? today()}, ${v.reviewCycleMonths ?? 12},
+        ${v.issuedDate ?? todayVN()},
+        ${v.effectiveDate ?? todayVN()}, ${v.reviewCycleMonths ?? 12},
         'thu_cong', ${v.filePath}, ${v.fileHash},
         'cho_hoan_thien', ${v.registrantUserId}, ${ownerDeptId}
       )`;
@@ -282,8 +283,4 @@ export async function saveDraft(
     });
     return versionId;
   }) as Promise<string>;
-}
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
 }

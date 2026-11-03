@@ -12,16 +12,19 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { isEffectiveNow } from '../../src/domain/lifecycle-status.js';
 import { classifySitesForRepublish } from '../../src/domain/receipt.js';
+import { todayVN } from '../../src/lib/clock.js';
 
-/** Ngày hôm nay dạng 'YYYY-MM-DD' (cùng cách domain tính). */
+/** Ngày hôm nay dạng 'YYYY-MM-DD' theo giờ VN (cùng cách domain tính qua
+ *  isEffectiveNow -> todayVN). Dùng todayVN để không lệch biên nửa đêm UTC/VN. */
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayVN();
 }
-/** Dời ngày hôm nay đi `days` ngày (âm = quá khứ), trả 'YYYY-MM-DD'. */
+/** Dời ngày hôm nay (giờ VN) đi `days` ngày (âm = quá khứ), trả 'YYYY-MM-DD'.
+ *  Lấy mốc 12:00 UTC của ngày VN để tránh nhảy ngày khi cộng/trừ. */
 function shiftDays(days: number): string {
-  const d = new Date();
+  const d = new Date(`${todayVN()}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+  return todayVN(d);
 }
 
 describe('isEffectiveNow — hiện hành VÀ đã tới ngày hiệu lực (điểm 4/8/9)', () => {

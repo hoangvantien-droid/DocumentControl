@@ -17,6 +17,7 @@
  * Các mã cũ (hieu_luc, da_dang_ky) được coi là hiện hành trong giai đoạn chuyển
  * đổi để dữ liệu/đường dẫn cũ không vỡ; Task 9 dọn khi không còn tham chiếu.
  */
+import { todayVN } from '../lib/clock.js';
 
 /** Trạng thái phiên bản trong mô hình mới. */
 export type VersionStatus =
@@ -54,7 +55,7 @@ export function isEffectiveNow(
 ): boolean {
   if (!isCurrentlyEffective(status)) return false;
   if (!effectiveDate) return false;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayVN();
   return effectiveDate.slice(0, 10) <= today;
 }
 

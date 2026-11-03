@@ -15,6 +15,7 @@ import {
   acceptReceipt, rejectReceipt, type RejectType,
 } from '../domain/receipt.js';
 import { loadDetail, loadSections } from '../domain/catalog.js';
+import { todayVN } from '../lib/clock.js';
 
 export function registerReceiptRoutes(app: FastifyInstance, sql: Sql): void {
   // Hàng chờ phản hồi của site (chỉ DC Site).
@@ -46,7 +47,7 @@ export function registerReceiptRoutes(app: FastifyInstance, sql: Sql): void {
     const [detail, sections] = await Promise.all([
       loadDetail(sql, r.version_id), loadSections(sql, r.version_id),
     ]);
-    return reply.view('receipt-respond.eta', { r, detail, sections, selfRegistered, error: null });
+    return reply.view('receipt-respond.eta', { r, detail, sections, selfRegistered, today: todayVN(), error: null });
   });
 
   // Chấp nhận.

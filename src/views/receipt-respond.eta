@@ -5,8 +5,9 @@
 var _recalled = (d.status === 'thu_hoi');
 /* Ngày hiệu lực tại site (đã coalesce về ngày gốc khi site không khai riêng). */
 var _siteEff = r.site_effective_date || d.effective_date;
-/* Điểm 4: chưa tới ngày hiệu lực của site -> không cho chấp nhận. */
-var _today = new Date().toISOString().slice(0, 10);
+/* Điểm 4: chưa tới ngày hiệu lực của site -> không cho chấp nhận. "Hôm nay"
+   theo giờ VN, truyền từ route (todayVN) để khớp kiểm tra phía domain. */
+var _today = it.today;
 var _beforeEffective = (_siteEff && String(_siteEff).slice(0, 10) > _today);
 %>
 

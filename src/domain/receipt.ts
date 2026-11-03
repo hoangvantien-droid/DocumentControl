@@ -561,7 +561,7 @@ export async function editVersionMetadata(
     await assertNotAcceptedLocked(tx as TransactionSql, input.versionId);
     const p = input.patch;
     // Điểm 10: chặn chỉnh ngày hiệu lực về quá khứ.
-    if (p.effectiveDate && p.effectiveDate.slice(0, 10) < today()) {
+    if (p.effectiveDate && p.effectiveDate.slice(0, 10) < todayVN()) {
       throw new BusinessError('edit.effective_past', 'Không được đặt ngày hiệu lực về quá khứ');
     }
     // Điểm 10: giữ nguyên expiry_date khi không nhập lại (undefined);
@@ -748,6 +748,3 @@ export async function publishAdditionalSites(
   })) as { added: number; republished: number };
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}

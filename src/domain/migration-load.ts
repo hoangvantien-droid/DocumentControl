@@ -14,6 +14,7 @@ import type { Sql, TransactionSql } from 'postgres';
 import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import { ensureDocument, type DocumentInput } from './registration.js';
+import { todayVN } from '../lib/clock.js';
 
 export interface MigratedVersionInput {
   docId: string;
@@ -38,7 +39,7 @@ export async function loadMigratedVersion(
   if (!v.originalEffectiveDate) {
     throw new BusinessError('migrate.original', 'Bản nạp bắt buộc có ngày hiệu lực gốc');
   }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayVN();
   return sql.begin(async (tx) => {
     await ensureDocument(tx as TransactionSql, doc);
     const versionId = randomUUID();

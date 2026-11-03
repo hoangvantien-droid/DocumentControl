@@ -27,6 +27,9 @@ export function getSql(config: Pick<Config, 'databaseUrl' | 'dbPoolMax'>): Sql {
     // Từ vựng nghiệp vụ tiếng Việt không dấu — không đổi tên cột (DCS-8 §3.1, §3.2).
     transform: { undefined: null },
     onnotice: () => {}, // im lặng NOTICE để log gọn
+    // FEAT-002: đặt múi giờ session Postgres ở MỘT chỗ để CURRENT_DATE/now()
+    // theo giờ VN (UTC+7), hết lệch biên 00:00-07:00 so với todayVN() phía Node.
+    connection: { TimeZone: 'Asia/Ho_Chi_Minh' },
   });
   return _sql;
 }
