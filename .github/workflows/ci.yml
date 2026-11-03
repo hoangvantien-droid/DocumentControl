@@ -1,0 +1,119 @@
+# .github/workflows/ci.yml — chạy ĐẦY ĐỦ bộ test DCS với PostgreSQL thật.
+#
+# Vì sao có file này: 37 test tích hợp trong test/domain/*.integration.test.ts
+# TỰ SKIP khi máy không có Postgres (khuôn _lifecycle-db.ts). Trên máy dev không
+# có DB chúng không chạy lần nào, nên các luồng IND-01, IND-04 và mô hình ngày
+# hiệu lực per-site chưa từng được kiểm chứng runtime. CI dựng một Postgres
+# service container, migrate + seed, rồi chạy các test đó THẬT (có DATABASE_URL_TEST).
+#
+# Ảnh Postgres: pgvector/pgvector:pg16 — BẮT BUỘC, không dùng postgres:16 trơn.
+#   Migration 001_schema.sql có `CREATE EXTENSION IF NOT EXISTS vector;` (cột
+#   embedding). Ảnh postgres:16 KHÔNG kèm extension vector nên migrate sẽ hỏng.
+#   Ảnh pgvector/pgvector:pg16 kế thừa postgres:16 và đã kèm sẵn vector; các
+#   extension khác mà 001 cần (pgcrypto, unaccent, pg_trgm) có sẵn trong contrib
+#   của bản Postgres gốc nên không cần ảnh riêng.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: dcs
+          POSTGRES_PASSWORD: dcs
+          # DB test — tên BẮT BUỘC chứa 'test': harness (constraints.test.ts,
+          # uat/harness.ts) chặn chạy nếu URL không có chữ 'test', phòng trỏ nhầm
+          # vào dữ liệu thật.
+          POSTGRES_DB: dcs_test
+        ports:
+          - 5432:5432
+        # Đợi DB sẵn sàng trước khi job chạy migrate/seed/test.
+        options: >-
+          --health-cmd "pg_isready -U dcs -d dcs_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Harness test ưu tiên DATABASE_URL_TEST; đặt cả hai trỏ vào dcs_test.
+      DATABASE_URL_TEST: postgres://dcs:dcs@localhost:5432/dcs_test
+      DATABASE_URL: postgres://dcs:dcs@localhost:5432/dcs_test
+      # GIÁ TRỊ GIẢ CHỈ DÙNG CHO CI — KHÔNG phải secret thật. config.ts yêu cầu
+      # SESSION_SECRET ≥ 32 ký tự; chuỗi dưới đây chỉ để qua cửa kiểm cấu hình
+      # khi dựng app trong test, không bảo vệ dữ liệu thật nào.
+      SESSION_SECRET: ci-fake-session-secret-not-a-real-secret-0123456789
+      FILE_STORAGE_PATH: ./files
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (tsc)
+        run: npm run build
+
+      - name: Prepare file storage dir
+        run: mkdir -p ./files
+
+      # migrate.ts đọc DATABASE_URL (src/config.ts), chạy 001..028 theo thứ tự số.
+      # Nó KHÔNG tự tạo database — database dcs_test do service container tạo sẵn
+      # qua POSTGRES_DB. Migration 001 bật các extension cần thiết.
+      - name: Run migrations
+        run: npm run migrate
+
+      # Cây tổ chức (BU MEAT, Site MML) không do migration nào nạp — thật thì
+      # đồng bộ từ L1. seed_matrix.mjs GIẢ ĐỊNH BU MEAT + Site MML đã có và ném
+      # lỗi nếu thiếu, nên phải dựng gốc trước trên database CI trống.
+      - name: Seed org tree (BU MEAT, Site MML)
+        run: node scripts/seed_org_ci.mjs
+
+      # seed_matrix nạp 7 account 3 vai (author@mml.io, dc_mml/dc_hcm ...), Site
+      # HCM thứ hai và các Dept. Các test tích hợp đọc author@mml.io + ≥2 site.
+      # --out vào thư mục làm việc (mặc định /run/... không ghi được trên CI).
+      - name: Seed account matrix
+        run: node scripts/seed_matrix.mjs --out ./dcs_matrix_pw.json
+
+      # ---- CỔNG CHÍNH (bắt buộc xanh) -------------------------------------
+      # Chạy toàn bộ test domain + lib. 37 test tích hợp .integration.test.ts
+      # nằm trong đây và giờ CHẠY THẬT (có DATABASE_URL_TEST) thay vì skip —
+      # đây là mục tiêu then chốt của CI. Không có lỗi nền nào trong tập này.
+      - name: Integration + unit tests (gate)
+        run: node --import tsx --test "test/domain/**/*.test.ts" "test/lib/**/*.test.ts"
+
+      # Bộ 16 ràng buộc tầng DB. constraints.test.ts XÓA & DỰNG LẠI schema riêng
+      # (DROP SCHEMA public CASCADE) nên chạy TÁCH và SAU bước trên để không phá
+      # database chung khi các file test khác đang chạy song song.
+      - name: DB constraints tests (gate)
+        run: node --import tsx --test "test/constraints.test.ts"
+
+      # ---- CHẠY TOÀN BỘ (báo cáo, không chặn) -----------------------------
+      # Chạy `npm test` trên MỌI file để không giấu lỗi nào. Bước này KHÔNG chặn
+      # build vì chứa lỗi NỀN CÓ TRƯỚC, KHÔNG liên quan tới công việc CI/Postgres:
+      #   - test/views/render.test.ts: 15 fail — lỗi phân giải layout thư mục con
+      #     (confirm.eta/recall.eta/admin/*) + 1 khẳng định ASI ở home.eta. Đã ghi
+      #     ngay trong header của chính file test đó; nằm ngoài phạm vi task này.
+      #   - test/uat/harness.ts: import './src/routes/confirmation.js' KHÔNG tồn
+      #     tại (route đã gộp vào receipts.ts) -> http.uat.test.ts vỡ lúc import.
+      #     Đây là tham chiếu hỏng CÓ TRƯỚC trên nhánh nền, không do CI gây ra.
+      # Hai cổng gate ở trên mới là tín hiệu thật cho 37 test tích hợp + ràng buộc.
+      - name: Full suite (report-only, pre-existing failures)
+        continue-on-error: true
+        run: npm test
