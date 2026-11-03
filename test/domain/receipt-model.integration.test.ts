@@ -21,6 +21,11 @@ import {
   acceptReceipt, rejectReceipt, editVersionMetadata, deleteUnacceptedVersion, recallByAuthor,
 } from '../../src/domain/receipt.js';
 
+/** Ngày hôm nay 'YYYY-MM-DD'. Dùng cho effective_date ở các ca KHẲNG ĐỊNH chấp
+ * nhận/hiển thị: sau điểm 4/8, bản có ngày hiệu lực tương lai (ví dụ 2026-12-31)
+ * không chấp nhận được, nên fixture phải dùng ngày đã tới (hôm nay). */
+const TODAY = new Date().toISOString().slice(0, 10);
+
 function resolveDbUrl(): string | null {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   for (const p of ['/etc/dcs/.env', '.env']) {
@@ -76,7 +81,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'Test receipt',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-rcpt',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -104,7 +109,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'Test idempotent',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-rcpt2',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -131,7 +136,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
         { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
         {
           docId, versionNo: '1.0', title: 'No site',
-          issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+          issuedDate: TODAY, effectiveDate: TODAY,
           reviewCycleMonths: 12, sourceChannel: 'thu_cong',
           filePath: '/tmp/t.pdf', fileHash: 'hash-rcpt3',
           registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -160,7 +165,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'Respond test',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-rcpt4',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -188,7 +193,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'Edit test',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-edit',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -230,7 +235,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'Recall test',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-recall',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -258,7 +263,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'E2E flow',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-e2e',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
@@ -298,7 +303,7 @@ describe('Mô hình receipt (tích hợp DB)', () => {
       { docId, docType: 'SOP', origin: 'noi_bo', scopeLevel: 'group' },
       {
         docId, versionNo: '1.0', title: 'Cross-site test',
-        issuedDate: '2026-12-31', effectiveDate: '2026-12-31',
+        issuedDate: TODAY, effectiveDate: TODAY,
         reviewCycleMonths: 12, sourceChannel: 'thu_cong',
         filePath: '/tmp/t.pdf', fileHash: 'hash-rcpt5',
         registrantUserId: AUTHOR_ID, ownerDepartmentId: '',
