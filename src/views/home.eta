@@ -16,6 +16,23 @@
     </form>
   </div>
 
+  <% if (it.contentErrorMine && it.contentErrorMine.length > 0) { %>
+    <div class="home-block">
+      <div class="alert-banner alert-banner--warning">
+        <strong>Site báo SAI NỘI DUNG sau khi đã áp dụng (<%= it.contentErrorMine.length %>).</strong>
+        Cần thu hồi và ban hành phiên bản mới gấp. Các site đang dùng bản này nên ngừng sử dụng ngay.
+      </div>
+      <ul class="home-list">
+        <% it.contentErrorMine.forEach(function(r){ %>
+          <li>
+            <a href="/my-documents/<%= r.version_id %>/issuance"><%= r.doc_id %> v<%= r.version_no %> — <%= r.title %></a>
+            <span class="status status-thu_hoi">sai nội dung sau áp dụng</span>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+  <% } %>
+
   <% if (it.pendingReceipts && it.pendingReceipts.length > 0) { %>
     <div class="home-block">
       <h2>Chờ site bạn phản hồi (<%= it.pendingReceipts.length %>)</h2>
@@ -43,7 +60,7 @@
     </div>
   <% } %>
 
-  <% if ((!it.pendingReceipts || it.pendingReceipts.length===0) && (!it.rejectedMine || it.rejectedMine.length===0)) { %>
+  <% if ((!it.pendingReceipts || it.pendingReceipts.length===0) && (!it.rejectedMine || it.rejectedMine.length===0) && (!it.contentErrorMine || it.contentErrorMine.length===0)) { %>
     <p class="build-note">Không có việc nào cần bạn xử lý hôm nay.</p>
   <% } %>
 </section>

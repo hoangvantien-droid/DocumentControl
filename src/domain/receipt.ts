@@ -13,7 +13,8 @@ import { BusinessError } from '../lib/errors.js';
 import { writeAudit } from '../lib/audit.js';
 import { todayVN } from '../lib/clock.js';
 import {
-  aggregateStatusOf, type AggregateStatus, type ReceiptTally,
+  aggregateStatusOf, isReceiptBlockingVersionStatus,
+  type AggregateStatus, type ReceiptTally,
 } from './lifecycle-status.js';
 import { siteIdsWithDocControl } from './permissions.js';
 
@@ -237,14 +238,15 @@ export async function recalledDocsForSites(sql: Sql, siteIds: string[]): Promise
 }
 
 /** Đếm nhanh số receipt đang chờ phản hồi của các site (cho badge sidebar).
- * Điểm 5: loại phiếu của tài liệu đã thu hồi (JOIN document_versions). */
+ * Điểm 5 + IND-01: loại phiếu của tài liệu đã thu hồi HOẶC đã hết hiệu lực (bị
+ * bản mới thay thế) — JOIN document_versions. */
 export async function pendingReceiptCountForSites(sql: Sql, siteIds: string[]): Promise<number> {
   if (siteIds.length === 0) return 0;
   const rows = await sql<{ n: number }[]>`
     SELECT count(*)::int AS n FROM document_receipt r
       JOIN document_versions v ON v.version_id = r.version_id
      WHERE r.status = 'cho_phan_hoi'
-       AND v.status <> 'thu_hoi'
+       AND v.status NOT IN ('thu_hoi', 'het_hieu_luc')
        AND r.site_id = ANY(${siteIds}::uuid[])`;
   return rows[0]?.n ?? 0;
 }
@@ -271,7 +273,7 @@ export async function pendingReceiptsForSites(
       JOIN org_site s ON s.site_id = r.site_id
       JOIN document_versions v ON v.version_id = r.version_id
      WHERE r.status = 'cho_phan_hoi'
-       AND v.status <> 'thu_hoi'
+       AND v.status NOT IN ('thu_hoi', 'het_hieu_luc')
        AND r.site_id = ANY(${siteIds})
      ORDER BY v.submitted_at DESC NULLS LAST, s.site_code`;
 }
@@ -391,9 +393,15 @@ async function assertCanRespond(
   if (rc.status !== 'cho_phan_hoi') {
     throw new BusinessError('receipt.bad_status', 'Receipt không còn ở trạng thái chờ phản hồi');
   }
-  // Điểm 5: phiếu của tài liệu đã thu hồi không được chấp nhận.
-  if (rc.version_status === 'thu_hoi') {
-    throw new BusinessError('receipt.recalled', 'Tài liệu đã bị thu hồi — không thể phản hồi phiếu này');
+  // Điểm 5 + IND-01: phiếu của phiên bản KHÓA (đã thu hồi hoặc đã hết hiệu lực
+  // vì bị bản mới thay thế) không được chấp nhận. Dùng chung helper
+  // isReceiptBlockingVersionStatus với truy vấn hàng chờ để hai nơi không lệch;
+  // tách thông điệp theo từng trạng thái cho rõ với người dùng.
+  if (isReceiptBlockingVersionStatus(rc.version_status)) {
+    if (rc.version_status === 'thu_hoi') {
+      throw new BusinessError('receipt.recalled', 'Tài liệu đã bị thu hồi — không thể phản hồi phiếu này');
+    }
+    throw new BusinessError('receipt.superseded', 'Tài liệu đã bị phiên bản mới thay thế — không thể phản hồi phiếu này');
   }
   // Điểm 4: site không được chấp nhận trước ngày hiệu lực (riêng của site nếu
   // có khai, nếu không thì ngày hiệu lực gốc). So với "hôm nay" theo giờ VN.

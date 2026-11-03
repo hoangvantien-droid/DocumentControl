@@ -67,6 +67,8 @@ export interface MyDocRow {
   content_rejected: number;
   aggregate: AggregateStatus;
   hasContentReject: boolean;
+  /** IND-04a: có ≥1 report 'bao_sai_noi_dung_sau_chap_nhan' cho version này. */
+  hasPostAcceptContentError: boolean;
 }
 
 /**
@@ -82,7 +84,7 @@ export async function assembleMyDocuments(sql: Sql, userId: string): Promise<MyD
     status: string; effective_date: string | null; rejection_reason: string | null;
     parse_status: string | null; parse_note: string | null;
     total: number; accepted: number; rejected: number; pending: number;
-    content_rejected: number;
+    content_rejected: number; post_accept_content_error: number;
   }[]>`
     SELECT v.version_id, v.doc_id, v.version_no, v.title, v.status,
            v.effective_date::text AS effective_date, v.rejection_reason,
@@ -92,6 +94,11 @@ export async function assembleMyDocuments(sql: Sql, userId: string): Promise<MyD
            count(r.*) FILTER (WHERE r.status = 'tu_choi')::int AS rejected,
            count(r.*) FILTER (WHERE r.status = 'cho_phan_hoi')::int AS pending
            , count(r.*) FILTER (WHERE r.status = 'tu_choi' AND r.response_type = 'sai_noi_dung')::int AS content_rejected
+           -- IND-04a: số report 'bao_sai_noi_dung_sau_chap_nhan' theo version
+           -- (site báo sai nội dung SAU KHI đã chấp nhận/áp dụng).
+           , (SELECT count(*)::int FROM document_issue_report ir
+               WHERE ir.version_id = v.version_id
+                 AND ir.status = 'bao_sai_noi_dung_sau_chap_nhan') AS post_accept_content_error
       FROM document_versions v
       LEFT JOIN document_receipt r ON r.version_id = v.version_id
      WHERE v.registrant_user_id = ${userId}
@@ -105,6 +112,7 @@ export async function assembleMyDocuments(sql: Sql, userId: string): Promise<MyD
       total: d.total, accepted: d.accepted, rejected: d.rejected, pending: d.pending,
     }),
     hasContentReject: d.content_rejected > 0,
+    hasPostAcceptContentError: d.post_accept_content_error > 0,
   }));
 }
 
@@ -121,7 +129,9 @@ const MY_DOCS_COLUMNS: ColumnDef<MyDocRow>[] = [
   { header: 'Site xác nhận',       value: (d) => (d.total > 0 ? `${d.accepted}/${d.total}` : '') },
   {
     header: 'Tình trạng ban hành',
-    value: (d) => (d.total > 0 ? aggregateDisplay(d.aggregate, d.hasContentReject).label : 'Chưa phát hành'),
+    value: (d) => (d.total > 0 || d.hasPostAcceptContentError
+      ? aggregateDisplay(d.aggregate, d.hasContentReject, d.hasPostAcceptContentError).label
+      : 'Chưa phát hành'),
   },
   { header: 'Lý do từ chối',       value: (d) => d.rejection_reason ?? '' },
 ];
@@ -347,11 +357,22 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     ]);
     const aggregate = aggregateStatusOf(tally);
     const anyAccepted = tally.accepted > 0;
-    // Điều kiện mở sửa/thu hồi/xóa (xem Task 6): chưa ai chấp nhận HOẶC có từ chối.
-    const canEditOrRecall = tally.accepted === 0 || tally.rejected > 0;
+    // IND-04c: TÁCH quyền sửa metadata khỏi quyền thu hồi.
+    //  - canEditMetadata: chỉ sửa tại chỗ khi CHƯA ai chấp nhận HOẶC có ≥1 từ chối.
+    //  - canRecall: Author LUÔN thu hồi được bản da_ban_hanh (kể cả khi mọi site
+    //    đã chấp nhận — khớp recallByAuthor đã mở quyền).
+    const canEditMetadata = tally.accepted === 0 || tally.rejected > 0;
+    const canRecall = v.status === 'da_ban_hanh';
     const canDelete = tally.accepted === 0;
     const hasContentReject = receipts.some((r) => r.status === 'tu_choi' && r.response_type === 'sai_noi_dung');
     const hasMetaReject = receipts.some((r) => r.status === 'tu_choi' && r.response_type === 'sai_dang_ky');
+    // IND-04a: report 'bao_sai_noi_dung_sau_chap_nhan' theo version (site báo
+    // sai nội dung SAU KHI đã áp dụng) — để cảnh báo đậm trên trang.
+    const [peRow] = await sql<{ n: number }[]>`
+      SELECT count(*)::int AS n FROM document_issue_report
+       WHERE version_id = ${v.version_id}
+         AND status = 'bao_sai_noi_dung_sau_chap_nhan'`;
+    const hasPostAcceptContentError = (peRow?.n ?? 0) > 0;
     // Phát hành thêm site (trong scope, chưa có receipt) + phát hành lại (từ chối sai đăng ký).
     const candidates = await candidateSitesForScope(sql, {
       scope_level: v.scope_level, scope_bu_id: v.scope_bu_id,
@@ -363,7 +384,8 @@ export function registerDocumentRoutes(app: FastifyInstance, sql: Sql, config: C
     const blockedByContentReject = hasContentReject;
     return reply.view('issuance-status.eta', {
       v, receipts, tally, aggregate, anyAccepted,
-      canEditOrRecall, canDelete, hasContentReject, hasMetaReject,
+      canEditMetadata, canRecall, canDelete, hasContentReject, hasMetaReject,
+      hasPostAcceptContentError,
       addableNew, republishable, blockedByContentReject,
     });
   });

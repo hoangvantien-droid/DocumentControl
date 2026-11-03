@@ -36,8 +36,8 @@
         <% if (d.total > 0) { %><%= d.accepted %>/<%= d.total %><% } else { %><span class="muted">—</span><% } %>
       </td>
       <td data-label="Tình trạng ban hành">
-        <% if (d.total > 0) { %>
-          <% var disp = it.aggregateDisplay(d.aggregate, d.hasContentReject); %>
+        <% if (d.total > 0 || d.hasPostAcceptContentError) { %>
+          <% var disp = it.aggregateDisplay(d.aggregate, d.hasContentReject, d.hasPostAcceptContentError); %>
           <span class="status <%= disp.cls %>"><%= disp.label %></span>
         <% } else { %><span class="muted">Chưa phát hành</span><% } %>
       </td>

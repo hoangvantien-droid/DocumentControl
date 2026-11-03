@@ -14,8 +14,13 @@
  *   - thu_hoi      : đã thu hồi — KHÔNG hiện hành.
  *   - het_hieu_luc : bị phiên bản mới thay thế — KHÔNG hiện hành.
  *   - cho_hoan_thien: nháp — KHÔNG hiện hành.
- * Các mã cũ (hieu_luc, da_dang_ky) được coi là hiện hành trong giai đoạn chuyển
- * đổi để dữ liệu/đường dẫn cũ không vỡ; Task 9 dọn khi không còn tham chiếu.
+ * Mã cũ hieu_luc vẫn coi là hiện hành trong giai đoạn chuyển đổi để dữ liệu/
+ * đường dẫn cũ không vỡ; Task 9 dọn khi không còn tham chiếu.
+ * IND-05: BỎ 'da_dang_ky' khỏi tập hiện hành — da_dang_ky nghĩa là "đã đăng ký,
+ * chờ hiệu lực" nên KHÔNG phải tài liệu đang có hiệu lực để site xem/áp dụng.
+ * Giữ nó ở đây gây bất nhất giữa đường in (coi là hiện hành) và đường quét/
+ * hiệu lực (isCurrentlyEffective). Hướng an toàn: chỉ coi hiện hành khi thực sự
+ * ban hành (da_ban_hanh) hoặc còn mã cũ hieu_luc.
  */
 import { todayVN } from '../lib/clock.js';
 
@@ -34,14 +39,25 @@ export type VersionStatus =
 /**
  * Tập trạng thái được coi là "hiện hành" — người chỉ-xem (Reader) được phép
  * thấy, và là tài liệu đang có hiệu lực để site nhận xử lý.
- * Thứ tự: mã mới trước, mã cũ (tương thích) sau.
+ * Thứ tự: mã mới trước, mã cũ (tương thích) sau. IND-05: KHÔNG gồm 'da_dang_ky'.
  */
-export const CURRENT_VIEW_STATUSES = ['da_ban_hanh', 'hieu_luc', 'da_dang_ky'] as const;
+export const CURRENT_VIEW_STATUSES = ['da_ban_hanh', 'hieu_luc'] as const;
 
 /** Trạng thái này có được coi là tài liệu hiện hành không. */
 export function isCurrentlyEffective(status: string | null | undefined): boolean {
   if (!status) return false;
   return (CURRENT_VIEW_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * Trạng thái version KHÓA phản hồi/hàng chờ của receipt (IND-01): một phiếu
+ * của phiên bản đã THU HỒI hoặc đã HẾT HIỆU LỰC (bị bản mới thay thế) không
+ * còn được chấp nhận và phải biến mất khỏi hàng chờ/badge của site. Helper
+ * THUẦN dùng chung giữa truy vấn hàng chờ (pending*) và kiểm quyền
+ * (assertCanRespond) để hai nơi không lệch nhau.
+ */
+export function isReceiptBlockingVersionStatus(status: string | null | undefined): boolean {
+  return status === 'thu_hoi' || status === 'het_hieu_luc';
 }
 
 /**

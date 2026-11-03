@@ -39,8 +39,8 @@ export interface CatalogFilters {
 /**
  * Danh mục tài liệu người dùng được thấy. Filters giữ trên URL để share/bookmark.
  * readOnlyViewer=true (người chỉ-xem/Reader): CHỈ hiện tài liệu hiện hành
- * (hieu_luc / da_dang_ky), ẩn bản lỗi thời/thu hồi/nháp/chờ — lọc TRƯỚC trong
- * truy vấn (DCS-2 §7.1), không lọc sau.
+ * (da_ban_hanh / hieu_luc — IND-05 đã bỏ da_dang_ky), ẩn bản lỗi thời/thu hồi/
+ * nháp/chờ — lọc TRƯỚC trong truy vấn (DCS-2 §7.1), không lọc sau.
  */
 export async function listVisibleDocuments(
   sql: Sql,
@@ -94,6 +94,10 @@ export async function listVisibleDocuments(
                OR (d.scope_level='site' AND st.site_id = d.scope_site_id)
                OR (d.scope_level='dept' AND dp.dept_id = d.scope_dept_id)))
        -- Hoặc là Admin (quản trị) — thấy để tra cứu.
+       -- IND-06 (KHÔNG đổi hành vi): nhánh này CHỈ thực sự áp cho user có thêm
+       -- vai nghiệp vụ (được requireDocFlow cho qua); Admin-THUẦN đã bị
+       -- requireDocFlow trả 403 trước khi tới truy vấn này. Việc "sửa đúng" quy
+       -- tắc nghiệp vụ nằm ở specs (FEAT-004), không sửa code ở đây.
        OR EXISTS (
          SELECT 1 FROM user_roles r
           WHERE r.user_id = ${userId} AND r.is_active
@@ -101,8 +105,9 @@ export async function listVisibleDocuments(
        )
      )
        -- Người chỉ-xem (Reader): chỉ tài liệu hiện hành (da_ban_hanh / hieu_luc
-       -- / da_dang_ky) VÀ đã tới ngày hiệu lực (điểm 4: không thấy bản tương lai).
-       AND (${!readOnlyViewer} OR (v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky')
+       -- — IND-05 bỏ da_dang_ky) VÀ đã tới ngày hiệu lực (điểm 4: không thấy
+       -- bản tương lai).
+       AND (${!readOnlyViewer} OR (v.status IN ('da_ban_hanh', 'hieu_luc')
                                    AND v.effective_date <= CURRENT_DATE))
        -- Lọc theo trạng thái
        AND (${effStatus}::varchar IS NULL OR v.status = ${effStatus})
@@ -179,9 +184,10 @@ export async function canViewVersion(
         FROM document_versions v
         JOIN documents d ON d.doc_id = v.doc_id
        WHERE v.version_id = ${versionId}
-         -- Người chỉ-xem (Reader): chỉ bản hiện hành (da_ban_hanh / hieu_luc /
-         -- da_dang_ky) VÀ đã tới ngày hiệu lực (điểm 4: chặn bản tương lai).
-         AND (${!readOnlyViewer} OR (v.status IN ('da_ban_hanh', 'hieu_luc', 'da_dang_ky')
+         -- Người chỉ-xem (Reader): chỉ bản hiện hành (da_ban_hanh / hieu_luc —
+         -- IND-05 bỏ da_dang_ky) VÀ đã tới ngày hiệu lực (điểm 4: chặn bản
+         -- tương lai).
+         AND (${!readOnlyViewer} OR (v.status IN ('da_ban_hanh', 'hieu_luc')
                                      AND v.effective_date <= CURRENT_DATE))
          AND (
            v.registrant_user_id = ${userId}
@@ -201,6 +207,9 @@ export async function canViewVersion(
                   OR (d.scope_level = 'dept' AND dp.dept_id = d.scope_dept_id)
                 )
            )
+           -- IND-06 (KHÔNG đổi hành vi): nhánh Admin này chỉ áp cho user có thêm
+           -- vai nghiệp vụ; Admin-THUẦN bị requireDocFlow trả 403 trước. Sửa
+           -- thực (nếu cần) nằm ở specs FEAT-004, không đổi code ở đây.
            OR EXISTS (
              SELECT 1
                FROM user_roles r

@@ -183,6 +183,11 @@ export async function submitRegistration(
     // vi phạm uq_one_current_per_doc (chỉ 1 bản 'da_ban_hanh' / doc_id). Giữ
     // liên kết phiên bản qua supersedes_version_id; kế thừa xác nhận đọc xử lý
     // bên dưới sau khi chèn (thay đổi 'nho' sao chép, 'lon' đặt lại).
+    // IND-01: chuyển bản gốc sang 'het_hieu_luc' ở ĐÂY là đủ — KHÔNG cần đụng
+    // tới receipt của bản cũ. Hàng chờ/badge (pendingReceipts*) và kiểm quyền
+    // (assertCanRespond) đã dùng chung isReceiptBlockingVersionStatus để loại
+    // mọi phiếu của version 'het_hieu_luc', nên các phiếu bản cũ tự biến mất
+    // khỏi hàng chờ và không còn chấp nhận được.
     if (v.supersedesVersionId) {
       await tx`
         UPDATE document_versions SET status = 'het_hieu_luc', updated_at = now()

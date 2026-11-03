@@ -140,13 +140,20 @@ export function aggregateStatusLabel(code: string | null | undefined): string {
  * Nhãn + lớp màu cho trạng thái tổng hợp, TÁCH tranh_chap theo loại từ chối:
  *   - hasContentReject=true  -> 'Có site báo sai nội dung' (đỏ, nặng).
  *   - hasContentReject=false -> 'Có site báo sai đăng ký' (amber, nhẹ).
+ * IND-04a: hasPostAcceptContentError=true (có site báo SAI NỘI DUNG SAU KHI đã
+ * áp dụng — report 'bao_sai_noi_dung_sau_chap_nhan') ƯU TIÊN CAO NHẤT, phủ lên
+ * cả toan_bo/mot_phan, vì đó là tín hiệu nặng nhất (site đang dùng bản sai).
  * Các trạng thái khác: nhãn như aggregateStatusLabel, bỏ qua cờ. GIỮ nguyên
  * aggregateStatusLabel/aggregateStatusOf (nguồn sự thật cho logic).
  */
 export function aggregateDisplay(
   aggregate: string | null | undefined,
   hasContentReject = false,
+  hasPostAcceptContentError = false,
 ): { label: string; cls: string } {
+  if (hasPostAcceptContentError) {
+    return { label: 'Có site báo sai nội dung sau khi áp dụng', cls: 'status-thu_hoi' };
+  }
   switch (aggregate) {
     case 'chua_phat_hanh': return { label: 'Chưa phát hành', cls: 'status-da_ban_hanh' };
     case 'dang_cho':       return { label: 'Đang chờ phản hồi', cls: 'status-da_ban_hanh' };

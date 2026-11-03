@@ -101,3 +101,19 @@ describe('aggregateDisplay — tách nhãn tranh_chap theo loại từ chối', 
     assert.equal(aggregateStatusLabel('tranh_chap'), 'Có site báo sai sót');
   });
 });
+
+describe('aggregateDisplay — IND-04a báo sai nội dung sau khi áp dụng', () => {
+  test('hasPostAcceptContentError ƯU TIÊN cao nhất, phủ lên toan_bo', () => {
+    const d = aggregateDisplay('toan_bo', false, true);
+    assert.equal(d.label, 'Có site báo sai nội dung sau khi áp dụng');
+    assert.equal(d.cls, 'status-thu_hoi');
+  });
+  test('phủ lên cả mot_phan và tranh_chap', () => {
+    assert.equal(aggregateDisplay('mot_phan', false, true).label, 'Có site báo sai nội dung sau khi áp dụng');
+    assert.equal(aggregateDisplay('tranh_chap', true, true).label, 'Có site báo sai nội dung sau khi áp dụng');
+  });
+  test('cờ post-accept=false -> giữ hành vi cũ', () => {
+    assert.equal(aggregateDisplay('toan_bo', false, false).label, 'Toàn bộ đã áp dụng');
+    assert.equal(aggregateDisplay('toan_bo').label, 'Toàn bộ đã áp dụng');
+  });
+});

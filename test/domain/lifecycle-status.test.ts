@@ -12,6 +12,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   isCurrentlyEffective,
+  isReceiptBlockingVersionStatus,
   aggregateStatusOf,
   CURRENT_VIEW_STATUSES,
   type ReceiptTally,
@@ -30,14 +31,33 @@ describe('isCurrentlyEffective — khái niệm hiện hành', () => {
   test('cho_hoan_thien (nháp) -> KHÔNG hiện hành', () => {
     assert.equal(isCurrentlyEffective('cho_hoan_thien'), false);
   });
-  test('mã cũ hieu_luc / da_dang_ky vẫn hiện hành (giai đoạn chuyển đổi)', () => {
+  test('mã cũ hieu_luc vẫn hiện hành (giai đoạn chuyển đổi)', () => {
     assert.equal(isCurrentlyEffective('hieu_luc'), true);
-    assert.equal(isCurrentlyEffective('da_dang_ky'), true);
+  });
+  test('IND-05: da_dang_ky KHÔNG còn hiện hành', () => {
+    assert.equal(isCurrentlyEffective('da_dang_ky'), false);
+    assert.ok(![...CURRENT_VIEW_STATUSES].includes('da_dang_ky' as never));
   });
   test('null/undefined/mã lạ -> KHÔNG hiện hành', () => {
     assert.equal(isCurrentlyEffective(null), false);
     assert.equal(isCurrentlyEffective(undefined), false);
     assert.equal(isCurrentlyEffective('abc'), false);
+  });
+});
+
+describe('isReceiptBlockingVersionStatus — khóa phản hồi/hàng chờ (IND-01)', () => {
+  test('thu_hoi / het_hieu_luc -> khóa (true)', () => {
+    assert.equal(isReceiptBlockingVersionStatus('thu_hoi'), true);
+    assert.equal(isReceiptBlockingVersionStatus('het_hieu_luc'), true);
+  });
+  test('da_ban_hanh / hieu_luc / mã khác -> KHÔNG khóa (false)', () => {
+    assert.equal(isReceiptBlockingVersionStatus('da_ban_hanh'), false);
+    assert.equal(isReceiptBlockingVersionStatus('hieu_luc'), false);
+    assert.equal(isReceiptBlockingVersionStatus('cho_hoan_thien'), false);
+  });
+  test('null/undefined -> false', () => {
+    assert.equal(isReceiptBlockingVersionStatus(null), false);
+    assert.equal(isReceiptBlockingVersionStatus(undefined), false);
   });
 });
 

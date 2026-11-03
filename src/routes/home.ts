@@ -32,10 +32,22 @@ export function registerHomeRoutes(app: FastifyInstance, sql: Sql): void {
          AND r.status = 'tu_choi'
        ORDER BY v.version_id`;
 
+    // IND-04b: tài liệu mình đăng ký có site BÁO SAI NỘI DUNG SAU KHI đã chấp
+    // nhận/áp dụng (report 'bao_sai_noi_dung_sau_chap_nhan') — cảnh báo đỏ ở
+    // trang chủ, Author phải xử lý gấp (thu hồi + bản mới).
+    const contentErrorMine = await sql`
+      SELECT DISTINCT v.version_id, v.doc_id, v.version_no, v.title
+        FROM document_versions v
+        JOIN document_issue_report ir ON ir.version_id = v.version_id
+       WHERE v.registrant_user_id = ${user.user_id}
+         AND ir.status = 'bao_sai_noi_dung_sau_chap_nhan'
+       ORDER BY v.version_id`;
+
     return reply.view('home.eta', {
       user,
       pendingReceipts,
       rejectedMine,
+      contentErrorMine,
       isSiteDocControl: siteIds.length > 0,
     });
   });
