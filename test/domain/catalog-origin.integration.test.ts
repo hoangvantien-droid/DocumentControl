@@ -80,7 +80,9 @@ describe('listVisibleDocuments trả về origin (tích hợp DB — Task 5.2)',
     await sql`INSERT INTO org_site (site_id, site_code, name) VALUES (${SITE}, 'MML', 'MML')`;
     await sql`INSERT INTO org_department (dept_id, dept_code, name, site_id)
               VALUES (${DEPT}, 'QA', 'QA In-process', ${SITE})`;
-    await sql`INSERT INTO app_user_ref (user_id) VALUES (${USER})`;
+    // app_user_ref là VIEW chỉ-đọc từ migration 005 (SELECT u.* FROM users
+    // JOIN hằng -> không auto-updatable). Insert vào BẢNG NỀN users.
+    await sql`INSERT INTO users (user_id) VALUES (${USER})`;
   });
 
   after(async () => {

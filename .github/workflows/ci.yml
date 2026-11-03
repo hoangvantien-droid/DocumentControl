@@ -95,16 +95,30 @@ jobs:
       # Chạy toàn bộ test domain + lib. 37 test tích hợp .integration.test.ts
       # nằm trong đây và giờ CHẠY THẬT (có DATABASE_URL_TEST) thay vì skip —
       # đây là mục tiêu then chốt của CI. Không có lỗi nền nào trong tập này.
+      #
+      # LOẠI TRỪ 3 file dùng DROP SCHEMA (catalog-origin, catalog-export-scope,
+      # mydocs-export-scope): chúng XÓA & DỰNG LẠI schema trong before() giống
+      # constraints.test.ts. node --test chạy các FILE song song, nên để chung ở
+      # đây thì một suite DROP SCHEMA xoá bảng/dữ liệu seed khi suite khác đang
+      # chạy -> lỗi giả 'relation "org_bu" does not exist' và các test bị
+      # cancelledByParent. Chạy TÁCH và SAU, tuần tự (xem bước dưới).
       - name: Integration + unit tests (gate)
         # bash cần globstar để expand `**`; glob trong nháy kép KHÔNG được expand
         # (node 20 không có glob built-in), nên gọi qua `bash -O globstar -c`.
-        run: bash -O globstar -c 'node --import tsx --test test/domain/**/*.test.ts test/lib/**/*.test.ts'
+        # extglob để loại 3 file DROP SCHEMA khỏi lượt chạy song song.
+        run: bash -O globstar -O extglob -c 'node --import tsx --test test/domain/!(catalog-origin.integration|catalog-export-scope.integration|mydocs-export-scope.integration).test.ts test/lib/**/*.test.ts'
 
-      # Bộ 16 ràng buộc tầng DB. constraints.test.ts XÓA & DỰNG LẠI schema riêng
-      # (DROP SCHEMA public CASCADE) nên chạy TÁCH và SAU bước trên để không phá
-      # database chung khi các file test khác đang chạy song song.
-      - name: DB constraints tests (gate)
-        run: node --import tsx --test "test/constraints.test.ts"
+      # 3 suite DROP SCHEMA + constraints.test.ts đều XÓA & DỰNG LẠI schema riêng
+      # (DROP SCHEMA public CASCADE). Chạy TÁCH và SAU bước gate, TUẦN TỰ
+      # (--test-concurrency=1) để không suite nào xoá database chung khi suite
+      # khác đang chạy. Mỗi file tự migrate lại schema sạch trong before().
+      - name: DB schema-rebuild tests (gate, serial)
+        run: >-
+          node --import tsx --test --test-concurrency=1
+          test/domain/catalog-origin.integration.test.ts
+          test/domain/catalog-export-scope.integration.test.ts
+          test/domain/mydocs-export-scope.integration.test.ts
+          test/constraints.test.ts
 
       # ---- CHẠY TOÀN BỘ (báo cáo, không chặn) -----------------------------
       # Chạy `npm test` trên MỌI file để không giấu lỗi nào. Bước này KHÔNG chặn

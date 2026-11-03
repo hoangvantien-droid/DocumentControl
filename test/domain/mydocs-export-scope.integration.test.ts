@@ -86,8 +86,10 @@ describe('assembleMyDocuments giới hạn theo registrant_user_id (tích hợp 
     await sql`INSERT INTO org_site (site_id, site_code, name) VALUES (${SITE}, 'MML', 'MML')`;
     await sql`INSERT INTO org_department (dept_id, dept_code, name, site_id)
               VALUES (${DEPT}, 'QA', 'QA In-process', ${SITE})`;
-    await sql`INSERT INTO app_user_ref (user_id) VALUES (${USER_A})`;
-    await sql`INSERT INTO app_user_ref (user_id) VALUES (${USER_B})`;
+    // app_user_ref là VIEW chỉ-đọc từ migration 005 (SELECT u.* FROM users
+    // JOIN hằng -> không auto-updatable). Insert vào BẢNG NỀN users.
+    await sql`INSERT INTO users (user_id) VALUES (${USER_A})`;
+    await sql`INSERT INTO users (user_id) VALUES (${USER_B})`;
 
     // Tài liệu của A và tài liệu của B (mỗi người một phiên bản do chính mình nộp).
     await seedDocFor(DOC_A, USER_A);
