@@ -434,10 +434,12 @@ export async function acceptReceipt(
     if (!applyDate) {
       throw new BusinessError('receipt.no_effective', 'Tài liệu chưa có ngày hiệu lực để chấp nhận');
     }
-    // Điểm 8: ngày site áp dụng không được sớm hơn ngày có hiệu lực gốc.
-    if (rc.effective_date && applyDate.slice(0, 10) < rc.effective_date.slice(0, 10)) {
-      throw new BusinessError('receipt.apply_before_effective', 'Ngày áp dụng không được sớm hơn ngày có hiệu lực của tài liệu');
-    }
+    // HƯỚNG 2: mỗi site có ngày hiệu lực độc lập — apply_date = site_effective_date
+    // (đã tự ràng buộc >= issued_date và >= hôm nay giờ VN lúc khai site). KHÔNG
+    // còn chặn apply_date >= ngày hiệu lực gốc: ràng buộc đó mâu thuẫn với mô hình
+    // per-site và làm receipt kẹt khi site_effective_date nằm trong
+    // [issued_date, effective_date_gốc). Guard điểm 4 (before_effective) vẫn chặn
+    // chấp nhận TRƯỚC ngày hiệu lực của chính site đó.
     await tx`
       UPDATE document_receipt
          SET status = 'chap_nhan', apply_date = ${applyDate},

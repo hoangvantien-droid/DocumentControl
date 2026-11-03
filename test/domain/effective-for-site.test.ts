@@ -8,8 +8,13 @@ import assert from 'node:assert/strict';
 import { effectiveForSite } from '../../src/domain/receipt.js';
 
 describe('effectiveForSite — ngày hiệu lực thực của site', () => {
-  test('có ngày riêng -> dùng ngày riêng', () => {
+  test('có ngày riêng (muộn hơn gốc) -> dùng ngày riêng', () => {
     assert.equal(effectiveForSite('2026-02-01', '2026-01-01'), '2026-02-01');
+  });
+  test('HƯỚNG 2: ngày riêng SỚM hơn ngày gốc -> vẫn dùng ngày riêng (độc lập)', () => {
+    // apply_date = site_effective_date, kể cả khi sớm hơn effective_date gốc;
+    // không còn ràng buộc >= ngày gốc.
+    assert.equal(effectiveForSite('2025-12-15', '2026-01-01'), '2025-12-15');
   });
   test('không khai ngày riêng (null) -> về ngày hiệu lực gốc', () => {
     assert.equal(effectiveForSite(null, '2026-01-01'), '2026-01-01');
